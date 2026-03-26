@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
-import { User, Briefcase, GraduationCap, Zap, Eye } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Zap, Languages, Eye } from 'lucide-react';
 
 const steps = [
   { icon: User, label: 'Persönlich' },
   { icon: Briefcase, label: 'Erfahrung' },
   { icon: GraduationCap, label: 'Bildung' },
   { icon: Zap, label: 'Skills' },
+  { icon: Languages, label: 'Sprachen' },
   { icon: Eye, label: 'Vorschau' },
 ];
 

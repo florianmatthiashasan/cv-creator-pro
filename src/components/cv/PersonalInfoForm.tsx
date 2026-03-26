@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { PersonalInfo } from '@/types/cv';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Camera, X } from 'lucide-react';
 
 interface Props {
   data: PersonalInfo;
@@ -9,12 +11,58 @@ interface Props {
 }
 
 const PersonalInfoForm = ({ data, onChange }: Props) => {
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const update = (field: keyof PersonalInfo, value: string) => {
     onChange({ ...data, [field]: value });
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      onChange({ ...data, photo: ev.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    onChange({ ...data, photo: undefined });
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
   return (
     <div className="space-y-6">
+      {/* Photo Upload */}
+      <div className="flex items-center gap-6">
+        <div className="relative group">
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="w-24 h-24 rounded-full border-2 border-dashed border-border hover:border-primary bg-surface flex items-center justify-center cursor-pointer overflow-hidden transition-colors"
+          >
+            {data.photo ? (
+              <img src={data.photo} alt="Profilbild" className="w-full h-full object-cover" />
+            ) : (
+              <Camera size={28} className="text-muted-foreground" />
+            )}
+          </div>
+          {data.photo && (
+            <button
+              onClick={removePhoto}
+              className="absolute -top-1 -right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X size={12} />
+            </button>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+        </div>
+        <div>
+          <p className="text-sm font-display text-foreground">Profilbild</p>
+          <p className="text-xs text-muted-foreground mt-1">JPG oder PNG, max. 5MB</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-foreground/80 font-display">Vorname</Label>

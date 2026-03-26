@@ -9,24 +9,28 @@ const formatDate = (d: string) => {
 };
 
 const ModernTemplate = ({ data }: { data: CVData }) => {
-  const { personalInfo: p, experiences, education, skills } = data;
+  const { personalInfo: p, experiences, education, skills, languages } = data;
 
   return (
     <div className="bg-white text-gray-900 p-8 min-h-[297mm] w-[210mm] font-sans text-sm">
       {/* Header */}
-      <div className="border-b-2 border-amber-500 pb-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{p.firstName} {p.lastName}</h1>
-        <p className="text-lg text-amber-600 mt-1">{p.title}</p>
-        <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
-          {p.email && <span className="flex items-center gap-1"><Mail size={12} /> {p.email}</span>}
-          {p.phone && <span className="flex items-center gap-1"><Phone size={12} /> {p.phone}</span>}
-          {p.address && <span className="flex items-center gap-1"><MapPin size={12} /> {p.address}</span>}
-          {p.website && <span className="flex items-center gap-1"><Globe size={12} /> {p.website}</span>}
-          {p.linkedin && <span className="flex items-center gap-1"><Linkedin size={12} /> {p.linkedin}</span>}
+      <div className="border-b-2 border-amber-500 pb-6 mb-6 flex items-center gap-6">
+        {p.photo && (
+          <img src={p.photo} alt="" className="w-20 h-20 rounded-full object-cover border-2 border-amber-500" />
+        )}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{p.firstName} {p.lastName}</h1>
+          <p className="text-lg text-amber-600 mt-1">{p.title}</p>
+          <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
+            {p.email && <span className="flex items-center gap-1"><Mail size={12} /> {p.email}</span>}
+            {p.phone && <span className="flex items-center gap-1"><Phone size={12} /> {p.phone}</span>}
+            {p.address && <span className="flex items-center gap-1"><MapPin size={12} /> {p.address}</span>}
+            {p.website && <span className="flex items-center gap-1"><Globe size={12} /> {p.website}</span>}
+            {p.linkedin && <span className="flex items-center gap-1"><Linkedin size={12} /> {p.linkedin}</span>}
+          </div>
         </div>
       </div>
 
-      {/* Summary */}
       {p.summary && (
         <div className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 mb-2">Profil</h2>
@@ -34,7 +38,6 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
         </div>
       )}
 
-      {/* Experience */}
       {experiences.length > 0 && (
         <div className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 mb-3">Berufserfahrung</h2>
@@ -51,7 +54,6 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
         </div>
       )}
 
-      {/* Education */}
       {education.length > 0 && (
         <div className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 mb-3">Bildung</h2>
@@ -68,24 +70,39 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
         </div>
       )}
 
-      {/* Skills */}
-      {skills.length > 0 && (
-        <div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 mb-3">Kenntnisse</h2>
-          <div className="grid grid-cols-2 gap-2">
-            {skills.map((skill) => (
-              <div key={skill.id} className="flex items-center gap-2">
-                <span className="text-gray-900 text-sm">{skill.name}</span>
-                <div className="flex gap-0.5 ml-auto">
-                  {[1, 2, 3, 4, 5].map((l) => (
-                    <div key={l} className={`w-2 h-2 rounded-full ${l <= skill.level ? 'bg-amber-500' : 'bg-gray-200'}`} />
-                  ))}
+      <div className="grid grid-cols-2 gap-6">
+        {skills.length > 0 && (
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 mb-3">Kenntnisse</h2>
+            <div className="space-y-2">
+              {skills.map((skill) => (
+                <div key={skill.id} className="flex items-center gap-2">
+                  <span className="text-gray-900 text-sm">{skill.name}</span>
+                  <div className="flex gap-0.5 ml-auto">
+                    {[1, 2, 3, 4, 5].map((l) => (
+                      <div key={l} className={`w-2 h-2 rounded-full ${l <= skill.level ? 'bg-amber-500' : 'bg-gray-200'}`} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {languages.length > 0 && (
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 mb-3">Sprachen</h2>
+            <div className="space-y-2">
+              {languages.map((lang) => (
+                <div key={lang.id} className="flex items-center justify-between">
+                  <span className="text-gray-900 text-sm">{lang.name}</span>
+                  <span className="text-xs text-amber-600 font-medium">{lang.level}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
