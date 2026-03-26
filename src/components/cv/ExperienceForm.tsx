@@ -49,8 +49,8 @@ const ExperienceForm = ({ data, onChange }: Props) => {
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="section-kicker">Berufserfahrung</p>
-                <span className="mt-1 inline-block text-sm font-medium text-foreground">Position {index + 1}</span>
+                <p className="section-kicker">Experience</p>
+                <span className="mt-1 inline-block text-sm font-medium text-foreground">Role {index + 1}</span>
               </div>
               <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} className="text-muted-foreground hover:text-destructive">
                 <Trash2 size={16} />
@@ -59,8 +59,8 @@ const ExperienceForm = ({ data, onChange }: Props) => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Unternehmen</Label>
-                  <Input value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} placeholder="Google GmbH" />
+                  <Label className="meta-label">Company</Label>
+                  <Input value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} placeholder="Google" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="meta-label">Position</Label>
@@ -73,24 +73,24 @@ const ExperienceForm = ({ data, onChange }: Props) => {
                   <Input type="month" value={exp.startDate} onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Ende</Label>
+                  <Label className="meta-label">End</Label>
                   <Input type="month" value={exp.endDate} onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)} disabled={exp.current} className="disabled:opacity-40" />
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5">
                 <Checkbox checked={exp.current} onCheckedChange={(checked) => updateExperience(exp.id, 'current', !!checked)} />
-                <Label className="text-sm text-foreground/70">Aktuell hier beschäftigt</Label>
+                <Label className="text-sm text-foreground/70">Currently working here</Label>
               </div>
               <div className="space-y-1.5">
-                <Label className="meta-label">Beschreibung</Label>
-                <Textarea value={exp.description} onChange={(e) => updateExperience(exp.id, 'description', e.target.value)} placeholder="Hauptaufgaben und Erfolge..." rows={3} className="resize-none" />
+                <Label className="meta-label">Description</Label>
+                <Textarea value={exp.description} onChange={(e) => updateExperience(exp.id, 'description', e.target.value)} placeholder="Key responsibilities and achievements..." rows={3} className="resize-none" />
               </div>
             </div>
           </motion.div>
         ))}
       </AnimatePresence>
       <Button onClick={addExperience} variant="outline" className="w-full border-dashed">
-        <Plus size={16} className="mr-1.5" /> Erfahrung hinzufügen
+        <Plus size={16} className="mr-1.5" /> Add experience
       </Button>
     </div>
   );

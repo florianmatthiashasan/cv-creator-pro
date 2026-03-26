@@ -26,7 +26,7 @@ const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Preview</p>
-            <p className="mt-0.5 text-[13px] font-medium text-foreground">Live-Vorschau</p>
+            <p className="mt-0.5 text-[13px] font-medium text-foreground">Live preview</p>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />

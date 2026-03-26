@@ -49,8 +49,8 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
       <DesignControls data={data.design} onChange={onDesignChange} />
 
       <div className="soft-panel p-4">
-        <p className="section-kicker">Template Auswahl</p>
-        <p className="mt-1.5 text-sm font-medium text-foreground">Wähle ein Layout, dann exportiere als PDF.</p>
+        <p className="section-kicker">Template selection</p>
+        <p className="mt-1.5 text-sm font-medium text-foreground">Choose a layout, then export your CV as a PDF.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
@@ -77,7 +77,7 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
       </div>
 
       <Button onClick={handleDownload} className="w-full">
-        <Download size={16} className="mr-1.5" /> Als PDF herunterladen
+        <Download size={16} className="mr-1.5" /> Download as PDF
       </Button>
 
       <CVPreviewCanvas

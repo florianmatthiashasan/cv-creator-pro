@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Muttersprache'] as const;
+const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'] as const;
 
 interface Props {
   data: Language[];
@@ -33,11 +33,11 @@ const LanguagesForm = ({ data, onChange }: Props) => {
           <motion.div key={lang.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-1.5">
-                <Label className="meta-label">Sprache</Label>
-                <Input value={lang.name} onChange={(e) => update(lang.id, 'name', e.target.value)} placeholder="Deutsch, Englisch, Französisch..." />
+                <Label className="meta-label">Language</Label>
+                <Input value={lang.name} onChange={(e) => update(lang.id, 'name', e.target.value)} placeholder="German, English, French..." />
               </div>
               <div className="space-y-1.5 sm:w-40">
-                <Label className="meta-label">Niveau</Label>
+                <Label className="meta-label">Level</Label>
                 <Select value={lang.level} onValueChange={(val) => update(lang.id, 'level', val)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -57,7 +57,7 @@ const LanguagesForm = ({ data, onChange }: Props) => {
         ))}
       </AnimatePresence>
       <Button onClick={add} variant="outline" className="w-full border-dashed">
-        <Plus size={16} className="mr-1.5" /> Sprache hinzufügen
+        <Plus size={16} className="mr-1.5" /> Add language
       </Button>
     </div>
   );

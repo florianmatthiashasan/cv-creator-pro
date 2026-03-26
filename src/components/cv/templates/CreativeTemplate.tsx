@@ -47,7 +47,7 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
         </div>
 
         <div className="space-y-3 mb-8">
-          <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: design.accentColor, fontFamily: design.headingFontFamily }}>Kontakt</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: design.accentColor, fontFamily: design.headingFontFamily }}>Contact</h3>
           {p.email && <div className="flex items-center gap-2 text-xs" style={{ color: design.sidebarTextColor }}><Mail size={12} style={{ color: design.accentColor }} /> {p.email}</div>}
           {p.phone && <div className="flex items-center gap-2 text-xs" style={{ color: design.sidebarTextColor }}><Phone size={12} style={{ color: design.accentColor }} /> {p.phone}</div>}
           {p.address && <div className="flex items-center gap-2 text-xs" style={{ color: design.sidebarTextColor }}><MapPin size={12} style={{ color: design.accentColor }} /> {p.address}</div>}
@@ -75,7 +75,7 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
 
         {languages.length > 0 && (
           <div className="mb-8">
-            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: design.accentColor, fontFamily: design.headingFontFamily }}>Sprachen</h3>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: design.accentColor, fontFamily: design.headingFontFamily }}>Languages</h3>
             <div className="space-y-2">
               {languages.map((lang) => (
                 <div key={lang.id} className="flex justify-between text-xs">
@@ -89,14 +89,14 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
 
         {education.length > 0 && (
           <div>
-            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: design.accentColor, fontFamily: design.headingFontFamily }}>Bildung</h3>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: design.accentColor, fontFamily: design.headingFontFamily }}>Education</h3>
             {education.map((edu) => (
               <div key={edu.id} className="mb-4">
                 <p className="text-xs font-semibold" style={{ color: design.sidebarTextColor, fontFamily: design.headingFontFamily }}>{edu.degree}</p>
                 <p className="text-xs" style={{ color: design.accentColor }}>{edu.field}</p>
                 <p className="text-xs" style={{ color: design.sidebarTextColor }}>{edu.institution}</p>
                 <p className="text-xs" style={{ color: `${design.sidebarTextColor}99` }}>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</p>
-                {edu.grade && <p className="text-xs" style={{ color: `${design.sidebarTextColor}99` }}>Note: {edu.grade}</p>}
+                {edu.grade && <p className="text-xs" style={{ color: `${design.sidebarTextColor}99` }}>Grade: {edu.grade}</p>}
                 {edu.description && <p className="mt-1 text-xs leading-relaxed" style={{ color: `${design.sidebarTextColor}cc` }}>{edu.description}</p>}
               </div>
             ))}
@@ -114,7 +114,7 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
 
         {p.summary && (
           <div className="mb-8">
-            <h2 className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profil</h2>
+            <h2 className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profile</h2>
             <div className="mb-3 h-0.5 w-8" style={{ backgroundColor: design.accentColor }} />
             <p className="text-xs leading-relaxed" style={{ color: design.bodyColor }}>{p.summary}</p>
           </div>
@@ -122,14 +122,14 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
 
         {experiences.length > 0 && (
           <div>
-            <h2 className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Erfahrung</h2>
+            <h2 className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Experience</h2>
             <div className="mb-4 h-0.5 w-8" style={{ backgroundColor: design.accentColor }} />
             {experiences.map((exp) => (
               <div key={exp.id} className="relative mb-5 border-l-2 pl-4" style={{ borderColor: `${design.accentColor}55` }}>
                 <div className="absolute -left-[5px] top-1 h-2 w-2 rounded-full" style={{ backgroundColor: design.accentColor }} />
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-sm font-bold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{exp.position}</h3>
-                  <span className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</span>
+                  <span className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}</span>
                 </div>
                 <p className="text-xs font-medium" style={{ color: design.accentColor }}>{exp.company}</p>
                 <p className="mt-1 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{exp.description}</p>

@@ -8,12 +8,12 @@ import ExecutiveTemplate from './ExecutiveTemplate';
 import MonoTemplate from './MonoTemplate';
 
 export const templateOptions: Array<{ id: CVTemplate; label: string; desc: string }> = [
-  { id: 'modern', label: 'Modern', desc: 'Klar und markant' },
-  { id: 'classic', label: 'Klassisch', desc: 'Zeitlos elegant' },
-  { id: 'creative', label: 'Kreativ', desc: 'Mit Sidebar' },
-  { id: 'minimal', label: 'Minimal', desc: 'Reduziert und luftig' },
-  { id: 'executive', label: 'Executive', desc: 'Edler Business-Look' },
-  { id: 'mono', label: 'Mono', desc: 'Technisch und präzise' },
+  { id: 'modern', label: 'Modern', desc: 'Clean and distinctive' },
+  { id: 'classic', label: 'Classic', desc: 'Timeless and elegant' },
+  { id: 'creative', label: 'Creative', desc: 'With sidebar layout' },
+  { id: 'minimal', label: 'Minimal', desc: 'Reduced and airy' },
+  { id: 'executive', label: 'Executive', desc: 'Polished business look' },
+  { id: 'mono', label: 'Mono', desc: 'Technical and precise' },
 ];
 
 export const templateComponents: Record<CVTemplate, ComponentType<{ data: CVData }>> = {

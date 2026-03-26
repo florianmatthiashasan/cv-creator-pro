@@ -10,15 +10,15 @@ interface Props {
 
 const colorFields: Array<{ key: keyof CVDesign; label: string }> = [
   { key: 'nameColor', label: 'Name' },
-  { key: 'titleColor', label: 'Titel' },
-  { key: 'headingColor', label: 'Überschriften' },
-  { key: 'bodyColor', label: 'Fließtext' },
-  { key: 'mutedColor', label: 'Meta / Sekundär' },
+  { key: 'titleColor', label: 'Title' },
+  { key: 'headingColor', label: 'Headings' },
+  { key: 'bodyColor', label: 'Body text' },
+  { key: 'mutedColor', label: 'Meta / Secondary' },
   { key: 'accentColor', label: 'Accent' },
-  { key: 'backgroundColor', label: 'Seitenhintergrund' },
-  { key: 'sidebarBackgroundColor', label: 'Sidebar Hintergrund' },
-  { key: 'sidebarTextColor', label: 'Sidebar Text' },
-  { key: 'dividerColor', label: 'Linien / Divider' },
+  { key: 'backgroundColor', label: 'Page background' },
+  { key: 'sidebarBackgroundColor', label: 'Sidebar background' },
+  { key: 'sidebarTextColor', label: 'Sidebar text' },
+  { key: 'dividerColor', label: 'Lines / Divider' },
 ];
 
 const DesignControls = ({ data, onChange }: Props) => {
@@ -29,8 +29,8 @@ const DesignControls = ({ data, onChange }: Props) => {
   return (
     <div className="space-y-5">
       <div className="soft-panel p-4">
-        <p className="section-kicker">Design Einstellungen</p>
-        <p className="mt-1.5 text-sm font-medium text-foreground">Wähle Schriften und Farben. Die Vorschau reagiert sofort.</p>
+        <p className="section-kicker">Design settings</p>
+        <p className="mt-1.5 text-sm font-medium text-foreground">Choose fonts and colors. The preview updates instantly.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -80,7 +80,7 @@ const DesignControls = ({ data, onChange }: Props) => {
               />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">{String(data[field.key]).toUpperCase()}</p>
-                <p className="text-xs text-muted-foreground">Live im CV sichtbar</p>
+                <p className="text-xs text-muted-foreground">Visible live in the CV</p>
               </div>
             </div>
           </div>

@@ -24,7 +24,7 @@ const SkillsForm = ({ data, onChange }: Props) => {
     onChange(data.filter((s) => s.id !== id));
   };
 
-  const levelLabels = ['', 'Grundkenntnisse', 'Fortgeschritten', 'Gut', 'Sehr gut', 'Experte'];
+  const levelLabels = ['', 'Basic', 'Intermediate', 'Good', 'Very good', 'Expert'];
 
   return (
     <div className="space-y-5">
@@ -51,7 +51,7 @@ const SkillsForm = ({ data, onChange }: Props) => {
         ))}
       </AnimatePresence>
       <Button onClick={add} variant="outline" className="w-full border-dashed">
-        <Plus size={16} className="mr-1.5" /> Skill hinzufügen
+        <Plus size={16} className="mr-1.5" /> Add skill
       </Button>
     </div>
   );

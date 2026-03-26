@@ -2,12 +2,12 @@ import { motion } from 'framer-motion';
 import { User, Briefcase, GraduationCap, Zap, Languages, Eye } from 'lucide-react';
 
 const steps = [
-  { icon: User, label: 'Persönlich' },
-  { icon: Briefcase, label: 'Erfahrung' },
-  { icon: GraduationCap, label: 'Bildung' },
+  { icon: User, label: 'Personal' },
+  { icon: Briefcase, label: 'Experience' },
+  { icon: GraduationCap, label: 'Education' },
   { icon: Zap, label: 'Skills' },
-  { icon: Languages, label: 'Sprachen' },
-  { icon: Eye, label: 'Vorschau' },
+  { icon: Languages, label: 'Languages' },
+  { icon: Eye, label: 'Preview' },
 ];
 
 interface StepIndicatorProps {

@@ -4,7 +4,7 @@ import { getDesignTokens } from '@/lib/cv-design';
 const formatDate = (d: string) => {
   if (!d) return '';
   const [y, m] = d.split('-');
-  const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return `${months[parseInt(m) - 1]} ${y}`;
 };
 
@@ -40,14 +40,14 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
 
       {p.summary && (
         <div className="mb-8">
-          <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Über mich</h2>
+          <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>About me</h2>
           <p className="leading-relaxed italic" style={{ color: design.bodyColor }}>{p.summary}</p>
         </div>
       )}
 
       {experiences.length > 0 && (
         <div className="mb-8">
-          <h2 className="mb-4 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Berufserfahrung</h2>
+          <h2 className="mb-4 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Experience</h2>
           {experiences.map((exp) => (
             <div key={exp.id} className="mb-5 border-l-2 pl-4" style={{ borderColor: design.dividerColor }}>
               <div className="flex justify-between">
@@ -55,7 +55,7 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
                   <h3 className="font-semibold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{exp.position}</h3>
                   <p className="italic" style={{ color: design.accentColor }}>{exp.company}</p>
                 </div>
-                <span className="whitespace-nowrap text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</span>
+                <span className="whitespace-nowrap text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{exp.description}</p>
             </div>
@@ -65,7 +65,7 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
 
       {education.length > 0 && (
         <div className="mb-8">
-          <h2 className="mb-4 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Bildung</h2>
+          <h2 className="mb-4 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Education</h2>
           {education.map((edu) => (
             <div key={edu.id} className="mb-4 border-l-2 pl-4" style={{ borderColor: design.dividerColor }}>
               <div className="flex justify-between">
@@ -75,7 +75,7 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
                 </div>
                 <span className="whitespace-nowrap text-xs" style={{ color: design.mutedColor }}>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</span>
               </div>
-              {edu.grade && <p className="mt-1 text-xs" style={{ color: design.mutedColor }}>Note: {edu.grade}</p>}
+              {edu.grade && <p className="mt-1 text-xs" style={{ color: design.mutedColor }}>Grade: {edu.grade}</p>}
               {edu.description && <p className="mt-2 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{edu.description}</p>}
             </div>
           ))}
@@ -85,7 +85,7 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
       <div className="grid grid-cols-2 gap-8">
         {skills.length > 0 && (
           <div>
-            <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Kenntnisse</h2>
+            <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Skills</h2>
             <div className="flex flex-wrap gap-2">
               {skills.map((skill) => (
                 <span
@@ -102,7 +102,7 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
 
         {languages.length > 0 && (
           <div>
-            <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Sprachen</h2>
+            <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Languages</h2>
             <div className="space-y-1">
               {languages.map((lang) => (
                 <div key={lang.id} className="flex justify-between text-sm">

@@ -5,7 +5,7 @@ import { Mail, Phone, MapPin, Globe, Linkedin } from 'lucide-react';
 const formatDate = (d: string) => {
   if (!d) return '';
   const [y, m] = d.split('-');
-  const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${months[parseInt(m) - 1]} ${y}`;
 };
 
@@ -42,19 +42,19 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
 
       {p.summary && (
         <div className="mb-6">
-          <h2 className="mb-2 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profil</h2>
+          <h2 className="mb-2 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profile</h2>
           <p className="leading-relaxed" style={{ color: design.bodyColor }}>{p.summary}</p>
         </div>
       )}
 
       {experiences.length > 0 && (
         <div className="mb-6">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Berufserfahrung</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Experience</h2>
           {experiences.map((exp) => (
             <div key={exp.id} className="mb-4">
               <div className="flex justify-between items-baseline">
                 <h3 className="font-bold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{exp.position}</h3>
-                <span className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</span>
+                <span className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}</span>
               </div>
               <p className="text-sm" style={{ color: design.accentColor }}>{exp.company}</p>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{exp.description}</p>
@@ -65,7 +65,7 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
 
       {education.length > 0 && (
         <div className="mb-6">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Bildung</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Education</h2>
           {education.map((edu) => (
             <div key={edu.id} className="mb-3">
               <div className="flex justify-between items-baseline">
@@ -73,7 +73,7 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
                 <span className="text-xs" style={{ color: design.mutedColor }}>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</span>
               </div>
               <p className="text-sm" style={{ color: design.accentColor }}>{edu.institution}</p>
-              {edu.grade && <p className="text-xs" style={{ color: design.mutedColor }}>Note: {edu.grade}</p>}
+              {edu.grade && <p className="text-xs" style={{ color: design.mutedColor }}>Grade: {edu.grade}</p>}
               {edu.description && <p className="mt-1 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{edu.description}</p>}
             </div>
           ))}
@@ -83,7 +83,7 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
       <div className="grid grid-cols-2 gap-6">
         {skills.length > 0 && (
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Kenntnisse</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Skills</h2>
             <div className="space-y-2">
               {skills.map((skill) => (
                 <div key={skill.id} className="flex items-center gap-2">
@@ -101,7 +101,7 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
 
         {languages.length > 0 && (
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Sprachen</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Languages</h2>
             <div className="space-y-2">
               {languages.map((lang) => (
                 <div key={lang.id} className="flex items-center justify-between">

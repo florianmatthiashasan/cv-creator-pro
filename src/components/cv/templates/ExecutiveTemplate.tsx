@@ -4,7 +4,7 @@ import { getDesignTokens } from '@/lib/cv-design';
 const formatDate = (d: string) => {
   if (!d) return '';
   const [y, m] = d.split('-');
-  const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${months[parseInt(m) - 1]} ${y}`;
 };
 
@@ -38,14 +38,14 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
         <div className="space-y-8">
           {p.summary && (
             <section>
-              <h2 className="mb-3 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profil</h2>
+              <h2 className="mb-3 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profile</h2>
               <p className="leading-7" style={{ color: design.bodyColor }}>{p.summary}</p>
             </section>
           )}
 
           {experiences.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Berufserfahrung</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Experience</h2>
               <div className="space-y-5">
                 {experiences.map((exp) => (
                   <div key={exp.id} className="border-l-2 pl-4" style={{ borderColor: design.accentColor }}>
@@ -54,7 +54,7 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
                         <h3 className="font-semibold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{exp.position}</h3>
                         <p style={{ color: design.accentColor }}>{exp.company}</p>
                       </div>
-                      <p className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</p>
+                      <p className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}</p>
                     </div>
                     {exp.description && <p className="mt-2 text-xs leading-6" style={{ color: design.bodyColor }}>{exp.description}</p>}
                   </div>
@@ -65,7 +65,7 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
 
           {education.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Bildung</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Education</h2>
               <div className="space-y-4">
                 {education.map((edu) => (
                   <div key={edu.id}>
@@ -77,7 +77,7 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
                       </div>
                       <p className="text-xs" style={{ color: design.mutedColor }}>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</p>
                     </div>
-                    {edu.grade && <p className="mt-1 text-xs" style={{ color: design.mutedColor }}>Note: {edu.grade}</p>}
+                    {edu.grade && <p className="mt-1 text-xs" style={{ color: design.mutedColor }}>Grade: {edu.grade}</p>}
                     {edu.description && <p className="mt-2 text-xs leading-6" style={{ color: design.bodyColor }}>{edu.description}</p>}
                   </div>
                 ))}
@@ -108,7 +108,7 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
 
           {languages.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Sprachen</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Languages</h2>
               <div className="space-y-2">
                 {languages.map((lang) => (
                   <div key={lang.id} className="flex items-center justify-between text-xs">
