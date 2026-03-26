@@ -13,14 +13,14 @@ import CVPreview from '@/components/cv/CVPreview';
 import CVPreviewCanvas from '@/components/cv/CVPreviewCanvas';
 
 const TOTAL_STEPS = 6;
-const stepTitles = ['Persönliche Daten', 'Berufserfahrung', 'Bildung', 'Kenntnisse & Skills', 'Sprachen', 'Vorschau & Download'];
+const stepTitles = ['Persönliche Daten', 'Berufserfahrung', 'Bildung', 'Kenntnisse & Skills', 'Sprachen', 'Design, Vorschau & Download'];
 const stepDescriptions = [
   'Erzähl uns etwas über dich',
   'Deine bisherigen Stationen',
   'Dein akademischer Werdegang',
   'Was kannst du besonders gut?',
   'Welche Sprachen sprichst du?',
-  'Wähle dein Template und lade deinen CV herunter',
+  'Passe Schrift und Farben an, wähle dein Template und lade deinen CV herunter',
 ];
 
 const Index = () => {
@@ -183,9 +183,16 @@ const Index = () => {
                       {step === 2 && <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />}
                       {step === 3 && <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />}
                       {step === 4 && <LanguagesForm data={cvData.languages} onChange={(d) => setCvData({ ...cvData, languages: d })} />}
-                      {step === 5 && <CVPreview data={cvData} template={template} onTemplateChange={setTemplate} />}
-                    </motion.div>
-                  </AnimatePresence>
+                  {step === 5 && (
+                    <CVPreview
+                      data={cvData}
+                      template={template}
+                      onTemplateChange={setTemplate}
+                      onDesignChange={(design) => setCvData({ ...cvData, design })}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
 
                   {/* Navigation */}
                   <div className="mt-8 flex justify-between border-t border-border pt-5">

@@ -1,4 +1,5 @@
 import { CVData } from '@/types/cv';
+import { getDesignTokens } from '@/lib/cv-design';
 
 const formatDate = (d: string) => {
   if (!d) return '';
@@ -9,14 +10,22 @@ const formatDate = (d: string) => {
 
 const ExecutiveTemplate = ({ data }: { data: CVData }) => {
   const { personalInfo: p, experiences, education, skills, languages } = data;
+  const design = getDesignTokens(data.design);
 
   return (
-    <div className="min-h-[297mm] w-[210mm] bg-[#f7f3ec] px-0 font-serif text-sm text-[#1d1a16]">
-      <header className="bg-[#1d1a16] px-10 py-10 text-[#f7f3ec]">
-        <p className="text-xs uppercase tracking-[0.45em] text-[#d8b36a]">Professional Resume</p>
-        <h1 className="mt-3 text-4xl font-semibold">{p.firstName} {p.lastName}</h1>
-        <p className="mt-2 text-base text-[#e8dcc8]">{p.title}</p>
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#e8dcc8]">
+    <div
+      className="min-h-[297mm] w-[210mm] px-0 text-sm"
+      style={{
+        backgroundColor: design.backgroundColor,
+        color: design.bodyColor,
+        fontFamily: design.bodyFontFamily,
+      }}
+    >
+      <header className="px-10 py-10" style={{ backgroundColor: design.sidebarBackgroundColor, color: design.sidebarTextColor }}>
+        <p className="text-xs uppercase tracking-[0.45em]" style={{ color: design.accentColor }}>Professional Resume</p>
+        <h1 className="mt-3 text-4xl font-semibold" style={{ color: design.nameColor, fontFamily: design.headingFontFamily }}>{p.firstName} {p.lastName}</h1>
+        <p className="mt-2 text-base" style={{ color: design.titleColor }}>{p.title}</p>
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs" style={{ color: design.sidebarTextColor }}>
           {p.email && <span>{p.email}</span>}
           {p.phone && <span>{p.phone}</span>}
           {p.address && <span>{p.address}</span>}
@@ -29,25 +38,25 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
         <div className="space-y-8">
           {p.summary && (
             <section>
-              <h2 className="mb-3 text-sm uppercase tracking-[0.25em] text-[#8c6a2f]">Profil</h2>
-              <p className="leading-7 text-[#433d36]">{p.summary}</p>
+              <h2 className="mb-3 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Profil</h2>
+              <p className="leading-7" style={{ color: design.bodyColor }}>{p.summary}</p>
             </section>
           )}
 
           {experiences.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em] text-[#8c6a2f]">Berufserfahrung</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Berufserfahrung</h2>
               <div className="space-y-5">
                 {experiences.map((exp) => (
-                  <div key={exp.id} className="border-l-2 border-[#d8b36a] pl-4">
+                  <div key={exp.id} className="border-l-2 pl-4" style={{ borderColor: design.accentColor }}>
                     <div className="flex items-baseline justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold">{exp.position}</h3>
-                        <p className="text-[#8c6a2f]">{exp.company}</p>
+                        <h3 className="font-semibold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{exp.position}</h3>
+                        <p style={{ color: design.accentColor }}>{exp.company}</p>
                       </div>
-                      <p className="text-xs text-[#7c746c]">{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</p>
+                      <p className="text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</p>
                     </div>
-                    {exp.description && <p className="mt-2 text-xs leading-6 text-[#4b443d]">{exp.description}</p>}
+                    {exp.description && <p className="mt-2 text-xs leading-6" style={{ color: design.bodyColor }}>{exp.description}</p>}
                   </div>
                 ))}
               </div>
@@ -56,20 +65,20 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
 
           {education.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em] text-[#8c6a2f]">Bildung</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Bildung</h2>
               <div className="space-y-4">
                 {education.map((edu) => (
                   <div key={edu.id}>
                     <div className="flex items-baseline justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold">{edu.degree}</h3>
-                        <p className="text-[#8c6a2f]">{edu.institution}</p>
-                        {edu.field && <p className="text-xs text-[#5b544d]">{edu.field}</p>}
+                        <h3 className="font-semibold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{edu.degree}</h3>
+                        <p style={{ color: design.accentColor }}>{edu.institution}</p>
+                        {edu.field && <p className="text-xs" style={{ color: design.bodyColor }}>{edu.field}</p>}
                       </div>
-                      <p className="text-xs text-[#7c746c]">{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</p>
+                      <p className="text-xs" style={{ color: design.mutedColor }}>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</p>
                     </div>
-                    {edu.grade && <p className="mt-1 text-xs text-[#5b544d]">Note: {edu.grade}</p>}
-                    {edu.description && <p className="mt-2 text-xs leading-6 text-[#4b443d]">{edu.description}</p>}
+                    {edu.grade && <p className="mt-1 text-xs" style={{ color: design.mutedColor }}>Note: {edu.grade}</p>}
+                    {edu.description && <p className="mt-2 text-xs leading-6" style={{ color: design.bodyColor }}>{edu.description}</p>}
                   </div>
                 ))}
               </div>
@@ -77,19 +86,19 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
           )}
         </div>
 
-        <aside className="space-y-8 border-l border-[#d8c8b2] pl-6">
+        <aside className="space-y-8 border-l pl-6" style={{ borderColor: design.dividerColor }}>
           {skills.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em] text-[#8c6a2f]">Skills</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Skills</h2>
               <div className="space-y-3">
                 {skills.map((skill) => (
                   <div key={skill.id}>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span>{skill.name}</span>
-                      <span className="text-[#8c6a2f]">{skill.level}/5</span>
+                      <span style={{ color: design.bodyColor }}>{skill.name}</span>
+                      <span style={{ color: design.accentColor }}>{skill.level}/5</span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-[#ddd2c2]">
-                      <div className="h-full rounded-full bg-[#8c6a2f]" style={{ width: `${skill.level * 20}%` }} />
+                    <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: design.dividerColor }}>
+                      <div className="h-full rounded-full" style={{ width: `${skill.level * 20}%`, backgroundColor: design.accentColor }} />
                     </div>
                   </div>
                 ))}
@@ -99,12 +108,12 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
 
           {languages.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm uppercase tracking-[0.25em] text-[#8c6a2f]">Sprachen</h2>
+              <h2 className="mb-4 text-sm uppercase tracking-[0.25em]" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>Sprachen</h2>
               <div className="space-y-2">
                 {languages.map((lang) => (
                   <div key={lang.id} className="flex items-center justify-between text-xs">
-                    <span>{lang.name}</span>
-                    <span className="text-[#8c6a2f]">{lang.level}</span>
+                    <span style={{ color: design.bodyColor }}>{lang.name}</span>
+                    <span style={{ color: design.accentColor }}>{lang.level}</span>
                   </div>
                 ))}
               </div>

@@ -1,4 +1,5 @@
 import { CVData } from '@/types/cv';
+import { getDesignTokens } from '@/lib/cv-design';
 
 const formatDate = (d: string) => {
   if (!d) return '';
@@ -9,21 +10,29 @@ const formatDate = (d: string) => {
 
 const ClassicTemplate = ({ data }: { data: CVData }) => {
   const { personalInfo: p, experiences, education, skills, languages } = data;
+  const design = getDesignTokens(data.design);
 
   return (
-    <div className="bg-white text-gray-900 p-10 min-h-[297mm] w-[210mm] font-serif text-sm">
-      <div className="text-center border-b border-gray-300 pb-6 mb-8">
+    <div
+      className="min-h-[297mm] w-[210mm] p-10 text-sm"
+      style={{
+        backgroundColor: design.backgroundColor,
+        color: design.bodyColor,
+        fontFamily: design.bodyFontFamily,
+      }}
+    >
+      <div className="mb-8 border-b pb-6 text-center" style={{ borderColor: design.dividerColor }}>
         {p.photo && (
-          <img src={p.photo} alt="" className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border border-gray-300" />
+          <img src={p.photo} alt="" className="mx-auto mb-4 h-24 w-24 rounded-full border object-cover" style={{ borderColor: design.dividerColor }} />
         )}
-        <h1 className="text-3xl font-normal tracking-wide text-gray-900">{p.firstName} {p.lastName}</h1>
-        <p className="text-base text-gray-600 mt-1 italic">{p.title}</p>
-        <div className="flex justify-center gap-4 mt-3 text-xs text-gray-500">
+        <h1 className="text-3xl font-normal tracking-wide" style={{ color: design.nameColor, fontFamily: design.headingFontFamily }}>{p.firstName} {p.lastName}</h1>
+        <p className="mt-1 text-base italic" style={{ color: design.titleColor }}>{p.title}</p>
+        <div className="mt-3 flex justify-center gap-4 text-xs" style={{ color: design.mutedColor }}>
           {p.email && <span>{p.email}</span>}
           {p.phone && <span>• {p.phone}</span>}
           {p.address && <span>• {p.address}</span>}
         </div>
-        <div className="flex justify-center gap-4 mt-1 text-xs text-gray-500">
+        <div className="mt-1 flex justify-center gap-4 text-xs" style={{ color: design.mutedColor }}>
           {p.website && <span>{p.website}</span>}
           {p.linkedin && <span>• {p.linkedin}</span>}
         </div>
@@ -31,24 +40,24 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
 
       {p.summary && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1 mb-3">Über mich</h2>
-          <p className="text-gray-700 leading-relaxed italic">{p.summary}</p>
+          <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Über mich</h2>
+          <p className="leading-relaxed italic" style={{ color: design.bodyColor }}>{p.summary}</p>
         </div>
       )}
 
       {experiences.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1 mb-4">Berufserfahrung</h2>
+          <h2 className="mb-4 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Berufserfahrung</h2>
           {experiences.map((exp) => (
-            <div key={exp.id} className="mb-5 pl-4 border-l-2 border-gray-200">
+            <div key={exp.id} className="mb-5 border-l-2 pl-4" style={{ borderColor: design.dividerColor }}>
               <div className="flex justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{exp.position}</h3>
-                  <p className="text-gray-600 italic">{exp.company}</p>
+                  <h3 className="font-semibold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{exp.position}</h3>
+                  <p className="italic" style={{ color: design.accentColor }}>{exp.company}</p>
                 </div>
-                <span className="text-xs text-gray-500 whitespace-nowrap">{formatDate(exp.startDate)} — {exp.current ? 'Heute' : formatDate(exp.endDate)}</span>
+                <span className="whitespace-nowrap text-xs" style={{ color: design.mutedColor }}>{formatDate(exp.startDate)} - {exp.current ? 'Heute' : formatDate(exp.endDate)}</span>
               </div>
-              <p className="text-gray-600 mt-2 text-xs leading-relaxed">{exp.description}</p>
+              <p className="mt-2 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{exp.description}</p>
             </div>
           ))}
         </div>
@@ -56,18 +65,18 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
 
       {education.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1 mb-4">Bildung</h2>
+          <h2 className="mb-4 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Bildung</h2>
           {education.map((edu) => (
-            <div key={edu.id} className="mb-4 pl-4 border-l-2 border-gray-200">
+            <div key={edu.id} className="mb-4 border-l-2 pl-4" style={{ borderColor: design.dividerColor }}>
               <div className="flex justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{edu.degree}, {edu.field}</h3>
-                  <p className="text-gray-600 italic">{edu.institution}</p>
+                  <h3 className="font-semibold" style={{ color: design.headingColor, fontFamily: design.headingFontFamily }}>{edu.degree}{edu.field ? `, ${edu.field}` : ''}</h3>
+                  <p className="italic" style={{ color: design.accentColor }}>{edu.institution}</p>
                 </div>
-                <span className="text-xs text-gray-500 whitespace-nowrap">{formatDate(edu.startDate)} — {formatDate(edu.endDate)}</span>
+                <span className="whitespace-nowrap text-xs" style={{ color: design.mutedColor }}>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</span>
               </div>
-              {edu.grade && <p className="text-xs text-gray-500 mt-1">Note: {edu.grade}</p>}
-              {edu.description && <p className="mt-2 text-xs leading-relaxed text-gray-600">{edu.description}</p>}
+              {edu.grade && <p className="mt-1 text-xs" style={{ color: design.mutedColor }}>Note: {edu.grade}</p>}
+              {edu.description && <p className="mt-2 text-xs leading-relaxed" style={{ color: design.bodyColor }}>{edu.description}</p>}
             </div>
           ))}
         </div>
@@ -76,10 +85,16 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
       <div className="grid grid-cols-2 gap-8">
         {skills.length > 0 && (
           <div>
-            <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1 mb-3">Kenntnisse</h2>
+            <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Kenntnisse</h2>
             <div className="flex flex-wrap gap-2">
               {skills.map((skill) => (
-                <span key={skill.id} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded">{skill.name}</span>
+                <span
+                  key={skill.id}
+                  className="rounded px-3 py-1 text-xs"
+                  style={{ backgroundColor: `${design.accentColor}18`, color: design.bodyColor }}
+                >
+                  {skill.name}
+                </span>
               ))}
             </div>
           </div>
@@ -87,12 +102,12 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
 
         {languages.length > 0 && (
           <div>
-            <h2 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1 mb-3">Sprachen</h2>
+            <h2 className="mb-3 border-b pb-1 text-base font-semibold" style={{ color: design.headingColor, borderColor: design.dividerColor, fontFamily: design.headingFontFamily }}>Sprachen</h2>
             <div className="space-y-1">
               {languages.map((lang) => (
                 <div key={lang.id} className="flex justify-between text-sm">
-                  <span className="text-gray-900">{lang.name}</span>
-                  <span className="text-gray-500">{lang.level}</span>
+                  <span style={{ color: design.bodyColor }}>{lang.name}</span>
+                  <span style={{ color: design.mutedColor }}>{lang.level}</span>
                 </div>
               ))}
             </div>

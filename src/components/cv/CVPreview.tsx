@@ -5,14 +5,17 @@ import { Download, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CVPreviewCanvas from './CVPreviewCanvas';
 import { templateOptions } from './templates/registry';
+import DesignControls from './DesignControls';
+import { cvPrintFontHref } from '@/lib/cv-design';
 
 interface Props {
   data: CVData;
   template: CVTemplate;
   onTemplateChange: (t: CVTemplate) => void;
+  onDesignChange: (data: CVData['design']) => void;
 }
 
-const CVPreview = ({ data, template, onTemplateChange }: Props) => {
+const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) => {
   const printRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = () => {
@@ -27,7 +30,7 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
       <html>
         <head>
           <title>${data.personalInfo.firstName} ${data.personalInfo.lastName} - CV</title>
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+          <link href="${cvPrintFontHref}" rel="stylesheet">
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
             @page { margin: 0; size: A4; }
@@ -43,6 +46,8 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
 
   return (
     <div className="space-y-5">
+      <DesignControls data={data.design} onChange={onDesignChange} />
+
       <div className="soft-panel p-4">
         <p className="section-kicker">Template Auswahl</p>
         <p className="mt-1.5 text-sm font-medium text-foreground">Wähle ein Layout, dann exportiere als PDF.</p>
