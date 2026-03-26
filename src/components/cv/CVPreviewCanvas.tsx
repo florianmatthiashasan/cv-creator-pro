@@ -22,20 +22,20 @@ const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
     const TemplateComponent = templateComponents[template];
 
     return (
-      <div className="preview-shell overflow-hidden animate-fade-up">
-        <div className="flex items-center justify-between border-b border-border/70 bg-white/90 px-4 py-3">
+      <div className="preview-shell animate-fade-up">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <p className="section-kicker">Live Vorschau</p>
-            <p className="mt-1 text-sm font-display text-foreground">Dein Lebenslauf aktualisiert sich sofort.</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Preview</p>
+            <p className="mt-0.5 text-[13px] font-medium text-foreground">Live-Vorschau</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           </div>
         </div>
 
-        <div className={`overflow-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(246,239,230,0.95)),radial-gradient(circle_at_top_left,rgba(248,153,60,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(123,202,187,0.15),transparent_28%)] p-4 ${maxHeightClassName}`}>
+        <div className={`overflow-auto bg-muted/40 p-4 ${maxHeightClassName}`}>
           <div className={`origin-top-left w-[210mm] ${scaleClassName}`}>
             <div ref={ref}>
               <TemplateComponent data={data} />

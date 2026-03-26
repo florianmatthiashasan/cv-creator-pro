@@ -42,10 +42,10 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="soft-panel p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Template Auswahl</p>
-        <p className="mt-2 font-display text-lg text-foreground">Wähle ein Layout, dann exportiere als PDF.</p>
+        <p className="section-kicker">Template Auswahl</p>
+        <p className="mt-1.5 text-sm font-medium text-foreground">Wähle ein Layout, dann exportiere als PDF.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
@@ -53,25 +53,26 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
           <motion.button
             key={t.id}
             onClick={() => onTemplateChange(t.id)}
-            className={`relative rounded-[24px] border p-4 text-left transition-all ${
+            className={`relative rounded-xl border p-4 text-left transition-all duration-150 ${
               template === t.id
-                ? 'border-primary/30 bg-gradient-to-br from-orange-50 via-white to-amber-50 shadow-[0_24px_50px_-32px_rgba(235,117,25,0.45)]'
-                : 'border-white/70 bg-white/80 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white'
+                ? 'border-foreground bg-foreground/[0.03] ring-1 ring-foreground/10'
+                : 'border-border bg-white hover:border-foreground/20'
             }`}
-            whileHover={{ scale: 1.015 }}
             whileTap={{ scale: 0.98 }}
           >
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/90">
-              <FileText size={20} className={template === t.id ? 'text-primary' : 'text-muted-foreground'} />
+            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${
+              template === t.id ? 'bg-foreground text-white' : 'bg-muted text-muted-foreground'
+            }`}>
+              <FileText size={18} />
             </div>
-            <p className={`text-sm font-display ${template === t.id ? 'text-primary' : 'text-foreground'}`}>{t.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{t.desc}</p>
+            <p className={`text-sm font-medium ${template === t.id ? 'text-foreground' : 'text-foreground/80'}`}>{t.label}</p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">{t.desc}</p>
           </motion.button>
         ))}
       </div>
 
-      <Button onClick={handleDownload} className="w-full font-display">
-        <Download size={16} className="mr-2" /> Als PDF herunterladen
+      <Button onClick={handleDownload} className="w-full">
+        <Download size={16} className="mr-1.5" /> Als PDF herunterladen
       </Button>
 
       <CVPreviewCanvas

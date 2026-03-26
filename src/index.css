@@ -1,57 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 36 45% 97%;
-    --foreground: 215 29% 16%;
+    --background: 0 0% 99%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 29% 16%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 29% 16%;
+    --popover-foreground: 0 0% 9%;
 
-    --primary: 24 92% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 34 48% 94%;
-    --secondary-foreground: 215 29% 20%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 36 36% 93%;
-    --muted-foreground: 215 14% 42%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 44%;
 
-    --accent: 160 46% 90%;
-    --accent-foreground: 168 37% 20%;
+    --accent: 142 44% 93%;
+    --accent-foreground: 142 40% 20%;
 
-    --destructive: 0 78% 58%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 28 31% 86%;
-    --input: 32 35% 90%;
-    --ring: 24 92% 55%;
+    --border: 0 0% 91%;
+    --input: 0 0% 91%;
+    --ring: 0 0% 9%;
 
-    --radius: 1.3rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 34 43% 96%;
-    --sidebar-foreground: 215 29% 20%;
-    --sidebar-primary: 24 92% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 46% 90%;
-    --sidebar-accent-foreground: 168 37% 20%;
-    --sidebar-border: 28 31% 86%;
-    --sidebar-ring: 24 92% 55%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 142 44% 93%;
+    --sidebar-accent-foreground: 142 40% 20%;
+    --sidebar-border: 0 0% 91%;
+    --sidebar-ring: 0 0% 9%;
 
     --surface: 0 0% 100%;
-    --surface-foreground: 215 29% 16%;
-    --amber-glow: 31 98% 58%;
+    --surface-foreground: 0 0% 9%;
   }
 }
 
@@ -62,16 +57,12 @@ All colors MUST be HSL.
 
   html {
     @apply scroll-smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     @apply bg-background text-foreground font-body antialiased;
-    background-image:
-      radial-gradient(circle at top left, hsla(24, 92%, 55%, 0.16), transparent 26%),
-      radial-gradient(circle at 88% 14%, hsla(168, 42%, 64%, 0.14), transparent 24%),
-      radial-gradient(circle at 60% 100%, hsla(36, 78%, 75%, 0.14), transparent 22%),
-      linear-gradient(180deg, hsl(36 45% 98%), hsl(32 38% 95%));
-    background-attachment: fixed;
   }
 
   #root {
@@ -79,76 +70,71 @@ All colors MUST be HSL.
   }
 
   ::selection {
-    background: hsla(24, 92%, 55%, 0.22);
+    background: hsl(0 0% 9% / 0.08);
     color: hsl(var(--foreground));
   }
 }
 
 @layer components {
-  .noise-texture {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-  }
-
-  .glass-panel {
-    @apply rounded-[30px] border border-white/70 bg-white/80 shadow-[0_24px_80px_-32px_rgba(177,120,54,0.28)] backdrop-blur-xl;
+  .editor-card {
+    @apply rounded-2xl border border-border bg-white;
   }
 
   .soft-panel {
-    @apply rounded-[26px] border border-white/60 bg-white/70 shadow-[0_14px_40px_-28px_rgba(73,45,14,0.28)] backdrop-blur-md;
-  }
-
-  .editor-card {
-    @apply rounded-[28px] border border-white/70 bg-white/90 shadow-[0_24px_60px_-34px_rgba(84,56,24,0.22)];
-  }
-
-  .field-shell {
-    @apply rounded-2xl border border-white/70 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_10px_30px_-24px_rgba(66,39,6,0.3)];
-  }
-
-  .mesh-divider {
-    background-image: linear-gradient(90deg, transparent, hsla(27, 46%, 66%, 0.6), transparent);
+    @apply rounded-xl border border-border bg-muted/50;
   }
 
   .meta-label {
-    @apply font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground;
   }
 
   .section-kicker {
-    @apply font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground;
-  }
-
-  .hero-feature {
-    @apply relative overflow-hidden rounded-[26px] border border-white/70 bg-white/80 p-5 shadow-[0_18px_44px_-30px_rgba(84,56,24,0.26)] transition-all duration-300;
-  }
-
-  .hero-feature-line {
-    @apply absolute left-0 top-5 h-12 w-1 rounded-full bg-primary/80 transition-all duration-300;
+    @apply text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground;
   }
 
   .step-tab-shell {
-    @apply rounded-[24px] border border-white/70 bg-white/75 p-2 shadow-[0_18px_40px_-30px_rgba(84,56,24,0.22)] backdrop-blur-xl;
+    @apply rounded-xl bg-muted/60 p-1;
   }
 
   .preview-shell {
-    @apply rounded-[30px] border border-white/70 bg-white/80 shadow-[0_24px_70px_-34px_rgba(84,56,24,0.28)] backdrop-blur-xl;
+    @apply rounded-2xl border border-border bg-white overflow-hidden;
+  }
+
+  .ink-panel {
+    @apply rounded-2xl border border-foreground/5 bg-foreground text-white;
+  }
+
+  .glass-panel {
+    @apply rounded-2xl border border-border bg-white/80 backdrop-blur-xl;
+  }
+
+  .hero-feature {
+    @apply relative rounded-xl border border-border bg-white p-5 transition-all duration-200;
+  }
+
+  .hero-feature:hover {
+    border-color: hsl(0 0% 80%);
+  }
+
+  .hero-feature-line {
+    @apply absolute left-0 top-5 h-10 w-[3px] rounded-full bg-foreground/80 transition-all duration-200;
   }
 }
 
 @layer utilities {
   .animate-fade-up {
-    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-fade-right {
-    animation: fadeRight 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: fadeRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translate3d(0, 18px, 0);
+    transform: translate3d(0, 12px, 0);
   }
 
   to {
@@ -160,7 +146,7 @@ All colors MUST be HSL.
 @keyframes fadeRight {
   from {
     opacity: 0;
-    transform: translate3d(-24px, 0, 0);
+    transform: translate3d(-12px, 0, 0);
   }
 
   to {

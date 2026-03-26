@@ -27,20 +27,20 @@ const SkillsForm = ({ data, onChange }: Props) => {
   const levelLabels = ['', 'Grundkenntnisse', 'Fortgeschritten', 'Gut', 'Sehr gut', 'Experte'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AnimatePresence mode="popLayout">
         {data.map((skill) => (
-          <motion.div key={skill.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="soft-panel relative p-5">
+          <motion.div key={skill.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-4">
             <div className="flex items-start gap-4">
               <div className="flex-1 space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label className="meta-label">Skill</Label>
                   <Input value={skill.name} onChange={(e) => update(skill.id, 'name', e.target.value)} placeholder="React, Python, Projektmanagement..." />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <Label className="meta-label">Level</Label>
-                    <span className="text-xs text-primary font-display">{levelLabels[skill.level]}</span>
+                    <span className="text-xs font-medium text-foreground/70">{levelLabels[skill.level]}</span>
                   </div>
                   <Slider value={[skill.level]} onValueChange={([val]) => update(skill.id, 'level', val)} min={1} max={5} step={1} className="w-full" />
                 </div>
@@ -50,8 +50,8 @@ const SkillsForm = ({ data, onChange }: Props) => {
           </motion.div>
         ))}
       </AnimatePresence>
-      <Button onClick={add} variant="outline" className="w-full border-dashed font-display">
-        <Plus size={16} className="mr-2" /> Skill hinzufügen
+      <Button onClick={add} variant="outline" className="w-full border-dashed">
+        <Plus size={16} className="mr-1.5" /> Skill hinzufügen
       </Button>
     </div>
   );

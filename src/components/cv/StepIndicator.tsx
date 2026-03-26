@@ -17,72 +17,56 @@ interface StepIndicatorProps {
 
 const StepIndicator = ({ currentStep, onStepClick }: StepIndicatorProps) => {
   return (
-    <div className="step-tab-shell mb-6 overflow-x-auto">
-      <div role="tablist" className="flex min-w-max items-center gap-2">
+    <div className="step-tab-shell overflow-x-auto">
+      <div role="tablist" className="flex min-w-max items-center gap-0.5">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;
           const isCompleted = index < currentStep;
 
           return (
-            <div key={index} className="shrink-0">
-              <button
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onStepClick(index)}
-                className={`group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all duration-300 ${
+            <button
+              key={index}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onStepClick(index)}
+              className={`group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors duration-150 ${
+                isActive
+                  ? 'bg-white text-foreground shadow-sm'
+                  : isCompleted
+                    ? 'text-foreground/70 hover:bg-white/80 hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-white/60 hover:text-foreground/70'
+              }`}
+            >
+              <motion.div
+                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150 ${
                   isActive
-                    ? 'bg-white text-foreground shadow-[0_20px_44px_-30px_rgba(235,117,25,0.42)]'
+                    ? 'bg-foreground text-white'
                     : isCompleted
-                      ? 'bg-orange-50/75 text-foreground/80 hover:bg-white'
-                      : 'text-muted-foreground hover:bg-white/80 hover:text-foreground/80'
+                      ? 'bg-foreground/10 text-foreground'
+                      : 'bg-transparent text-muted-foreground'
                 }`}
+                whileTap={{ scale: 0.95 }}
               >
-                <div
-                  className={`absolute inset-x-4 bottom-1 h-[2px] rounded-full transition-all duration-300 ${
-                    isActive ? 'bg-primary opacity-100' : 'bg-transparent opacity-0'
-                  }`}
-                />
-                <motion.div
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl border transition-colors duration-300 ${
+                <Icon size={15} />
+              </motion.div>
+              <div className="pr-0.5">
+                <p className={`font-mono text-[10px] tabular-nums tracking-[0.06em] ${isActive ? 'text-foreground/50' : 'text-muted-foreground/70'}`}>
+                  {String(index + 1).padStart(2, '0')}
+                </p>
+                <span
+                  className={`text-[13px] font-medium leading-none transition-colors ${
                     isActive
-                      ? 'border-primary/20 bg-primary text-primary-foreground'
+                      ? 'text-foreground'
                       : isCompleted
-                        ? 'border-primary/15 bg-orange-100 text-primary'
-                        : 'border-white/70 bg-white/70 text-muted-foreground'
+                        ? 'text-foreground/70'
+                        : 'text-muted-foreground'
                   }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
-                  <Icon
-                    size={18}
-                    className={`transition-colors ${
-                      isActive
-                        ? 'text-primary-foreground'
-                        : isCompleted
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
-                    }`}
-                  />
-                </motion.div>
-                <div className="pr-1">
-                  <p className={`font-mono text-[10px] uppercase tracking-[0.24em] ${isActive ? 'text-primary/80' : 'text-muted-foreground'}`}>
-                    {String(index + 1).padStart(2, '0')}
-                  </p>
-                  <span
-                    className={`text-sm font-body font-medium transition-colors ${
-                      isActive
-                        ? 'text-foreground'
-                        : isCompleted
-                          ? 'text-foreground/70'
-                          : 'text-muted-foreground'
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-              </button>
-            </div>
+                  {step.label}
+                </span>
+              </div>
+            </button>
           );
         })}
       </div>

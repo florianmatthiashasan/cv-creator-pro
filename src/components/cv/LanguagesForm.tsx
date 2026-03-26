@@ -27,16 +27,16 @@ const LanguagesForm = ({ data, onChange }: Props) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AnimatePresence mode="popLayout">
         {data.map((lang) => (
-          <motion.div key={lang.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="soft-panel relative p-5">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
-              <div className="flex-1 space-y-2">
+          <motion.div key={lang.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="flex-1 space-y-1.5">
                 <Label className="meta-label">Sprache</Label>
                 <Input value={lang.name} onChange={(e) => update(lang.id, 'name', e.target.value)} placeholder="Deutsch, Englisch, Französisch..." />
               </div>
-              <div className="space-y-2 xl:w-44">
+              <div className="space-y-1.5 sm:w-40">
                 <Label className="meta-label">Niveau</Label>
                 <Select value={lang.level} onValueChange={(val) => update(lang.id, 'level', val)}>
                   <SelectTrigger>
@@ -56,8 +56,8 @@ const LanguagesForm = ({ data, onChange }: Props) => {
           </motion.div>
         ))}
       </AnimatePresence>
-      <Button onClick={add} variant="outline" className="w-full border-dashed font-display">
-        <Plus size={16} className="mr-2" /> Sprache hinzufügen
+      <Button onClick={add} variant="outline" className="w-full border-dashed">
+        <Plus size={16} className="mr-1.5" /> Sprache hinzufügen
       </Button>
     </div>
   );
