@@ -10,6 +10,7 @@ import EducationForm from '@/components/cv/EducationForm';
 import SkillsForm from '@/components/cv/SkillsForm';
 import LanguagesForm from '@/components/cv/LanguagesForm';
 import CVPreview from '@/components/cv/CVPreview';
+import CVPreviewCanvas from '@/components/cv/CVPreviewCanvas';
 
 const TOTAL_STEPS = 6;
 const stepTitles = ['Persönliche Daten', 'Berufserfahrung', 'Bildung', 'Kenntnisse & Skills', 'Sprachen', 'Vorschau & Download'];
@@ -34,7 +35,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background font-body">
       <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-7xl px-6 py-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-primary/10">
               <Sparkles size={20} className="text-primary" />
@@ -45,40 +46,56 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <StepIndicator currentStep={step} onStepClick={setStep} />
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_520px]">
+          <div className="min-w-0">
+            <StepIndicator currentStep={step} onStepClick={setStep} />
 
-        <div className="text-center mb-8">
-          <h2 className="text-xl font-display font-semibold text-foreground">{stepTitles[step]}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{stepDescriptions[step]}</p>
-        </div>
+            <div className="mb-8 text-center xl:text-left">
+              <h2 className="text-xl font-display font-semibold text-foreground">{stepTitles[step]}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{stepDescriptions[step]}</p>
+            </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {step === 0 && <PersonalInfoForm data={cvData.personalInfo} onChange={(d) => setCvData({ ...cvData, personalInfo: d })} />}
-            {step === 1 && <ExperienceForm data={cvData.experiences} onChange={(d) => setCvData({ ...cvData, experiences: d })} />}
-            {step === 2 && <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />}
-            {step === 3 && <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />}
-            {step === 4 && <LanguagesForm data={cvData.languages} onChange={(d) => setCvData({ ...cvData, languages: d })} />}
-            {step === 5 && <CVPreview data={cvData} template={template} onTemplateChange={setTemplate} />}
-          </motion.div>
-        </AnimatePresence>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {step === 0 && <PersonalInfoForm data={cvData.personalInfo} onChange={(d) => setCvData({ ...cvData, personalInfo: d })} />}
+                {step === 1 && <ExperienceForm data={cvData.experiences} onChange={(d) => setCvData({ ...cvData, experiences: d })} />}
+                {step === 2 && <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />}
+                {step === 3 && <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />}
+                {step === 4 && <LanguagesForm data={cvData.languages} onChange={(d) => setCvData({ ...cvData, languages: d })} />}
+                {step === 5 && <CVPreview data={cvData} template={template} onTemplateChange={setTemplate} />}
+              </motion.div>
+            </AnimatePresence>
 
-        <div className="flex justify-between mt-10">
-          <Button onClick={prev} disabled={step === 0} variant="outline" className="font-display border-border">
-            <ArrowLeft size={16} className="mr-2" /> Zurück
-          </Button>
-          {step < lastStep && (
-            <Button onClick={next} className="bg-primary text-primary-foreground font-display hover:bg-primary/90">
-              Weiter <ArrowRight size={16} className="ml-2" />
-            </Button>
-          )}
+            <div className="mt-10 flex justify-between">
+              <Button onClick={prev} disabled={step === 0} variant="outline" className="font-display border-border">
+                <ArrowLeft size={16} className="mr-2" /> Zurück
+              </Button>
+              {step < lastStep && (
+                <Button onClick={next} className="bg-primary text-primary-foreground font-display hover:bg-primary/90">
+                  Weiter <ArrowRight size={16} className="ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <aside className="hidden xl:block">
+            <div className="sticky top-8 space-y-4">
+              <div className="rounded-2xl border border-border bg-card/40 p-4">
+                <p className="text-sm font-display text-foreground">Editor + Preview</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Links bearbeitest du deine Daten, rechts siehst du sofort das Ergebnis.
+                </p>
+              </div>
+              <CVPreviewCanvas data={cvData} template={template} maxHeightClassName="max-h-[calc(100vh-12rem)]" />
+            </div>
+          </aside>
         </div>
       </div>
     </div>

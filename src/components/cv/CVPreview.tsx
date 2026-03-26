@@ -3,9 +3,7 @@ import { CVData, CVTemplate } from '@/types/cv';
 import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
-import ModernTemplate from './templates/ModernTemplate';
-import ClassicTemplate from './templates/ClassicTemplate';
-import CreativeTemplate from './templates/CreativeTemplate';
+import CVPreviewCanvas from './CVPreviewCanvas';
 
 interface Props {
   data: CVData;
@@ -48,8 +46,6 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
-  const TemplateComponent = template === 'modern' ? ModernTemplate : template === 'classic' ? ClassicTemplate : CreativeTemplate;
-
   return (
     <div className="space-y-6">
       {/* Template Selector */}
@@ -77,15 +73,13 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
       </Button>
 
       {/* Preview */}
-      <div className="border border-border rounded-xl overflow-hidden">
-        <div className="overflow-auto max-h-[70vh]">
-          <div className="transform scale-[0.5] origin-top-left w-[200%]">
-            <div ref={printRef}>
-              <TemplateComponent data={data} />
-            </div>
-          </div>
-        </div>
-      </div>
+      <CVPreviewCanvas
+        ref={printRef}
+        data={data}
+        template={template}
+        maxHeightClassName="max-h-[70vh]"
+        scaleClassName="scale-[0.5] md:scale-[0.58]"
+      />
     </div>
   );
 };
