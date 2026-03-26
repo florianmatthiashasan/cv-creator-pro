@@ -1,3 +1,5 @@
-# Welcome to your Lovable project
+# CV Builder
 
-TODO: Document your project here
+A free web-based CV builder that enables users to create professional resumes quickly and easily — without any payment or subscription.
+
+🌐 Live: https://www.folio-cv.com
