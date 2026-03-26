@@ -65,6 +65,7 @@ const ModernTemplate = ({ data }: { data: CVData }) => {
               </div>
               <p className="text-amber-600 text-sm">{edu.institution}</p>
               {edu.grade && <p className="text-xs text-gray-500">Note: {edu.grade}</p>}
+              {edu.description && <p className="mt-1 text-xs leading-relaxed text-gray-600">{edu.description}</p>}
             </div>
           ))}
         </div>

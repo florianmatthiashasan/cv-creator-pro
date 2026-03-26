@@ -29,6 +29,7 @@ export interface Education {
   startDate: string;
   endDate: string;
   grade?: string;
+  description?: string;
 }
 
 export interface Skill {

@@ -75,6 +75,7 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
                 <p className="text-xs text-gray-400">{edu.institution}</p>
                 <p className="text-xs text-gray-500">{formatDate(edu.startDate)} — {formatDate(edu.endDate)}</p>
                 {edu.grade && <p className="text-xs text-gray-500">Note: {edu.grade}</p>}
+                {edu.description && <p className="mt-1 text-xs leading-relaxed text-gray-400">{edu.description}</p>}
               </div>
             ))}
           </div>

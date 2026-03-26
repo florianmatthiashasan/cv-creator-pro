@@ -1,5 +1,6 @@
 import { Education } from '@/types/cv';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
@@ -12,7 +13,19 @@ interface Props {
 
 const EducationForm = ({ data, onChange }: Props) => {
   const add = () => {
-    onChange([...data, { id: crypto.randomUUID(), institution: '', degree: '', field: '', startDate: '', endDate: '', grade: '' }]);
+    onChange([
+      ...data,
+      {
+        id: crypto.randomUUID(),
+        institution: '',
+        degree: '',
+        field: '',
+        startDate: '',
+        endDate: '',
+        grade: '',
+        description: '',
+      },
+    ]);
   };
 
   const update = (id: string, field: keyof Education, value: string) => {
@@ -60,6 +73,16 @@ const EducationForm = ({ data, onChange }: Props) => {
                   <Label className="text-foreground/80 font-display">Note</Label>
                   <Input value={edu.grade || ''} onChange={(e) => update(edu.id, 'grade', e.target.value)} placeholder="1.3" className="bg-card border-border focus:border-primary" />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground/80 font-display">Beschreibung</Label>
+                <Textarea
+                  value={edu.description || ''}
+                  onChange={(e) => update(edu.id, 'description', e.target.value)}
+                  placeholder="Welche Schwerpunkte, Projekte oder Aktivitäten hattest du dort?"
+                  rows={3}
+                  className="bg-card border-border focus:border-primary resize-none"
+                />
               </div>
             </div>
           </motion.div>

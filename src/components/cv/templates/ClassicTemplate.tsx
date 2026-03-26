@@ -67,6 +67,7 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
                 <span className="text-xs text-gray-500 whitespace-nowrap">{formatDate(edu.startDate)} — {formatDate(edu.endDate)}</span>
               </div>
               {edu.grade && <p className="text-xs text-gray-500 mt-1">Note: {edu.grade}</p>}
+              {edu.description && <p className="mt-2 text-xs leading-relaxed text-gray-600">{edu.description}</p>}
             </div>
           ))}
         </div>
