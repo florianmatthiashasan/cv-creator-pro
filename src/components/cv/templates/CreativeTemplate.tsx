@@ -8,16 +8,20 @@ const formatDate = (d: string) => {
 };
 
 const CreativeTemplate = ({ data }: { data: CVData }) => {
-  const { personalInfo: p, experiences, education, skills } = data;
+  const { personalInfo: p, experiences, education, skills, languages } = data;
 
   return (
     <div className="bg-white min-h-[297mm] w-[210mm] font-sans text-sm flex">
       {/* Sidebar */}
       <div className="w-[70mm] bg-gray-900 text-white p-6 flex flex-col">
         <div className="mb-8">
-          <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-2xl font-bold text-gray-900 mx-auto">
-            {p.firstName?.[0]}{p.lastName?.[0]}
-          </div>
+          {p.photo ? (
+            <img src={p.photo} alt="" className="w-20 h-20 rounded-full object-cover border-2 border-amber-500 mx-auto" />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-2xl font-bold text-gray-900 mx-auto">
+              {p.firstName?.[0]}{p.lastName?.[0]}
+            </div>
+          )}
         </div>
 
         <div className="space-y-3 mb-8">
@@ -30,7 +34,7 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
         </div>
 
         {skills.length > 0 && (
-          <div>
+          <div className="mb-8">
             <h3 className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-3">Skills</h3>
             <div className="space-y-3">
               {skills.map((skill) => (
@@ -47,8 +51,22 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
           </div>
         )}
 
+        {languages.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-3">Sprachen</h3>
+            <div className="space-y-2">
+              {languages.map((lang) => (
+                <div key={lang.id} className="flex justify-between text-xs">
+                  <span className="text-gray-300">{lang.name}</span>
+                  <span className="text-amber-400 font-medium">{lang.level}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {education.length > 0 && (
-          <div className="mt-8">
+          <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-3">Bildung</h3>
             {education.map((edu) => (
               <div key={edu.id} className="mb-4">
