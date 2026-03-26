@@ -8,6 +8,7 @@ export interface PersonalInfo {
   summary: string;
   website?: string;
   linkedin?: string;
+  photo?: string; // base64 data URL
 }
 
 export interface Experience {
@@ -36,11 +37,18 @@ export interface Skill {
   level: number; // 1-5
 }
 
+export interface Language {
+  id: string;
+  name: string;
+  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Muttersprache';
+}
+
 export interface CVData {
   personalInfo: PersonalInfo;
   experiences: Experience[];
   education: Education[];
   skills: Skill[];
+  languages: Language[];
 }
 
 export type CVTemplate = 'modern' | 'classic' | 'creative';
@@ -58,4 +66,5 @@ export const emptyCVData: CVData = {
   experiences: [],
   education: [],
   skills: [],
+  languages: [],
 };

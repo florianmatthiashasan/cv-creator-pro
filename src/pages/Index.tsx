@@ -8,14 +8,17 @@ import PersonalInfoForm from '@/components/cv/PersonalInfoForm';
 import ExperienceForm from '@/components/cv/ExperienceForm';
 import EducationForm from '@/components/cv/EducationForm';
 import SkillsForm from '@/components/cv/SkillsForm';
+import LanguagesForm from '@/components/cv/LanguagesForm';
 import CVPreview from '@/components/cv/CVPreview';
 
-const stepTitles = ['Persönliche Daten', 'Berufserfahrung', 'Bildung', 'Kenntnisse & Skills', 'Vorschau & Download'];
+const TOTAL_STEPS = 6;
+const stepTitles = ['Persönliche Daten', 'Berufserfahrung', 'Bildung', 'Kenntnisse & Skills', 'Sprachen', 'Vorschau & Download'];
 const stepDescriptions = [
   'Erzähl uns etwas über dich',
   'Deine bisherigen Stationen',
   'Dein akademischer Werdegang',
   'Was kannst du besonders gut?',
+  'Welche Sprachen sprichst du?',
   'Wähle dein Template und lade deinen CV herunter',
 ];
 
@@ -24,12 +27,12 @@ const Index = () => {
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
   const [template, setTemplate] = useState<CVTemplate>('modern');
 
-  const next = () => setStep((s) => Math.min(s + 1, 4));
+  const lastStep = TOTAL_STEPS - 1;
+  const next = () => setStep((s) => Math.min(s + 1, lastStep));
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   return (
     <div className="min-h-screen bg-background font-body">
-      {/* Hero Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex items-center gap-3 mb-2">
@@ -45,13 +48,11 @@ const Index = () => {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <StepIndicator currentStep={step} onStepClick={setStep} />
 
-        {/* Step Title */}
         <div className="text-center mb-8">
           <h2 className="text-xl font-display font-semibold text-foreground">{stepTitles[step]}</h2>
           <p className="text-sm text-muted-foreground mt-1">{stepDescriptions[step]}</p>
         </div>
 
-        {/* Step Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -60,30 +61,20 @@ const Index = () => {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {step === 0 && (
-              <PersonalInfoForm data={cvData.personalInfo} onChange={(d) => setCvData({ ...cvData, personalInfo: d })} />
-            )}
-            {step === 1 && (
-              <ExperienceForm data={cvData.experiences} onChange={(d) => setCvData({ ...cvData, experiences: d })} />
-            )}
-            {step === 2 && (
-              <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />
-            )}
-            {step === 3 && (
-              <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />
-            )}
-            {step === 4 && (
-              <CVPreview data={cvData} template={template} onTemplateChange={setTemplate} />
-            )}
+            {step === 0 && <PersonalInfoForm data={cvData.personalInfo} onChange={(d) => setCvData({ ...cvData, personalInfo: d })} />}
+            {step === 1 && <ExperienceForm data={cvData.experiences} onChange={(d) => setCvData({ ...cvData, experiences: d })} />}
+            {step === 2 && <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />}
+            {step === 3 && <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />}
+            {step === 4 && <LanguagesForm data={cvData.languages} onChange={(d) => setCvData({ ...cvData, languages: d })} />}
+            {step === 5 && <CVPreview data={cvData} template={template} onTemplateChange={setTemplate} />}
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation */}
         <div className="flex justify-between mt-10">
           <Button onClick={prev} disabled={step === 0} variant="outline" className="font-display border-border">
             <ArrowLeft size={16} className="mr-2" /> Zurück
           </Button>
-          {step < 4 && (
+          {step < lastStep && (
             <Button onClick={next} className="bg-primary text-primary-foreground font-display hover:bg-primary/90">
               Weiter <ArrowRight size={16} className="ml-2" />
             </Button>
