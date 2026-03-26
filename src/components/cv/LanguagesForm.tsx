@@ -31,12 +31,12 @@ const LanguagesForm = ({ data, onChange }: Props) => {
       <AnimatePresence mode="popLayout">
         {data.map((lang) => (
           <motion.div key={lang.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="relative p-5 rounded-xl bg-surface border border-border">
-            <div className="flex items-end gap-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
               <div className="flex-1 space-y-2">
                 <Label className="text-foreground/80 font-display">Sprache</Label>
                 <Input value={lang.name} onChange={(e) => update(lang.id, 'name', e.target.value)} placeholder="Deutsch, Englisch, Französisch..." className="bg-card border-border focus:border-primary" />
               </div>
-              <div className="w-44 space-y-2">
+              <div className="space-y-2 xl:w-44">
                 <Label className="text-foreground/80 font-display">Niveau</Label>
                 <Select value={lang.level} onValueChange={(val) => update(lang.id, 'level', val)}>
                   <SelectTrigger className="bg-card border-border">

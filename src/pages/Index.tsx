@@ -47,7 +47,7 @@ const Index = () => {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_520px]">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_520px]">
           <div className="min-w-0">
             <StepIndicator currentStep={step} onStepClick={setStep} />
 
@@ -85,7 +85,7 @@ const Index = () => {
             </div>
           </div>
 
-          <aside className="hidden xl:block">
+          <aside className="hidden md:block">
             <div className="sticky top-8 space-y-4">
               <div className="rounded-2xl border border-border bg-card/40 p-4">
                 <p className="text-sm font-display text-foreground">Editor + Preview</p>
@@ -93,7 +93,12 @@ const Index = () => {
                   Links bearbeitest du deine Daten, rechts siehst du sofort das Ergebnis.
                 </p>
               </div>
-              <CVPreviewCanvas data={cvData} template={template} maxHeightClassName="max-h-[calc(100vh-12rem)]" />
+              <CVPreviewCanvas
+                data={cvData}
+                template={template}
+                maxHeightClassName="max-h-[calc(100vh-12rem)]"
+                scaleClassName="scale-[0.31] lg:scale-[0.36] xl:scale-[0.44] 2xl:scale-[0.58]"
+              />
             </div>
           </aside>
         </div>

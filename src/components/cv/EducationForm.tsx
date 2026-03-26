@@ -50,7 +50,7 @@ const EducationForm = ({ data, onChange }: Props) => {
                 <Label className="text-foreground/80 font-display">Institution</Label>
                 <Input value={edu.institution} onChange={(e) => update(edu.id, 'institution', e.target.value)} placeholder="TU München" className="bg-card border-border focus:border-primary" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-foreground/80 font-display">Abschluss</Label>
                   <Input value={edu.degree} onChange={(e) => update(edu.id, 'degree', e.target.value)} placeholder="Master of Science" className="bg-card border-border focus:border-primary" />
@@ -60,7 +60,7 @@ const EducationForm = ({ data, onChange }: Props) => {
                   <Input value={edu.field} onChange={(e) => update(edu.id, 'field', e.target.value)} placeholder="Informatik" className="bg-card border-border focus:border-primary" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                 <div className="space-y-2">
                   <Label className="text-foreground/80 font-display">Start</Label>
                   <Input type="month" value={edu.startDate} onChange={(e) => update(edu.id, 'startDate', e.target.value)} className="bg-card border-border focus:border-primary" />

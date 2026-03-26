@@ -54,7 +54,7 @@ const ExperienceForm = ({ data, onChange }: Props) => {
               </Button>
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-foreground/80 font-display">Unternehmen</Label>
                   <Input value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} placeholder="Google GmbH" className="bg-card border-border focus:border-primary" />
@@ -64,7 +64,7 @@ const ExperienceForm = ({ data, onChange }: Props) => {
                   <Input value={exp.position} onChange={(e) => updateExperience(exp.id, 'position', e.target.value)} placeholder="Senior Developer" className="bg-card border-border focus:border-primary" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-foreground/80 font-display">Start</Label>
                   <Input type="month" value={exp.startDate} onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)} className="bg-card border-border focus:border-primary" />

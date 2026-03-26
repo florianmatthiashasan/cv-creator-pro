@@ -52,7 +52,7 @@ export interface CVData {
   languages: Language[];
 }
 
-export type CVTemplate = 'modern' | 'classic' | 'creative';
+export type CVTemplate = 'modern' | 'classic' | 'creative' | 'minimal' | 'executive' | 'mono';
 
 export const emptyCVData: CVData = {
   personalInfo: {

@@ -4,18 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CVPreviewCanvas from './CVPreviewCanvas';
+import { templateOptions } from './templates/registry';
 
 interface Props {
   data: CVData;
   template: CVTemplate;
   onTemplateChange: (t: CVTemplate) => void;
 }
-
-const templates: { id: CVTemplate; label: string; desc: string }[] = [
-  { id: 'modern', label: 'Modern', desc: 'Clean & Bold' },
-  { id: 'classic', label: 'Klassisch', desc: 'Zeitlos elegant' },
-  { id: 'creative', label: 'Kreativ', desc: 'Sidebar-Layout' },
-];
 
 const CVPreview = ({ data, template, onTemplateChange }: Props) => {
   const printRef = useRef<HTMLDivElement>(null);
@@ -49,8 +44,8 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
   return (
     <div className="space-y-6">
       {/* Template Selector */}
-      <div className="grid grid-cols-3 gap-3">
-        {templates.map((t) => (
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+        {templateOptions.map((t) => (
           <motion.button
             key={t.id}
             onClick={() => onTemplateChange(t.id)}
@@ -78,7 +73,7 @@ const CVPreview = ({ data, template, onTemplateChange }: Props) => {
         data={data}
         template={template}
         maxHeightClassName="max-h-[70vh]"
-        scaleClassName="scale-[0.5] md:scale-[0.58]"
+        scaleClassName="scale-[0.4] md:scale-[0.5] xl:scale-[0.58]"
       />
     </div>
   );

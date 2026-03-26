@@ -1,8 +1,6 @@
 import { forwardRef } from 'react';
 import { CVData, CVTemplate } from '@/types/cv';
-import ModernTemplate from './templates/ModernTemplate';
-import ClassicTemplate from './templates/ClassicTemplate';
-import CreativeTemplate from './templates/CreativeTemplate';
+import { templateComponents } from './templates/registry';
 
 interface Props {
   data: CVData;
@@ -17,16 +15,11 @@ const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
       data,
       template,
       maxHeightClassName = 'max-h-[70vh]',
-      scaleClassName = 'scale-[0.5] md:scale-[0.58] xl:scale-[0.68]',
+      scaleClassName = 'scale-[0.42] lg:scale-[0.5] xl:scale-[0.62]',
     },
     ref,
   ) => {
-    const TemplateComponent =
-      template === 'modern'
-        ? ModernTemplate
-        : template === 'classic'
-          ? ClassicTemplate
-          : CreativeTemplate;
+    const TemplateComponent = templateComponents[template];
 
     return (
       <div className="border border-border rounded-2xl overflow-hidden bg-card/80 shadow-2xl shadow-black/20">

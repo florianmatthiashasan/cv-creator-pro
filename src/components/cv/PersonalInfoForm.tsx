@@ -63,7 +63,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
         <div className="space-y-2">
           <Label className="text-foreground/80 font-display">Vorname</Label>
           <Input value={data.firstName} onChange={(e) => update('firstName', e.target.value)} placeholder="Max" className="bg-surface border-border focus:border-primary" />
@@ -77,7 +77,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
         <Label className="text-foreground/80 font-display">Berufsbezeichnung</Label>
         <Input value={data.title} onChange={(e) => update('title', e.target.value)} placeholder="Senior Software Engineer" className="bg-surface border-border focus:border-primary" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
         <div className="space-y-2">
           <Label className="text-foreground/80 font-display">E-Mail</Label>
           <Input type="email" value={data.email} onChange={(e) => update('email', e.target.value)} placeholder="max@example.com" className="bg-surface border-border focus:border-primary" />
@@ -91,7 +91,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
         <Label className="text-foreground/80 font-display">Adresse</Label>
         <Input value={data.address} onChange={(e) => update('address', e.target.value)} placeholder="Musterstraße 1, 10115 Berlin" className="bg-surface border-border focus:border-primary" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
         <div className="space-y-2">
           <Label className="text-foreground/80 font-display">Website</Label>
           <Input value={data.website || ''} onChange={(e) => update('website', e.target.value)} placeholder="https://meineseite.de" className="bg-surface border-border focus:border-primary" />
