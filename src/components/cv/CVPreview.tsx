@@ -7,6 +7,7 @@ import CVPreviewCanvas from './CVPreviewCanvas';
 import { templateOptions } from './templates/registry';
 import DesignControls from './DesignControls';
 import { cvPrintFontHref } from '@/lib/cv-design';
+import { trackEvent } from '@/lib/analytics';
 
 interface Props {
   data: CVData;
@@ -22,8 +23,21 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
     const content = printRef.current;
     if (!content) return;
 
+    trackEvent('download_clicked', {
+      template,
+      experience_count: data.experiences.length,
+      education_count: data.education.length,
+      skill_count: data.skills.length,
+      language_count: data.languages.length,
+    });
+
     const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    if (!printWindow) {
+      trackEvent('download_popup_blocked', {
+        template,
+      });
+      return;
+    }
 
     printWindow.document.write(`
       <!DOCTYPE html>
