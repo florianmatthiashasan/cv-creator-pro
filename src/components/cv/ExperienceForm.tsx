@@ -38,6 +38,15 @@ const ExperienceForm = ({ data, onChange }: Props) => {
 
   return (
     <div className="space-y-5">
+      {data.length === 0 && (
+        <div className="empty-state">
+          <p className="text-sm font-semibold text-foreground">No roles added yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            Add recent roles, internships, freelance work, or projects that show measurable responsibility.
+          </p>
+        </div>
+      )}
+
       <AnimatePresence mode="popLayout">
         {data.map((exp, index) => (
           <motion.div
@@ -77,7 +86,7 @@ const ExperienceForm = ({ data, onChange }: Props) => {
                   <Input type="month" value={exp.endDate} onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)} disabled={exp.current} className="disabled:opacity-40" />
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5">
+              <div className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2.5">
                 <Checkbox checked={exp.current} onCheckedChange={(checked) => updateExperience(exp.id, 'current', !!checked)} />
                 <Label className="text-sm text-foreground/70">Currently working here</Label>
               </div>

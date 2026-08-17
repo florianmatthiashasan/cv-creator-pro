@@ -38,7 +38,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
         <div className="relative group">
           <div
             onClick={() => fileRef.current?.click()}
-            className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-muted/40 transition-colors hover:border-foreground/30 hover:bg-muted/60"
+            className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-md border-2 border-dashed border-white/15 bg-black/20 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-white/[0.06]"
           >
             {data.photo ? (
               <img src={data.photo} alt="Profile photo" className="w-full h-full object-cover" />
@@ -49,7 +49,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
           {data.photo && (
             <button
               onClick={removePhoto}
-              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-white opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground opacity-0 transition-opacity group-hover:opacity-100"
             >
               <X size={10} />
             </button>
@@ -59,49 +59,49 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
         <div>
           <p className="section-kicker">Profile</p>
           <p className="mt-1 text-sm font-medium text-foreground">Upload portrait</p>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">JPG or PNG, max. 5 MB</p>
+          <p className="mt-0.5 max-w-md text-[13px] leading-6 text-muted-foreground">Use a clear headshot when it fits your market. You can remove it any time.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">First name</Label>
           <Input value={data.firstName} onChange={(e) => update('firstName', e.target.value)} placeholder="Max" />
         </div>
-        <div className="space-y-1.5">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">Last name</Label>
           <Input value={data.lastName} onChange={(e) => update('lastName', e.target.value)} placeholder="Mustermann" />
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="field-card space-y-1.5">
         <Label className="meta-label">Job title</Label>
         <Input value={data.title} onChange={(e) => update('title', e.target.value)} placeholder="Senior Software Engineer" />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="field-card space-y-1.5">
         <Label className="meta-label">Email</Label>
           <Input type="email" value={data.email} onChange={(e) => update('email', e.target.value)} placeholder="max@example.com" />
         </div>
-        <div className="space-y-1.5">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">Phone</Label>
           <Input value={data.phone} onChange={(e) => update('phone', e.target.value)} placeholder="+49 123 456 789" />
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="field-card space-y-1.5">
         <Label className="meta-label">Address</Label>
         <Input value={data.address} onChange={(e) => update('address', e.target.value)} placeholder="Sample Street 1, 10115 Berlin" />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">Website</Label>
           <Input value={data.website || ''} onChange={(e) => update('website', e.target.value)} placeholder="https://mywebsite.com" />
         </div>
-        <div className="space-y-1.5">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">LinkedIn</Label>
           <Input value={data.linkedin || ''} onChange={(e) => update('linkedin', e.target.value)} placeholder="linkedin.com/in/max" />
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="field-card space-y-1.5">
         <Label className="meta-label">Summary</Label>
         <Textarea value={data.summary} onChange={(e) => update('summary', e.target.value)} placeholder="A short summary of your career, strengths, and focus..." rows={4} className="resize-none" />
       </div>

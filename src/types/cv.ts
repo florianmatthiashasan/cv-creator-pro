@@ -79,7 +79,17 @@ export interface CVData {
   design: CVDesign;
 }
 
-export type CVTemplate = 'modern' | 'classic' | 'creative' | 'minimal' | 'executive' | 'mono';
+export type CVTemplate =
+  | 'modern'
+  | 'classic'
+  | 'creative'
+  | 'minimal'
+  | 'executive'
+  | 'mono'
+  | 'atlas'
+  | 'studio'
+  | 'compact'
+  | 'grid';
 
 export const emptyCVData: CVData = {
   personalInfo: {
@@ -96,17 +106,17 @@ export const emptyCVData: CVData = {
   skills: [],
   languages: [],
   design: {
-    headingFont: 'playfair',
-    bodyFont: 'dm-sans',
-    nameColor: '#161616',
-    titleColor: '#c7662d',
-    headingColor: '#161616',
-    bodyColor: '#303030',
-    mutedColor: '#6c6a66',
-    accentColor: '#c7662d',
+    headingFont: 'space-grotesk',
+    bodyFont: 'manrope',
+    nameColor: '#101416',
+    titleColor: '#2f7668',
+    headingColor: '#101416',
+    bodyColor: '#263033',
+    mutedColor: '#657174',
+    accentColor: '#9fcf62',
     backgroundColor: '#ffffff',
-    sidebarBackgroundColor: '#1d1a16',
-    sidebarTextColor: '#f5efe7',
-    dividerColor: '#dbcab2',
+    sidebarBackgroundColor: '#11181b',
+    sidebarTextColor: '#f4f1e8',
+    dividerColor: '#d8ded7',
   },
 };

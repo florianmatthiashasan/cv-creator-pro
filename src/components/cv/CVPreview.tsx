@@ -72,15 +72,15 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
           <motion.button
             key={t.id}
             onClick={() => onTemplateChange(t.id)}
-            className={`relative rounded-xl border p-4 text-left transition-all duration-150 ${
+            className={`relative rounded-md border p-4 text-left transition-all duration-200 ${
               template === t.id
-                ? 'border-foreground bg-foreground/[0.03] ring-1 ring-foreground/10'
-                : 'border-border bg-white hover:border-foreground/20'
+                ? 'border-accent bg-accent/[0.07] ring-1 ring-accent/15'
+                : 'border-white/10 bg-white/[0.045] hover:-translate-y-0.5 hover:border-accent/30 hover:bg-white/[0.08]'
             }`}
             whileTap={{ scale: 0.98 }}
           >
-            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${
-              template === t.id ? 'bg-foreground text-white' : 'bg-muted text-muted-foreground'
+            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-md ${
+              template === t.id ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
             }`}>
               <FileText size={18} />
             </div>

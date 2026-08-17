@@ -11,6 +11,7 @@ import SkillsForm from '@/components/cv/SkillsForm';
 import LanguagesForm from '@/components/cv/LanguagesForm';
 import CVPreview from '@/components/cv/CVPreview';
 import CVPreviewCanvas from '@/components/cv/CVPreviewCanvas';
+import { templateOptions } from '@/components/cv/templates/registry';
 import { useSeo } from '@/hooks/use-seo';
 import { trackEvent } from '@/lib/analytics';
 
@@ -27,23 +28,23 @@ const stepDescriptions = [
 const marketingFeatures = [
   {
     icon: Sparkles,
-    title: 'Free resume builder',
-    description: 'Create a professional resume or CV online without signup, watermarks, or hidden costs.',
+    title: 'Focused writing flow',
+    description: 'Six guided steps keep content, hierarchy, and export decisions organized.',
   },
   {
     icon: LayoutTemplate,
-    title: 'CV templates with live preview',
-    description: 'Choose from six layouts and see every change instantly in the preview before exporting your resume.',
+    title: '10 CV layouts',
+    description: 'Switch between classic, editorial, sidebar, compact, grid, and technical resume structures.',
   },
   {
     icon: Palette,
-    title: 'Customize fonts and colors',
-    description: 'Adjust headings, body text, accent colors, and font pairings so your CV fits your industry and personality.',
+    title: 'Design controls',
+    description: 'Tune fonts, accents, sidebar colors, dividers, and page colors with live feedback.',
   },
   {
     icon: FileDown,
-    title: 'PDF export for applications',
-    description: 'Download your resume as an A4-optimized PDF and use it right away for job applications, LinkedIn, or portfolios.',
+    title: 'A4 PDF export',
+    description: 'Export the finished document for applications, portfolios, and LinkedIn workflows.',
   },
 ];
 const howItWorks = [
@@ -194,15 +195,17 @@ const Index = () => {
   };
 
   return (
-    <div className="relative min-h-screen font-body">
-      {/* ─── Top Navigation ─── */}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+    <div className="relative min-h-screen overflow-hidden font-body">
+      <a href="#editor" className="skip-link">Skip to editor</a>
+      <div className="app-noise" aria-hidden="true" />
+
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <img
               src="/folio-cv-logo.png"
               alt="Folio CV"
-              className="h-8 w-auto object-contain"
+              className="h-9 w-auto object-contain"
             />
           </div>
 
@@ -212,7 +215,7 @@ const Index = () => {
               <a href="#editor" className="transition-colors hover:text-foreground">Editor</a>
               <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
             </nav>
-            <span className="hidden rounded-full bg-foreground px-3 py-1.5 font-mono text-[11px] tracking-[0.06em] text-white sm:inline-flex">
+            <span className="hidden rounded-md border border-accent/20 bg-accent/10 px-3 py-1.5 font-mono text-[11px] tracking-[0.08em] text-accent sm:inline-flex">
               free forever
             </span>
             <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
@@ -225,26 +228,27 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="pt-16">
-        {/* ─── Hero ─── */}
-        <section className="border-b border-border">
-          <div className="mx-auto max-w-7xl px-6 py-20 lg:py-28">
-            <div className="grid gap-16 lg:grid-cols-[1fr_380px] lg:items-start">
+      <main className="relative z-10 pt-16">
+        <section className="relative overflow-hidden border-b border-white/10">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent" aria-hidden="true" />
+          <div className="mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:py-20">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] lg:items-center">
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               >
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                  Free resume builder
-                </p>
+                <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_0_5px_hsl(76_67%_66%/0.13)]" />
+                  Free builder, 10 layouts, live A4 preview
+                </div>
 
-                <h1 className="mt-4 max-w-2xl font-display text-[clamp(2.8rem,6vw,5rem)] italic leading-[1.05] tracking-[-0.02em] text-foreground">
-                  Build your resume online, customize it live, and download it as a PDF.
+                <h1 className="max-w-3xl font-display text-[clamp(3.7rem,7vw,6.7rem)] font-semibold leading-[0.9] tracking-[-0.065em] text-foreground">
+                  Design a sharp CV without fighting the layout.
                 </h1>
 
-                <p className="mt-6 max-w-lg text-[15px] leading-7 text-muted-foreground">
-                  Folio CV is a free CV and resume builder with live preview, six templates, design customization, and fast PDF export for applications.
+                <p className="mt-7 max-w-xl text-base leading-8 text-muted-foreground">
+                  Folio CV is now a dark, modern resume studio: guided writing on one side, live template preview on the other, and enough layouts to match different roles.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -268,79 +272,116 @@ const Index = () => {
                   </Button>
                 </div>
 
-                <div className="mt-10 flex flex-wrap gap-6 text-[13px] text-muted-foreground">
-                  {['Resume & CV builder', 'Live preview', 'A4 PDF export', 'No signup required'].map((item) => (
-                    <span key={item} className="flex items-center gap-2">
-                      <span className="h-1 w-1 rounded-full bg-foreground/30" />
-                      {item}
-                    </span>
+                <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+                  {[
+                    ['10', 'layouts'],
+                    ['A4', 'preview'],
+                    ['0', 'signup'],
+                  ].map(([value, label]) => (
+                    <div key={label} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                      <p className="font-mono text-2xl text-foreground">{value}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+                    </div>
                   ))}
                 </div>
               </motion.div>
 
-              <div className="space-y-3 lg:pt-8">
-                {[
-                  {
-                    num: '01',
-                    title: 'Live preview',
-                    desc: 'Every input updates your resume instantly. No reloads, no guesswork.',
-                  },
-                  {
-                    num: '02',
-                    title: 'Free and accountless',
-                    desc: 'Start immediately, try templates, and download your CV as a PDF without creating an account.',
-                  },
-                  {
-                    num: '03',
-                    title: 'Design customization',
-                    desc: 'Adjust colors, fonts, and layouts for modern, classic, or creative applications.',
-                  },
-                ].map((item, index) => (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.15 + 0.08 * index, ease: [0.16, 1, 0.3, 1] }}
-                    className="hero-feature group"
-                  >
-                    <div className="hero-feature-line group-hover:h-14" />
-                    <div className="pl-4">
-                      <p className="font-mono text-[11px] tracking-[0.06em] text-muted-foreground">{item.num}</p>
-                      <h3 className="mt-1.5 text-base font-semibold text-foreground">{item.title}</h3>
-                      <p className="mt-1 text-[13px] leading-6 text-muted-foreground">{item.desc}</p>
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+                className="glass-panel relative overflow-hidden p-3"
+              >
+                <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-accent/10 blur-3xl" aria-hidden="true" />
+                <div className="relative rounded-lg border border-white/10 bg-black/25 p-4 shadow-[inset_0_1px_0_hsl(0_0%_100%/0.07)]">
+                  <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Live workspace</p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">Template mixer</p>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                    <span className="rounded-md bg-accent px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-foreground">
+                      10 styles
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-[0.72fr_1.28fr]">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                      {templateOptions.slice(0, 6).map((item, index) => (
+                        <div key={item.id} className={`rounded-md border p-3 ${index === 0 ? 'border-accent/50 bg-accent/10' : 'border-white/10 bg-white/[0.035]'}`}>
+                          <p className="font-mono text-[10px] tracking-[0.08em] text-accent">{String(index + 1).padStart(2, '0')}</p>
+                          <p className="mt-1 truncate text-sm font-semibold text-foreground">{item.label}</p>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-lg border border-white/10 bg-[#f5f1e7] p-4 text-[#11181b] shadow-[0_24px_60px_-42px_hsl(0_0%_0%/0.95)]">
+                      <div className="mb-5 flex items-start justify-between">
+                        <div>
+                          <p className="font-display text-3xl font-semibold leading-none tracking-[-0.04em]">Mira Keller</p>
+                          <p className="mt-1 text-xs text-[#5d6868]">Product designer</p>
+                        </div>
+                        <div className="h-12 w-12 rounded-md bg-[#11181b]" />
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="mb-1 h-2 w-20 rounded-full bg-[#9fcf62]" />
+                          <div className="h-1.5 w-full rounded-full bg-[#11181b]/40" />
+                          <div className="mt-1 h-1.5 w-4/5 rounded-full bg-[#11181b]/25" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="h-10 rounded bg-[#11181b]/10" />
+                          <div className="h-10 rounded bg-[#11181b]/10" />
+                          <div className="h-10 rounded bg-[#11181b]/10" />
+                        </div>
+                        <div className="h-24 rounded-md border border-[#11181b]/10 bg-[#11181b]/5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        <section id="features" className="border-b border-border bg-white/70">
-          <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
-            <div className="max-w-3xl">
-              <p className="section-kicker">Why Folio CV</p>
-              <h2 className="mt-3 font-display text-4xl italic text-foreground">
-                Everything you need to create a professional resume in one place.
-              </h2>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                Folio CV helps you create a polished resume online. The app combines resume templates,
-                live preview, design customization, and PDF export in one clear workflow.
+        <section id="features" className="studio-band">
+          <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:py-16">
+            <div className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
+              <div>
+                <p className="section-kicker">Template library</p>
+                <h2 className="mt-3 max-w-2xl font-display text-4xl font-semibold leading-[0.98] tracking-[-0.045em] text-foreground md:text-5xl">
+                  More layouts, different personalities.
+                </h2>
+              </div>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground lg:ml-auto lg:text-right">
+                Pick a conservative CV, a compact one-page layout, a sidebar profile, an editorial timeline, or a modular portfolio-style grid. The same content can be tested across all formats.
               </p>
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {templateOptions.map((item, index) => (
+                <article key={item.id} className="hero-feature min-h-36 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">{String(index + 1).padStart(2, '0')}</p>
+                  <h3 className="mt-5 text-lg font-semibold text-foreground">{item.label}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.desc}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/10">
+          <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:py-16">
+            <div className="grid gap-4 md:grid-cols-4">
               {marketingFeatures.map((feature) => {
                 const Icon = feature.icon;
                 return (
                   <article key={feature.title} className="hero-feature">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-foreground text-white">
-                        <Icon size={18} />
-                      </div>
-                      <h3 className="text-base font-semibold text-foreground">{feature.title}</h3>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.06] text-accent">
+                      <Icon size={18} />
                     </div>
-                    <p className="mt-4 text-sm leading-6 text-muted-foreground">{feature.description}</p>
+                    <h3 className="mt-5 text-base font-semibold text-foreground">{feature.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{feature.description}</p>
                   </article>
                 );
               })}
@@ -348,23 +389,34 @@ const Index = () => {
           </div>
         </section>
 
-        {/* ─── Editor ─── */}
         <section id="editor" className="scroll-mt-16">
-          <div className="mx-auto max-w-7xl px-6 py-12">
+          <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6">
+            <div className="mb-7 grid gap-4 md:grid-cols-[0.9fr_1.1fr] md:items-end">
+              <div>
+                <p className="section-kicker">Editor</p>
+                <h2 className="mt-2 font-display text-4xl font-semibold leading-[0.95] tracking-[-0.045em] text-foreground md:text-5xl">
+                  Build, compare, export.
+              </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-7 text-muted-foreground md:ml-auto md:text-right">
+                Work through the guided steps, then switch between 10 layouts in the design step without re-entering your content.
+              </p>
+            </div>
+
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_520px]">
               <div className="min-w-0">
                 <div className="editor-card px-5 py-5 md:px-7 md:py-7">
                   {/* Header */}
-                  <div className="mb-6 flex flex-col gap-4 border-b border-border pb-6">
+                  <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="section-kicker">Step {step + 1} of {TOTAL_STEPS}</p>
-                        <h2 className="mt-2 font-display text-3xl italic text-foreground">{stepTitles[step]}</h2>
+                        <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">{stepTitles[step]}</h2>
                         <p className="mt-1.5 text-sm text-muted-foreground">{stepDescriptions[step]}</p>
                       </div>
-                      <div className="rounded-lg bg-foreground px-3 py-2 text-right">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-white/50">Step</p>
-                        <p className="font-mono text-lg tabular-nums text-white">{String(step + 1).padStart(2, '0')}<span className="text-white/40">/{TOTAL_STEPS}</span></p>
+                      <div className="rounded-md border border-accent/20 bg-accent/10 px-3 py-2 text-right">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-accent/70">Step</p>
+                        <p className="font-mono text-lg tabular-nums text-accent">{String(step + 1).padStart(2, '0')}<span className="text-accent/40">/{TOTAL_STEPS}</span></p>
                       </div>
                     </div>
                     <StepIndicator currentStep={step} onStepClick={setStep} />
@@ -384,19 +436,19 @@ const Index = () => {
                       {step === 2 && <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />}
                       {step === 3 && <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />}
                       {step === 4 && <LanguagesForm data={cvData.languages} onChange={(d) => setCvData({ ...cvData, languages: d })} />}
-                  {step === 5 && (
-                    <CVPreview
-                      data={cvData}
-                      template={template}
-                      onTemplateChange={handleTemplateChange}
-                      onDesignChange={(design) => setCvData({ ...cvData, design })}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                      {step === 5 && (
+                        <CVPreview
+                          data={cvData}
+                          template={template}
+                          onTemplateChange={handleTemplateChange}
+                          onDesignChange={(design) => setCvData({ ...cvData, design })}
+                        />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
 
                   {/* Navigation */}
-                  <div className="mt-8 flex justify-between border-t border-border pt-5">
+                  <div className="mt-8 flex justify-between border-t border-white/10 pt-5">
                     <Button onClick={prev} disabled={step === 0} variant="outline">
                       <ArrowLeft size={16} className="mr-1.5" /> Back
                     </Button>
@@ -412,6 +464,13 @@ const Index = () => {
               {/* Sidebar Preview */}
               <aside className="hidden lg:block">
                 <div className="sticky top-20 space-y-3">
+                  <div className="glass-panel flex items-center justify-between px-4 py-3">
+                    <div>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Live preview</p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">{template} template</p>
+                    </div>
+                    <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_0_5px_hsl(76_67%_66%/0.13)]" />
+                  </div>
                   <CVPreviewCanvas
                     data={cvData}
                     template={template}
@@ -424,17 +483,16 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="border-t border-border border-b bg-muted/30">
-          <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
+        <section className="studio-band">
+          <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:py-16">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
               <div>
                 <p className="section-kicker">How it works</p>
-                <h2 className="mt-3 font-display text-4xl italic text-foreground">
-                  Create a professional resume in just a few steps.
+                <h2 className="mt-3 font-display text-4xl font-semibold leading-[0.98] tracking-[-0.045em] text-foreground md:text-5xl">
+                  One workflow, many final directions.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                  If you want to build a strong resume online, you should be able to control content, layout, and PDF export in one place.
-                  That is exactly what Folio CV is built for.
+                  Add the content once, then use templates and design controls to test how the same profile reads in different contexts.
                 </p>
               </div>
 
@@ -442,7 +500,7 @@ const Index = () => {
                 {howItWorks.map((item, index) => (
                   <article key={item} className="soft-panel p-5">
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-white">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-semibold text-accent-foreground">
                         {index + 1}
                       </div>
                       <div>
@@ -457,12 +515,12 @@ const Index = () => {
           </div>
         </section>
 
-        <section id="faq" className="border-b border-border">
-          <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
+        <section id="faq" className="border-b border-white/10">
+          <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:py-16">
             <div className="max-w-3xl">
               <p className="section-kicker">FAQ</p>
-              <h2 className="mt-3 font-display text-4xl italic text-foreground">
-                Frequently asked questions about the resume and CV builder.
+              <h2 className="mt-3 font-display text-4xl font-semibold leading-[0.98] tracking-[-0.045em] text-foreground md:text-5xl">
+                Questions before you export.
               </h2>
               <p className="mt-4 text-sm leading-7 text-muted-foreground">
                 These answers help users understand exactly what Folio CV is for and how it fits into their application workflow.
@@ -484,11 +542,11 @@ const Index = () => {
         </section>
 
         {/* ─── Footer CTA ─── */}
-        <section className="border-t border-border">
-          <div className="mx-auto max-w-7xl px-6 py-8">
+        <section className="border-t border-white/10 bg-black/30 text-foreground">
+          <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-foreground">Folio CV is free and open-source.</p>
+                <p className="text-sm font-semibold text-foreground">Folio CV is free and open-source.</p>
                 <p className="mt-0.5 text-[13px] text-muted-foreground">
                   If you find it useful, consider supporting the project.
                 </p>
