@@ -34,7 +34,7 @@ const DesignControls = ({ data, onChange }: Props) => {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="space-y-2">
+        <div className="field-card space-y-2">
           <Label className="meta-label">Headline Font</Label>
           <Select value={data.headingFont} onValueChange={(value) => update('headingFont', value as CVDesign['headingFont'])}>
             <SelectTrigger>
@@ -50,7 +50,7 @@ const DesignControls = ({ data, onChange }: Props) => {
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="field-card space-y-2">
           <Label className="meta-label">Body Font</Label>
           <Select value={data.bodyFont} onValueChange={(value) => update('bodyFont', value as CVDesign['bodyFont'])}>
             <SelectTrigger>
@@ -69,14 +69,14 @@ const DesignControls = ({ data, onChange }: Props) => {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {colorFields.map((field) => (
-          <div key={field.key} className="soft-panel p-3">
+          <div key={field.key} className="field-card">
             <Label className="meta-label">{field.label}</Label>
             <div className="mt-3 flex items-center gap-3">
               <input
                 type="color"
                 value={String(data[field.key])}
                 onChange={(event) => update(field.key, event.target.value)}
-                className="h-11 w-14 cursor-pointer rounded-xl border border-border bg-white p-1"
+                className="h-11 w-14 cursor-pointer rounded-md border border-white/10 bg-black/20 p-1"
               />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">{String(data[field.key]).toUpperCase()}</p>

@@ -28,6 +28,15 @@ const LanguagesForm = ({ data, onChange }: Props) => {
 
   return (
     <div className="space-y-5">
+      {data.length === 0 && (
+        <div className="empty-state">
+          <p className="text-sm font-semibold text-foreground">No languages added yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            Add the languages that are relevant for the application and choose the closest CEFR level.
+          </p>
+        </div>
+      )}
+
       <AnimatePresence mode="popLayout">
         {data.map((lang) => (
           <motion.div key={lang.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-4">

@@ -38,6 +38,15 @@ const EducationForm = ({ data, onChange }: Props) => {
 
   return (
     <div className="space-y-5">
+      {data.length === 0 && (
+        <div className="empty-state">
+          <p className="text-sm font-semibold text-foreground">No education added yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            Add degrees, bootcamps, certificates, or relevant training that supports your target role.
+          </p>
+        </div>
+      )}
+
       <AnimatePresence mode="popLayout">
         {data.map((edu, index) => (
           <motion.div key={edu.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-5">
