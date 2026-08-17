@@ -203,9 +203,9 @@ const Index = () => {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <img
-              src="/folio-cv-logo.png"
+              src="/folio-cv-logo.svg"
               alt="Folio CV"
-              className="h-9 w-auto object-contain"
+              className="h-10 w-auto object-contain"
             />
           </div>
 

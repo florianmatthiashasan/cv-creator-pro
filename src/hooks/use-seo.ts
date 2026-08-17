@@ -37,7 +37,7 @@ export const useSeo = ({
   title,
   description,
   path = '/',
-  image = '/folio-cv-logo.png',
+  image = '/folio-cv-logo.svg',
   robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1',
   jsonLd = [],
 }: UseSeoOptions) => {
@@ -52,14 +52,14 @@ export const useSeo = ({
     upsertMeta('name', 'description', description);
     upsertMeta('name', 'robots', robots);
     upsertMeta('name', 'author', 'yourdeveloperhsn');
-    upsertMeta('name', 'theme-color', '#f5efe7');
+    upsertMeta('name', 'theme-color', '#0C1015');
     upsertMeta('name', 'application-name', 'Folio CV');
 
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:type', 'website');
     upsertMeta('property', 'og:site_name', 'Folio CV');
-    upsertMeta('property', 'og:locale', 'de_DE');
+    upsertMeta('property', 'og:locale', 'en_US');
     upsertMeta('property', 'og:url', absoluteUrl);
     upsertMeta('property', 'og:image', absoluteImageUrl);
 
