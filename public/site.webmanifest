@@ -6,9 +6,15 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f8f3ed",
-  "theme_color": "#f8f3ed",
+  "background_color": "#0C1015",
+  "theme_color": "#0C1015",
   "icons": [
+    {
+      "src": "/folio-cv-icon.svg",
+      "sizes": "256x256",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "/folio-cv-mark.png",
       "sizes": "256x256",
