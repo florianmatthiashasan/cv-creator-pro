@@ -32,6 +32,17 @@
     <link rel="canonical" href="https://www.folio-cv.com/" />
     <link rel="alternate" hreflang="en" href="https://www.folio-cv.com/" />
     <link rel="alternate" hreflang="x-default" href="https://www.folio-cv.com/" />
+    <script>
+      document.documentElement.classList.add('js-enabled');
+      if (window.location.pathname === '/index.html') {
+        window.history.replaceState(null, '', '/');
+      }
+    </script>
+    <style>
+      .js-enabled .crawler-fallback {
+        display: none;
+      }
+    </style>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -71,7 +82,7 @@
 
   <body>
     <div id="root">
-      <main>
+      <main class="crawler-fallback">
         <section>
           <p>Free builder, 10 layouts, live A4 preview</p>
           <h1>Design a sharp CV without fighting the layout.</h1>
