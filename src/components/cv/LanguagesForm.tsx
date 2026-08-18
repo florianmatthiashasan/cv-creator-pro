@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trackEvent } from '@/lib/analytics';
 
 const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'] as const;
 
@@ -15,6 +16,10 @@ interface Props {
 
 const LanguagesForm = ({ data, onChange }: Props) => {
   const add = () => {
+    trackEvent('section_added', {
+      section_type: 'language',
+    });
+
     onChange([...data, { id: crypto.randomUUID(), name: '', level: 'B1' }]);
   };
 

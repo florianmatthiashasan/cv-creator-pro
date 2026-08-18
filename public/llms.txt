@@ -1,0 +1,31 @@
+# Folio CV
+
+Folio CV is a free web-based CV and resume builder. It helps users write structured resume content, compare templates, customize visual styling, preview the result, and export the finished document as a PDF.
+
+## What it does
+
+Folio CV provides a guided resume-building workflow with sections for personal details, work experience, education, skills, languages, design settings, live preview, and PDF export.
+
+## Who it's for
+
+Folio CV is for students, early-career professionals, freelancers, creatives, and experienced candidates who need a clear resume or CV for applications.
+
+## Key features
+
+- Live resume preview
+- Multiple CV and resume templates
+- Design customization for fonts, colors, accents, sidebars, dividers, and page colors
+- A4-oriented preview
+- PDF export
+- No registration required
+- Free to use
+
+## Pricing
+
+Folio CV is free to use. No credit card is required for the core resume-building workflow.
+
+## Links
+
+- Home: https://www.folio-cv.com/
+- Features: https://www.folio-cv.com/features
+- FAQ: https://www.folio-cv.com/faq

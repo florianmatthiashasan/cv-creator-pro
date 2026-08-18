@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trackEvent } from '@/lib/analytics';
 
 interface Props {
   data: Experience[];
@@ -14,6 +15,10 @@ interface Props {
 
 const ExperienceForm = ({ data, onChange }: Props) => {
   const addExperience = () => {
+    trackEvent('section_added', {
+      section_type: 'experience',
+    });
+
     onChange([
       ...data,
       {

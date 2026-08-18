@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trackEvent } from '@/lib/analytics';
 
 interface Props {
   data: Skill[];
@@ -13,6 +14,10 @@ interface Props {
 
 const SkillsForm = ({ data, onChange }: Props) => {
   const add = () => {
+    trackEvent('section_added', {
+      section_type: 'skill',
+    });
+
     onChange([...data, { id: crypto.randomUUID(), name: '', level: 3 }]);
   };
 

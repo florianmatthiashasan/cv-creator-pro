@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CVData, CVTemplate, emptyCVData } from '@/types/cv';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import CVPreview from '@/components/cv/CVPreview';
 import CVPreviewCanvas from '@/components/cv/CVPreviewCanvas';
 import { templateOptions } from '@/components/cv/templates/registry';
 import { useSeo } from '@/hooks/use-seo';
-import { trackEvent } from '@/lib/analytics';
+import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
 
 const TOTAL_STEPS = 6;
 const stepTitles = ['Personal details', 'Work experience', 'Education', 'Skills & strengths', 'Languages', 'Design, preview & download'];
@@ -93,8 +93,6 @@ const Index = () => {
   const [step, setStep] = useState(0);
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
   const [template, setTemplate] = useState<CVTemplate>('modern');
-  const hasTrackedCvStart = useRef(false);
-  const hasTrackedDownloadStep = useRef(false);
 
   const lastStep = TOTAL_STEPS - 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
@@ -162,26 +160,9 @@ const Index = () => {
   });
 
   useEffect(() => {
-    trackEvent('editor_step_viewed', {
-      step_index: step + 1,
-      step_name: stepTitles[step],
-    });
+    if (!hasMeaningfulCvContent(cvData)) return;
 
-    if (step === lastStep && !hasTrackedDownloadStep.current) {
-      hasTrackedDownloadStep.current = true;
-      trackEvent('reached_download_step', {
-        template,
-      });
-    }
-  }, [lastStep, step, template]);
-
-  useEffect(() => {
-    if (hasTrackedCvStart.current || !hasMeaningfulCvContent(cvData)) return;
-
-    hasTrackedCvStart.current = true;
-    trackEvent('cv_started', {
-      entry_point: 'editor',
-    });
+    trackCvStartedOncePerSession();
   }, [cvData]);
 
   const handleTemplateChange = (nextTemplate: CVTemplate) => {
@@ -189,8 +170,7 @@ const Index = () => {
 
     setTemplate(nextTemplate);
     trackEvent('template_selected', {
-      template: nextTemplate,
-      step_index: step + 1,
+      template_name: nextTemplate,
     });
   };
 
@@ -255,9 +235,6 @@ const Index = () => {
                   <Button
                     size="lg"
                     onClick={() => {
-                      trackEvent('start_building_clicked', {
-                        source: 'hero',
-                      });
                       document.getElementById('editor')?.scrollIntoView({ behavior: 'smooth' });
                     }}
                   >
@@ -550,6 +527,11 @@ const Index = () => {
                 <p className="mt-0.5 text-[13px] text-muted-foreground">
                   If you find it useful, consider supporting the project.
                 </p>
+                <nav className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <a href="/" className="transition-colors hover:text-foreground">Home</a>
+                  <a href="/features" className="transition-colors hover:text-foreground">Features</a>
+                  <a href="/faq" className="transition-colors hover:text-foreground">FAQ</a>
+                </nav>
               </div>
               <Button asChild variant="outline" size="sm">
                 <a href="https://buymeacoffee.com/yourdeveloperhsn" target="_blank" rel="noreferrer">

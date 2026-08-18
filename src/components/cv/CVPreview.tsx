@@ -16,6 +16,20 @@ interface Props {
   onDesignChange: (data: CVData['design']) => void;
 }
 
+const getSectionCount = (data: CVData) => {
+  const hasPersonalInfo = Object.values(data.personalInfo).some(
+    (value) => typeof value === 'string' && value.trim().length > 0,
+  );
+
+  return [
+    hasPersonalInfo,
+    data.experiences.length > 0,
+    data.education.length > 0,
+    data.skills.length > 0,
+    data.languages.length > 0,
+  ].filter(Boolean).length;
+};
+
 const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) => {
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -23,21 +37,10 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
     const content = printRef.current;
     if (!content) return;
 
-    trackEvent('download_clicked', {
-      template,
-      experience_count: data.experiences.length,
-      education_count: data.education.length,
-      skill_count: data.skills.length,
-      language_count: data.languages.length,
-    });
+    trackEvent('pdf_export_clicked');
 
     const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      trackEvent('download_popup_blocked', {
-        template,
-      });
-      return;
-    }
+    if (!printWindow) return;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -55,7 +58,14 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
       </html>
     `);
     printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    setTimeout(() => {
+      printWindow.print();
+      trackEvent('pdf_export_success', {
+        template_name: template,
+        section_count: getSectionCount(data),
+      });
+      printWindow.close();
+    }, 500);
   };
 
   return (

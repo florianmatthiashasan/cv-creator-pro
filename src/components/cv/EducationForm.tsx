@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trackEvent } from '@/lib/analytics';
 
 interface Props {
   data: Education[];
@@ -13,6 +14,10 @@ interface Props {
 
 const EducationForm = ({ data, onChange }: Props) => {
   const add = () => {
+    trackEvent('section_added', {
+      section_type: 'education',
+    });
+
     onChange([
       ...data,
       {
