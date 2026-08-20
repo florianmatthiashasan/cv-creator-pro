@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -25,6 +27,22 @@ import StepIndicator from '@/components/cv/StepIndicator';
 import { templateOptions } from '@/components/cv/templates/registry';
 import { useSeo } from '@/hooks/use-seo';
 import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
+import { fetchArbeitnowJobFromUrl, fetchArbeitnowMatches, getProfileCity } from '@/lib/job-matching';
+import {
+  ApplicationStage,
+  DbApplication,
+  convertMatchToApplication,
+  fetchDashboardData,
+  getInitialAuthUser,
+  onAuthUserChange,
+  saveApplication,
+  saveCvSnapshot,
+  signInWithEmail,
+  signOut,
+  supabaseConfigured,
+  updateApplicationStage,
+} from '@/lib/supabase-db';
+import { toast } from '@/components/ui/sonner';
 import { CVData, CVTemplate, emptyCVData } from '@/types/cv';
 
 const TOTAL_STEPS = 6;
@@ -40,19 +58,7 @@ const stepDescriptions = [
 
 type AppScreen = 'landing' | 'dashboard' | 'tracker' | 'editor' | 'matches';
 type TrackerView = 'kanban' | 'table';
-type ApplicationStage = 'Saved' | 'Applied' | 'Interview' | 'Offer' | 'Closed';
-
-type Application = {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  score: string;
-  stage: ApplicationStage;
-  when: string;
-  reason?: string;
-};
+type Application = DbApplication;
 
 type IndexProps = {
   initialScreen?: AppScreen;
@@ -66,10 +72,11 @@ const screenPaths: Record<AppScreen, string> = {
   matches: '/dashboard/matches',
 };
 
-const stages: ApplicationStage[] = ['Saved', 'Applied', 'Interview', 'Offer', 'Closed'];
+const stages: ApplicationStage[] = ['Saved', 'Applied', 'No response', 'Interview', 'Offer', 'Closed'];
 const nextStageLabel: Record<ApplicationStage, string> = {
   Saved: 'Mark applied',
-  Applied: 'Move to interview',
+  Applied: 'No response',
+  'No response': 'Move to interview',
   Interview: 'Move to offer',
   Offer: 'Close out',
   Closed: 'Reopen',
@@ -144,26 +151,26 @@ const faqs = [
 ];
 
 const dashboardCvs = [
-  { id: 1, name: 'Operations Lead — general', format: 'Classic', updated: '2 days ago', pages: '1 page', strength: '92%' },
-  { id: 2, name: 'Supply Chain Manager', format: 'Two column', updated: '5 days ago', pages: '2 pages', strength: '78%' },
-  { id: 3, name: 'Logistics referral', format: 'Compact', updated: '3 weeks ago', pages: '1 page', strength: '64%' },
-  { id: 4, name: 'Consulting version', format: 'Serif', updated: 'last month', pages: '2 pages', strength: '45%' },
+  { id: '1', name: 'Operations Lead — general', format: 'Classic', updated: '2 days ago', pages: '1 page', strength: '92%' },
+  { id: '2', name: 'Supply Chain Manager', format: 'Two column', updated: '5 days ago', pages: '2 pages', strength: '78%' },
+  { id: '3', name: 'Logistics referral', format: 'Compact', updated: '3 weeks ago', pages: '1 page', strength: '64%' },
+  { id: '4', name: 'Consulting version', format: 'Serif', updated: 'last month', pages: '2 pages', strength: '45%' },
 ];
 
 const initialApplications: Application[] = [
-  { id: 1, title: 'Operations Manager', company: 'Maersk NL', location: 'Rotterdam', salary: 'EUR 62k', score: '94%', stage: 'Interview', when: 'yesterday' },
-  { id: 2, title: 'Regional Planner', company: 'Picnic', location: 'Utrecht', salary: 'EUR 58k', score: '88%', stage: 'Applied', when: '3 days ago' },
-  { id: 3, title: 'Depot Lead', company: 'DHL Parcel', location: 'Amsterdam', salary: 'EUR 55k', score: '85%', stage: 'Applied', when: '4 days ago' },
-  { id: 4, title: 'Supply Chain Lead', company: 'Vanderlande', location: 'Veghel', salary: 'EUR 68k', score: '81%', stage: 'Saved', when: 'today' },
-  { id: 5, title: 'Ops Consultant', company: 'Districon', location: 'Hybrid', salary: 'EUR 60k', score: '76%', stage: 'Offer', when: '2 days ago' },
-  { id: 6, title: 'Warehouse Manager', company: 'Bol', location: 'Waalwijk', salary: 'EUR 57k', score: '72%', stage: 'Closed', when: 'last week' },
+  { id: '1', title: 'Operations Manager', company: 'Maersk NL', location: 'Rotterdam', salary: 'EUR 62k', score: '94%', stage: 'Interview', when: 'yesterday' },
+  { id: '2', title: 'Regional Planner', company: 'Picnic', location: 'Utrecht', salary: 'EUR 58k', score: '88%', stage: 'Applied', when: '3 days ago' },
+  { id: '3', title: 'Depot Lead', company: 'DHL Parcel', location: 'Amsterdam', salary: 'EUR 55k', score: '85%', stage: 'Applied', when: '4 days ago' },
+  { id: '4', title: 'Supply Chain Lead', company: 'Vanderlande', location: 'Veghel', salary: 'EUR 68k', score: '81%', stage: 'Saved', when: 'today' },
+  { id: '5', title: 'Ops Consultant', company: 'Districon', location: 'Hybrid', salary: 'EUR 60k', score: '76%', stage: 'Offer', when: '2 days ago' },
+  { id: '6', title: 'Warehouse Manager', company: 'Bol', location: 'Waalwijk', salary: 'EUR 57k', score: '72%', stage: 'Closed', when: 'last week' },
 ];
 
 const initialMatches: Application[] = [
-  { id: 11, title: 'Head of Operations', company: 'Fastned', location: 'Amsterdam', salary: 'EUR 72k', score: '91%', stage: 'Saved', when: 'new', reason: 'S&OP match' },
-  { id: 12, title: 'Logistics Manager', company: 'Coolblue', location: 'Rotterdam', salary: 'EUR 64k', score: '89%', stage: 'Saved', when: 'new', reason: 'Same city' },
-  { id: 13, title: 'Planning Lead', company: 'Jumbo', location: 'Veghel', salary: 'EUR 61k', score: '84%', stage: 'Saved', when: 'new', reason: 'Depot exp.' },
-  { id: 14, title: 'Network Planner', company: 'PostNL', location: 'The Hague', salary: 'EUR 59k', score: '80%', stage: 'Saved', when: 'new', reason: 'SQL listed' },
+  { id: '11', title: 'Head of Operations', company: 'Fastned', location: 'Amsterdam', salary: 'EUR 72k', score: '91%', stage: 'Saved', when: 'new', reason: 'S&OP match' },
+  { id: '12', title: 'Logistics Manager', company: 'Coolblue', location: 'Rotterdam', salary: 'EUR 64k', score: '89%', stage: 'Saved', when: 'new', reason: 'Same city' },
+  { id: '13', title: 'Planning Lead', company: 'Jumbo', location: 'Veghel', salary: 'EUR 61k', score: '84%', stage: 'Saved', when: 'new', reason: 'Depot exp.' },
+  { id: '14', title: 'Network Planner', company: 'PostNL', location: 'The Hague', salary: 'EUR 59k', score: '80%', stage: 'Saved', when: 'new', reason: 'SQL listed' },
 ];
 
 const sampleRoles = [
@@ -198,6 +205,7 @@ const hasMeaningfulCvContent = (data: CVData) => {
 const getStageClassName = (stage: ApplicationStage) => {
   if (stage === 'Interview') return 'organic-tag organic-tag-accent-2';
   if (stage === 'Applied') return 'organic-tag organic-tag-accent';
+  if (stage === 'No response') return 'organic-tag border border-border bg-transparent text-muted-foreground';
   if (stage === 'Offer') return 'organic-tag border border-accent text-accent';
   return 'organic-tag';
 };
@@ -219,7 +227,7 @@ const buildCvReview = (cvData: CVData) => {
   const skills = cvData.skills.map((skill) => skill.name).filter(Boolean);
   const words = countWords(summary);
   const numbers = `${summary} ${roleText}`.match(/\d+([.,]\d+)?%?/g) || [];
-  const hasHeader = Boolean(cvData.personalInfo.fullName && cvData.personalInfo.email);
+  const hasHeader = Boolean((cvData.personalInfo.firstName || cvData.personalInfo.lastName) && cvData.personalInfo.email);
   let score = 54;
   const items: { kind: 'Good' | 'Fix' | 'Tip'; title: string; body: string }[] = [];
 
@@ -254,44 +262,111 @@ const buildCvReview = (cvData: CVData) => {
   };
 };
 
-const parseJobUrl = (url: string): Application => {
-  const host = (url.match(/^(?:https?:\/\/)?(?:www\.)?([^/?#]+)/i) || [])[1] || 'posting.example';
-  const slug = url.split(/[?#]/)[0].split('/').filter(Boolean).pop() || 'operations-manager';
-  const title = slug
+const humanizeSlug = (value: string) =>
+  decodeURIComponent(value)
     .replace(/\.(html?|php)$/i, '')
+    .replace(/\b\d{4,}\b/g, '')
     .replace(/[-_]+/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
     .trim();
-  const company = host.split('.')[0];
+
+const knownJobCities = [
+  'Dornbirn',
+  'Innsbruck',
+  'Salzburg',
+  'Vienna',
+  'Wien',
+  'Graz',
+  'Linz',
+  'Klagenfurt',
+  'Berlin',
+  'Munich',
+  'Munchen',
+  'Hamburg',
+  'Karlsruhe',
+  'Mannheim',
+  'Amsterdam',
+  'Rotterdam',
+];
+
+const splitTitleAndLocation = (rawTitle: string, fallbackLocation: string) => {
+  const city = knownJobCities.find((item) => rawTitle.toLowerCase().endsWith(` ${item.toLowerCase()}`));
+  if (!city) return { title: rawTitle, location: fallbackLocation };
 
   return {
-    id: Date.now(),
-    title: title || 'Operations Manager',
-    company: company.charAt(0).toUpperCase() + company.slice(1),
-    location: 'Rotterdam',
-    salary: 'EUR 60k',
-    score: '87%',
+    title: rawTitle.slice(0, -city.length).trim(),
+    location: city === 'Wien' ? 'Vienna' : city,
+  };
+};
+
+const parseJobUrl = (url: string, fallbackLocation = 'Remote') => {
+  let parsedUrl: URL | null = null;
+  try {
+    parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+  } catch {
+    parsedUrl = null;
+  }
+
+  const host = parsedUrl?.hostname.replace(/^www\./, '') || 'posting.example';
+  const pathParts = parsedUrl?.pathname.split('/').filter(Boolean) || [];
+  const companyIndex = pathParts.indexOf('companies');
+  const companySlug = companyIndex >= 0 ? pathParts[companyIndex + 1] : '';
+  const titleSlug = pathParts[pathParts.length - 1] || 'operations-manager';
+  const titleWithLocation = humanizeSlug(titleSlug);
+  const { title, location } = splitTitleAndLocation(titleWithLocation, fallbackLocation);
+  const companyFromPath = companySlug ? humanizeSlug(companySlug) : '';
+  const isAggregatorHost = /(^|\.)jooble\.org$/.test(host);
+  const companyFromHost = isAggregatorHost ? '' : humanizeSlug(host.split('.')[0]);
+  const company = companyFromPath || companyFromHost;
+
+  return {
+    id: String(Date.now()),
+    title: title || 'Job from link',
+    company: company ? company.charAt(0).toUpperCase() + company.slice(1) : 'Company not listed',
+    location,
+    salary: 'Not listed',
+    score: 'Manual',
     stage: 'Saved',
     when: 'just now',
-    reason: 'titles and skills overlap',
+    reason: 'Draft from link',
+    sourceUrl: url,
   };
+};
+
+const getCvName = (data: CVData) => {
+  const role = data.personalInfo.title.trim();
+  const name = `${data.personalInfo.firstName} ${data.personalInfo.lastName}`.trim();
+  if (role && name) return `${role} - ${name}`;
+  return role || name || 'Untitled CV';
 };
 
 const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const hydratedUserIdRef = useRef<string | null>(null);
   const [screen, setScreenState] = useState<AppScreen>(initialScreen);
   const [step, setStep] = useState(0);
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
   const [template, setTemplate] = useState<CVTemplate>('modern');
+  const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
+  const [selectedCvName, setSelectedCvName] = useState('Untitled CV');
   const [applications, setApplications] = useState<Application[]>(initialApplications);
   const [matches, setMatches] = useState<Application[]>(initialMatches);
+  const [trackedMatchIds, setTrackedMatchIds] = useState<string[]>([]);
   const [trackerView, setTrackerView] = useState<TrackerView>('kanban');
   const [filters, setFilters] = useState({ role: '', location: '', salary: '' });
   const [addOpen, setAddOpen] = useState(false);
   const [addUrl, setAddUrl] = useState('');
+  const [addReading, setAddReading] = useState(false);
+  const [addReadStatus, setAddReadStatus] = useState<'idle' | 'imported' | 'draft'>('idle');
   const [draftApplication, setDraftApplication] = useState<Application | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   const lastStep = TOTAL_STEPS - 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
@@ -306,6 +381,209 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   useEffect(() => {
     setScreenState(initialScreen);
   }, [initialScreen]);
+
+  useEffect(() => {
+    if (!supabaseConfigured) {
+      setAuthLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    getInitialAuthUser().then((user) => {
+      if (cancelled) return;
+      setAuthUser(user);
+      setAuthLoading(false);
+    });
+
+    const unsubscribe = onAuthUserChange((user) => {
+      hydratedUserIdRef.current = null;
+      setAuthUser(user);
+      setAuthLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  const dashboardQuery = useQuery({
+    queryKey: ['dashboard-data', authUser?.id],
+    queryFn: () => fetchDashboardData(authUser as User),
+    enabled: Boolean(authUser && supabaseConfigured),
+  });
+
+  const hasMatchProfile = hasMeaningfulCvContent(cvData);
+  const arbeitnowMatchesQuery = useQuery({
+    queryKey: [
+      'arbeitnow-matches',
+      cvData.personalInfo.title,
+      cvData.personalInfo.address,
+      cvData.skills.map((skill) => skill.name).join('|'),
+      cvData.experiences.map((item) => item.position).join('|'),
+    ],
+    queryFn: () => fetchArbeitnowMatches(cvData),
+    enabled: hasMatchProfile,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+
+  useEffect(() => {
+    if (!authUser) {
+      hydratedUserIdRef.current = null;
+      setSelectedCvId(null);
+      setSelectedCvName('Untitled CV');
+      setApplications(initialApplications);
+      setMatches(initialMatches);
+      setTrackedMatchIds([]);
+      return;
+    }
+
+    const data = dashboardQuery.data;
+    if (!data || hydratedUserIdRef.current === authUser.id) return;
+
+    const firstCv = data.cvs[0];
+    if (firstCv) {
+      setSelectedCvId(firstCv.id);
+      setSelectedCvName(firstCv.name);
+      setCvData(firstCv.data);
+      setTemplate(firstCv.templateId);
+    } else if (hasMeaningfulCvContent(cvData)) {
+      setSelectedCvId(null);
+      setSelectedCvName(getCvName(cvData));
+    } else {
+      setSelectedCvId(null);
+      setSelectedCvName(getCvName(emptyCVData));
+      setCvData(emptyCVData);
+      setTemplate('modern');
+    }
+
+    setApplications(data.applications);
+    setMatches(data.matches);
+    hydratedUserIdRef.current = authUser.id;
+  }, [authUser, dashboardQuery.data, cvData]);
+
+  useEffect(() => {
+    if (!dashboardQuery.error) return;
+    toast.error(dashboardQuery.error instanceof Error ? dashboardQuery.error.message : 'Supabase-Daten konnten nicht geladen werden.');
+  }, [dashboardQuery.error]);
+
+  useEffect(() => {
+    if (!arbeitnowMatchesQuery.error) return;
+    toast.error(arbeitnowMatchesQuery.error instanceof Error ? arbeitnowMatchesQuery.error.message : 'Job matches could not be loaded.');
+  }, [arbeitnowMatchesQuery.error]);
+
+  const saveCvMutation = useMutation({
+    mutationFn: () =>
+      saveCvSnapshot({
+        userId: authUser?.id || '',
+        cvId: selectedCvId,
+        name: selectedCvName && selectedCvName !== 'Untitled CV' ? selectedCvName : getCvName(cvData),
+        templateId: template,
+        data: cvData,
+      }),
+    onSuccess: (cvId) => {
+      setSelectedCvId(cvId);
+      setSelectedCvName((current) => current || getCvName(cvData));
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
+      toast.success('CV wurde in Supabase gespeichert.');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'CV konnte nicht gespeichert werden.');
+    },
+  });
+
+  const applicationSaveMutation = useMutation({
+    mutationFn: (application: Application) =>
+      saveApplication({
+        userId: authUser?.id || '',
+        cvId: selectedCvId,
+        application,
+      }),
+    onSuccess: (application) => {
+      setApplications((current) => [application, ...current]);
+      setAddOpen(false);
+      setAddUrl('');
+      setDraftApplication(null);
+      setAddReadStatus('idle');
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
+      toast.success('Bewerbung wurde gespeichert.');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Bewerbung konnte nicht gespeichert werden.');
+    },
+  });
+
+  const stageUpdateMutation = useMutation({
+    mutationFn: ({ id, stage }: { id: string; stage: ApplicationStage }) => updateApplicationStage(id, stage),
+    onSuccess: (application) => {
+      setApplications((current) => current.map((item) => (item.id === application.id ? application : item)));
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Status konnte nicht gespeichert werden.');
+    },
+  });
+
+  const matchTrackMutation = useMutation({
+    mutationFn: async (match: Application) => {
+      const application = await convertMatchToApplication({
+        userId: authUser?.id || '',
+        cvId: selectedCvId,
+        match,
+      });
+
+      return { application, matchId: match.id };
+    },
+    onSuccess: ({ application, matchId }) => {
+      setApplications((current) => [application, ...current]);
+      setMatches((current) => current.filter((match) => match.id !== matchId));
+      setTrackedMatchIds((current) => [...new Set([...current, matchId])]);
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
+      toast.success('Match wurde in den Tracker verschoben.');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Match konnte nicht gespeichert werden.');
+    },
+  });
+
+  const dbTemplateOptions = useMemo(() => {
+    if (!dashboardQuery.data?.templates.length) return templateOptions;
+    return dashboardQuery.data.templates.map((item) => ({
+      id: item.id,
+      label: item.label,
+      desc: item.description,
+    }));
+  }, [dashboardQuery.data?.templates]);
+
+  const visibleDashboardCvs = useMemo(() => {
+    if (!authUser || !dashboardQuery.data) return dashboardCvs;
+    return dashboardQuery.data.cvs.map((cv) => ({
+      id: cv.id,
+      name: cv.name,
+      format: cv.format,
+      updated: cv.updated,
+      pages: cv.pages,
+      strength: `${cv.strength}%`,
+    }));
+  }, [authUser, dashboardQuery.data]);
+
+  const visibleMatches = useMemo(() => {
+    const apiMatches = arbeitnowMatchesQuery.data || [];
+    const shouldUseProfileMatches =
+      hasMatchProfile && (arbeitnowMatchesQuery.isFetching || arbeitnowMatchesQuery.isSuccess || Boolean(arbeitnowMatchesQuery.data));
+    const sourceMatches = shouldUseProfileMatches ? apiMatches : matches;
+    return sourceMatches.filter((match) => !trackedMatchIds.includes(match.id));
+  }, [arbeitnowMatchesQuery.data, arbeitnowMatchesQuery.isFetching, arbeitnowMatchesQuery.isSuccess, hasMatchProfile, matches, trackedMatchIds]);
+
+  const profileCity = getProfileCity(cvData);
+  const profileRole = cvData.personalInfo.title.trim() || 'Your target role';
+  const profileLocationLabel = profileCity ? `${profileCity} radius` : 'Location from CV';
+
+  const isLoggedIn = Boolean(authUser);
+  const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
+  const authStatusLabel = isLoggedIn ? 'Signed in' : 'Guest mode';
+  const authDetailLabel = isLoggedIn ? authUser?.email || 'logged in' : 'not logged in';
 
   const filteredApplications = useMemo(() => {
     const roleQuery = filters.role.toLowerCase();
@@ -399,25 +677,158 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     });
   };
 
-  const advanceApplication = (_id: number) => undefined;
+  const requestLogin = () => {
+    if (!supabaseConfigured) {
+      toast.error('Supabase ENV fehlt. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_PUBLISHABLE_KEY setzen.');
+      return;
+    }
 
-  const trackMatch = (_match: Application) => undefined;
-
-  const createDraftApplication = () => {
-    if (!addUrl.trim()) return;
-    setDraftApplication(parseJobUrl(addUrl.trim()));
+    setAuthOpen(true);
   };
 
-  const saveDraftApplication = () => undefined;
+  const handleAuthSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!authEmail.trim()) return;
+
+    setAuthSubmitting(true);
+    try {
+      await signInWithEmail(authEmail.trim());
+      toast.success('Check your inbox for the sign-in link.');
+      setAuthOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Login konnte nicht gestartet werden.');
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setAuthUser(null);
+      toast.success('Du bist ausgeloggt.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Logout fehlgeschlagen.');
+    }
+  };
+
+  const saveCurrentCv = () => {
+    if (!isLoggedIn) {
+      requestLogin();
+      return;
+    }
+
+    setSelectedCvName((current) => current || getCvName(cvData));
+    saveCvMutation.mutate();
+  };
+
+  const advanceApplication = (id: string) => {
+    if (!isLoggedIn) {
+      requestLogin();
+      return;
+    }
+
+    const application = applications.find((item) => item.id === id);
+    if (!application) return;
+    const stageIndex = stages.indexOf(application.stage);
+    const nextStage = stages[(stageIndex + 1) % stages.length];
+    stageUpdateMutation.mutate({ id, stage: nextStage });
+  };
+
+  const trackMatch = (match: Application) => {
+    if (!isLoggedIn) {
+      requestLogin();
+      return;
+    }
+
+    matchTrackMutation.mutate(match);
+  };
+
+  const createDraftApplication = async () => {
+    if (!addUrl.trim()) return;
+    setAddReading(true);
+    try {
+      const sourceApplication = await fetchArbeitnowJobFromUrl(addUrl.trim());
+      setDraftApplication(sourceApplication || parseJobUrl(addUrl.trim(), profileCity || 'Remote'));
+      setAddReadStatus(sourceApplication ? 'imported' : 'draft');
+    } catch {
+      setDraftApplication(parseJobUrl(addUrl.trim(), profileCity || 'Remote'));
+      setAddReadStatus('draft');
+    } finally {
+      setAddReading(false);
+    }
+  };
+
+  const saveDraftApplication = () => {
+    if (!draftApplication) return;
+    if (!isLoggedIn) {
+      requestLogin();
+      return;
+    }
+
+    applicationSaveMutation.mutate(draftApplication);
+  };
 
   const openEditor = () => {
     setScreen('editor');
     setStep(0);
   };
 
+  const startNewCv = () => {
+    setSelectedCvId(null);
+    setSelectedCvName(getCvName(emptyCVData));
+    setCvData(emptyCVData);
+    setTemplate('modern');
+    openEditor();
+  };
+
+  const openSavedCv = (id: string) => {
+    const cv = dashboardQuery.data?.cvs.find((item) => item.id === id);
+    if (cv) {
+      setSelectedCvId(cv.id);
+      setSelectedCvName(cv.name);
+      setCvData(cv.data);
+      setTemplate(cv.templateId);
+    }
+
+    openEditor();
+  };
+
   const openExportStep = () => {
     setScreen('editor');
     setStep(lastStep);
+  };
+
+  const renderAuthDialog = () => {
+    if (!authOpen) return null;
+
+    return (
+      <div className="folio-dialog-backdrop">
+        <form className="folio-dialog" onSubmit={handleAuthSubmit}>
+          <div>
+            <h2 className="font-display text-2xl font-normal">Sign in to save your work</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              We will email you a secure sign-in link. No password needed.
+            </p>
+          </div>
+          <Input
+            type="email"
+            placeholder="you@example.com"
+            value={authEmail}
+            onChange={(event) => setAuthEmail(event.target.value)}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={authSubmitting || !authEmail.trim()}>
+              {authSubmitting ? 'Sending...' : 'Continue'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    );
   };
 
   const renderAppShell = () => {
@@ -428,6 +839,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     }));
 
     return (
+      <>
       <div className="folio-app-shell">
         <aside className="folio-sidebar">
           <button className="flex items-center gap-3 px-2 font-display text-lg text-foreground" onClick={() => setScreen('landing')}>
@@ -452,16 +864,28 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </nav>
           <div className="mt-auto space-y-4">
             <div className="rounded-[20px] bg-background p-4">
-              <p className="font-display text-base">Guest mode</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">Create CVs for free. Dashboard data is demo until login.</p>
+              <p className="font-display text-base">{authStatusLabel}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {isLoggedIn ? 'Your CVs and applications are saved to your account.' : 'Create CVs for free. Save versions and track jobs after signing in.'}
+              </p>
             </div>
             <div className="flex items-center gap-3 px-1">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--organic-accent-2-300)] text-xs font-bold text-[var(--organic-accent-2-800)]">G</span>
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--organic-accent-2-300)] text-xs font-bold text-[var(--organic-accent-2-800)]">
+                {displayName.charAt(0).toUpperCase()}
+              </span>
               <div className="min-w-0">
-                <p className="text-sm font-semibold">Gast</p>
-                <p className="truncate text-xs text-muted-foreground">not logged in</p>
+                <p className="text-sm font-semibold">{displayName}</p>
+                <p className="truncate text-xs text-muted-foreground">{authDetailLabel}</p>
               </div>
             </div>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={isLoggedIn ? handleLogout : requestLogin}
+              disabled={authLoading}
+            >
+              {isLoggedIn ? 'Log out' : 'Log in'}
+            </Button>
             <Button variant="ghost" className="justify-start px-2 text-accent" onClick={() => setScreen('landing')}>
               <ArrowLeft size={16} />
               Back to site
@@ -474,25 +898,25 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">Good afternoon, Mara.</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">{openCount} applications still open · {matches.length} new matches this week</p>
+                  <h1 className="font-display text-4xl font-normal">Good afternoon, {displayName}.</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">{openCount} applications still open · {visibleMatches.length} job matches ready</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setScreen('tracker')}>Open tracker</Button>
-                  <Button onClick={openEditor}>New CV</Button>
+                  <Button onClick={startNewCv}>New CV</Button>
                 </div>
               </div>
 
-              <div className="mt-6">
+              {!isLoggedIn && <div className="mt-6">
                 <DemoNotice />
-              </div>
+              </div>}
 
               <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  ['CVs', String(dashboardCvs.length), 'one per role family'],
-                  ['Applications', String(applications.length), 'across five stages'],
+                  ['CVs', String(visibleDashboardCvs.length), 'one per role family'],
+                  ['Applications', String(applications.length), 'across six stages'],
                   ['Interviews', String(applications.filter((item) => item.stage === 'Interview').length), 'currently active'],
-                  ['New matches', String(matches.length), 'from the demo CV'],
+                  ['New matches', String(visibleMatches.length), 'from your profile'],
                 ].map(([label, value, note]) => (
                   <article key={label} className="organic-card p-5">
                     <p className="section-kicker">{label}</p>
@@ -506,10 +930,10 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <section>
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <h2 className="font-display text-2xl font-normal">Your CVs</h2>
-                    <Button variant="ghost" onClick={openEditor}>+ New version</Button>
+                    <Button variant="ghost" onClick={startNewCv}>+ New version</Button>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {dashboardCvs.map((cv) => (
+                    {visibleDashboardCvs.map((cv) => (
                       <article key={cv.id} className="organic-card p-5">
                         <div className="flex items-start justify-between gap-3">
                           <h3 className="font-display text-xl font-normal">{cv.name}</h3>
@@ -523,8 +947,10 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <span className="text-[var(--organic-accent-2-800)]">{cv.strength} complete</span>
                         </div>
                         <div className="mt-4 flex gap-2">
-                          <Button size="sm" variant="outline" onClick={openEditor}>Edit</Button>
-                          <Button size="sm" variant="ghost" disabled>Login required</Button>
+                          <Button size="sm" variant="outline" onClick={() => openSavedCv(cv.id)}>Edit</Button>
+                          <Button size="sm" variant="ghost" onClick={isLoggedIn ? saveCurrentCv : requestLogin}>
+                            {isLoggedIn ? 'Save' : 'Login required'}
+                          </Button>
                         </div>
                       </article>
                     ))}
@@ -534,10 +960,10 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <section>
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <h2 className="font-display text-2xl font-normal">Matched to your CV</h2>
-                    <span className="organic-tag organic-tag-accent-2">Demo parsed</span>
+                    <span className="organic-tag organic-tag-accent-2">{arbeitnowMatchesQuery.isFetching ? 'Refreshing' : 'Profile based'}</span>
                   </div>
                   <div className="organic-card p-3">
-                    {matches.map((job) => (
+                    {visibleMatches.map((job) => (
                       <article key={job.id} className="flex items-center gap-3 border-b border-border/70 px-1 py-4 last:border-0">
                         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">
                           {job.score}
@@ -546,7 +972,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <h3 className="truncate text-sm font-semibold">{job.title}</h3>
                           <p className="truncate text-xs text-muted-foreground">{job.company} · {job.location} · {job.salary}</p>
                         </div>
-                        <Button size="sm" variant="outline" disabled>Login required</Button>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {job.sourceUrl && (
+                            <Button size="sm" variant="ghost" asChild>
+                              <a href={job.sourceUrl} target="_blank" rel="noreferrer">
+                                Open
+                              </a>
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => trackMatch(job)}>
+                            {isLoggedIn ? 'Track' : 'Login required'}
+                          </Button>
+                        </div>
                       </article>
                     ))}
                     <Button variant="ghost" className="mt-2" onClick={() => setScreen('tracker')}>All matches and filters</Button>
@@ -568,13 +1005,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     <button className={trackerView === 'kanban' ? 'is-active' : ''} onClick={() => setTrackerView('kanban')}>Board</button>
                     <button className={trackerView === 'table' ? 'is-active' : ''} onClick={() => setTrackerView('table')}>Table</button>
                   </div>
-                  <Button disabled>Login required</Button>
+                  <Button onClick={isLoggedIn ? () => setAddOpen(true) : requestLogin}>
+                    {isLoggedIn ? 'Add application' : 'Login required'}
+                  </Button>
                 </div>
               </div>
 
-              <div className="mt-6">
+              {!isLoggedIn && <div className="mt-6">
                 <DemoNotice />
-              </div>
+              </div>}
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Input className="max-w-60" placeholder="Role or company" value={filters.role} onChange={(event) => setFilters((current) => ({ ...current, role: event.target.value }))} />
@@ -585,7 +1024,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
 
               {trackerView === 'kanban' ? (
-                <div className="mt-7 grid gap-4 xl:grid-cols-5">
+                <div className="mt-7 grid gap-4 xl:grid-cols-6">
                   {stageColumns.map((column) => (
                     <section key={column.stage} className="rounded-[24px] bg-card p-3 shadow-[var(--organic-shadow-sm)]">
                       <div className="mb-3 flex items-center justify-between px-1">
@@ -601,9 +1040,24 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                               <span className="organic-tag organic-tag-accent-2">{job.score}</span>
                               <span className="text-xs text-muted-foreground">{job.when}</span>
                             </div>
-                            <Button variant="ghost" size="sm" className="mt-3 justify-start px-0" disabled onClick={() => advanceApplication(job.id)}>
-                              Login required
-                            </Button>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              {job.sourceUrl && (
+                                <Button variant="ghost" size="sm" className="justify-start px-0" asChild>
+                                  <a href={job.sourceUrl} target="_blank" rel="noreferrer">
+                                    Open job
+                                  </a>
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start px-0"
+                                onClick={() => advanceApplication(job.id)}
+                                disabled={stageUpdateMutation.isPending}
+                              >
+                                {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
+                              </Button>
+                            </div>
                           </article>
                         ))}
                       </div>
@@ -635,7 +1089,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <td>{job.score}</td>
                           <td><span className={getStageClassName(job.stage)}>{job.stage}</span></td>
                           <td className="text-muted-foreground">{job.when}</td>
-                          <td><Button size="sm" variant="ghost" disabled onClick={() => advanceApplication(job.id)}>Login required</Button></td>
+                          <td>
+                            {job.sourceUrl && (
+                              <Button size="sm" variant="ghost" asChild>
+                                <a href={job.sourceUrl} target="_blank" rel="noreferrer">
+                                  Open
+                                </a>
+                              </Button>
+                            )}
+                            <Button size="sm" variant="ghost" onClick={() => advanceApplication(job.id)} disabled={stageUpdateMutation.isPending}>
+                              {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -649,17 +1114,21 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     <div>
                       <h2 className="font-display text-2xl font-normal">Add an application</h2>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Paste a job link. This demo reads the URL shape and fills a draft you can correct before saving.
+                        Paste a job link, then check the draft before saving it to the tracker.
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Input placeholder="https://jobs.example.com/operations-manager" value={addUrl} onChange={(event) => setAddUrl(event.target.value)} />
-                      <Button className="shrink-0" onClick={createDraftApplication}>Read link</Button>
+                      <Button className="shrink-0" onClick={createDraftApplication} disabled={addReading}>
+                        {addReading ? 'Checking...' : 'Create draft'}
+                      </Button>
                     </div>
                     {draftApplication && (
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          <span className="organic-tag organic-tag-accent-2">Read from link</span>
+                          <span className={`organic-tag ${addReadStatus === 'imported' ? 'organic-tag-accent-2' : 'organic-tag-accent'}`}>
+                            {addReadStatus === 'imported' ? 'Imported' : 'Draft from link'}
+                          </span>
                           <span className="text-xs text-muted-foreground">{addUrl}</span>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -677,13 +1146,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">
                             {draftApplication.score}
                           </span>
-                          Match against <strong>{dashboardCvs[0].name}</strong> — {draftApplication.reason}
+                          Match against <strong>{visibleDashboardCvs[0]?.name || selectedCvName}</strong> - {draftApplication.reason}
                         </div>
                       </div>
                     )}
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-                      <Button disabled={!draftApplication} onClick={saveDraftApplication}>Save to Saved</Button>
+                      <Button disabled={!draftApplication || applicationSaveMutation.isPending} onClick={saveDraftApplication}>
+                        {applicationSaveMutation.isPending ? 'Saving...' : 'Save to Saved'}
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -697,7 +1168,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <div>
                   <h1 className="font-display text-4xl font-normal">Matches</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Demo roles matched against the dashboard CV. Track a role to move it into the application board.
+                    Roles are matched against your CV details and location. Track a role to move it into the application board.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -706,26 +1177,26 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </div>
               </div>
 
-              <div className="mt-6">
+              {!isLoggedIn && <div className="mt-6">
                 <DemoNotice />
-              </div>
+              </div>}
 
               <div className="mt-7 grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
                 <aside className="organic-card p-5">
                   <p className="section-kicker">Filters</p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="organic-tag">Operations</span>
-                    <span className="organic-tag">Rotterdam · 30km</span>
-                    <span className="organic-tag">EUR 55k+</span>
-                    <span className="organic-tag border border-accent bg-transparent text-accent">Hybrid</span>
+                    <span className="organic-tag">{profileRole}</span>
+                    <span className="organic-tag">{profileLocationLabel}</span>
+                    <span className="organic-tag">Live listings</span>
+                    <span className="organic-tag border border-accent bg-transparent text-accent">Remote included</span>
                   </div>
                   <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                    These cards are local preview data from the redesign. The working product remains the CV simulator and export flow.
+                    Matches are ranked from your CV role, skills, and location. Remote roles are included when they fit the profile.
                   </p>
                 </aside>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  {matches.map((job) => (
+                  {visibleMatches.map((job) => (
                     <article key={job.id} className="organic-card p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div>
@@ -738,21 +1209,34 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       </div>
                       <div className="mt-5 flex flex-wrap gap-2">
                         <span className="organic-tag organic-tag-accent">{job.reason}</span>
-                        <span className="organic-tag">CV version: {dashboardCvs[0].format}</span>
+                        <span className="organic-tag">CV version: {visibleDashboardCvs[0]?.format || template}</span>
                       </div>
-                      <Button className="mt-6 w-full" variant="outline" disabled onClick={() => trackMatch(job)}>
-                        Login required
-                      </Button>
+                      <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                        {job.sourceUrl && (
+                          <Button variant="outline" asChild>
+                            <a href={job.sourceUrl} target="_blank" rel="noreferrer">
+                              Open job
+                            </a>
+                          </Button>
+                        )}
+                        <Button variant="outline" onClick={() => trackMatch(job)} disabled={matchTrackMutation.isPending}>
+                          {isLoggedIn ? 'Track role' : 'Login required'}
+                        </Button>
+                      </div>
                     </article>
                   ))}
 
-                  {matches.length === 0 && (
+                  {visibleMatches.length === 0 && (
                     <article className="organic-card p-8 md:col-span-2">
-                      <h2 className="font-display text-2xl font-normal">All current matches are tracked.</h2>
+                      <h2 className="font-display text-2xl font-normal">
+                        {hasMatchProfile ? 'No strong matches found yet.' : 'Add CV details to get matches.'}
+                      </h2>
                       <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                        Open the tracker to review the roles you moved into the application board.
+                        {hasMatchProfile
+                          ? 'Try adding a clearer role title, more skills, or a nearby city in your address.'
+                          : 'Your role, skills, and location are used to rank nearby and remote roles.'}
                       </p>
-                      <Button className="mt-6" onClick={() => setScreen('tracker')}>Open tracker</Button>
+                      <Button className="mt-6" onClick={hasMatchProfile ? openEditor : openEditor}>Edit CV</Button>
                     </article>
                   )}
                 </div>
@@ -770,6 +1254,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setReviewOpen((current) => !current)}>
                     {reviewOpen ? 'Hide CV check' : 'Run CV check'}
+                  </Button>
+                  <Button variant="outline" onClick={saveCurrentCv} disabled={saveCvMutation.isPending}>
+                    {saveCvMutation.isPending ? 'Saving...' : isLoggedIn ? 'Save CV' : 'Login to save'}
                   </Button>
                   <Button onClick={openExportStep}>Export PDF</Button>
                 </div>
@@ -808,7 +1295,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   <article className="organic-card p-5">
                     <p className="section-kicker">Format</p>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {templateOptions.map((item) => (
+                      {dbTemplateOptions.map((item) => (
                         <button
                           key={item.id}
                           className={`folio-chip ${template === item.id ? 'is-active' : ''}`}
@@ -894,12 +1381,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           )}
         </main>
       </div>
+      {renderAuthDialog()}
+      </>
     );
   };
 
   if (screen !== 'landing') return renderAppShell();
 
   return (
+    <>
     <div className="organic-page-shell">
       <a href="#content" className="skip-link">Skip to content</a>
       <div className="app-noise" aria-hidden="true" />
@@ -917,7 +1407,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <a href="#jobs" className="transition-colors hover:text-accent">Jobs</a>
               <a href="#tracker" className="transition-colors hover:text-accent">Tracker</a>
             </nav>
-            <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => setScreen('dashboard')}>Log in</Button>
+            <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={isLoggedIn ? () => setScreen('dashboard') : requestLogin}>
+              {isLoggedIn ? 'Dashboard' : 'Log in'}
+            </Button>
             <Button size="sm" onClick={openEditor}>Try simulator</Button>
           </div>
         </div>
@@ -964,8 +1456,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <div className="organic-paper relative z-10 rotate-[-1.4deg] rounded-[20px] p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-display text-3xl leading-none">Mara Ellison</p>
-                    <p className="mt-2 text-sm text-[var(--organic-accent-700)]">Operations Lead · Rotterdam</p>
+                    <p className="font-display text-3xl leading-none">
+                      {`${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.trim() || 'Mara Ellison'}
+                    </p>
+                    <p className="mt-2 text-sm text-[var(--organic-accent-700)]">
+                      {cvData.personalInfo.title.trim() || 'Operations Lead'} · {profileCity || 'Your city'}
+                    </p>
                   </div>
                   <span className="h-12 w-12 rounded-full bg-accent" />
                 </div>
@@ -1036,19 +1532,19 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               Jobs shown from what your CV already says.
             </h2>
             <p className="mt-5 max-w-[34em] text-base leading-8 text-foreground/80">
-              The dashboard design shows how role, city, salary, and remote filters can sit next
-              to match cards. It is a product preview around the free simulator.
+              We read the role, skills, and location from your CV, then rank open jobs by fit,
+              distance, and remote availability.
             </p>
-            <Button className="mt-6" onClick={() => setScreen('dashboard')}>Browse matches</Button>
+            <Button className="mt-6" onClick={() => setScreen('matches')}>Browse matches</Button>
           </div>
           <div className="organic-card p-6">
             <div className="mb-2 flex flex-wrap gap-2">
-              <span className="organic-tag">Operations</span>
-              <span className="organic-tag">Rotterdam · 30km</span>
-              <span className="organic-tag">EUR 55k+</span>
-              <span className="organic-tag border border-accent bg-transparent text-accent">Hybrid</span>
+              <span className="organic-tag">{profileRole}</span>
+              <span className="organic-tag">{profileLocationLabel}</span>
+              <span className="organic-tag">Live listings</span>
+              <span className="organic-tag border border-accent bg-transparent text-accent">Remote included</span>
             </div>
-            {matches.slice(0, 3).map((job) => (
+            {visibleMatches.slice(0, 3).map((job) => (
               <article key={job.id} className="flex items-center gap-4 border-t border-border/70 py-4">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">{job.score}</span>
                 <div className="min-w-0 flex-1">
@@ -1098,7 +1594,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             Saved, applied, interview, offer, closed. Board when you want the shape of it,
             table when you want the detail.
           </p>
-          <div className="mt-8 grid gap-3 lg:grid-cols-5">
+          <div className="mt-8 grid gap-3 lg:grid-cols-6">
             {stages.map((stage) => {
               const items = applications.filter((application) => application.stage === stage).slice(0, 1);
               return (
@@ -1234,6 +1730,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         </footer>
       </main>
     </div>
+    {renderAuthDialog()}
+    </>
   );
 };
 
