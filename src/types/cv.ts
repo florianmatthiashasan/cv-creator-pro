@@ -45,6 +45,8 @@ export interface Language {
 }
 
 export type CVFontChoice =
+  | 'caprasimo'
+  | 'figtree'
   | 'playfair'
   | 'dm-sans'
   | 'inter'
@@ -89,7 +91,8 @@ export type CVTemplate =
   | 'atlas'
   | 'studio'
   | 'compact'
-  | 'grid';
+  | 'grid'
+  | 'dev';
 
 export const emptyCVData: CVData = {
   personalInfo: {
@@ -106,17 +109,17 @@ export const emptyCVData: CVData = {
   skills: [],
   languages: [],
   design: {
-    headingFont: 'space-grotesk',
-    bodyFont: 'manrope',
-    nameColor: '#101416',
-    titleColor: '#2f7668',
-    headingColor: '#101416',
-    bodyColor: '#263033',
-    mutedColor: '#657174',
-    accentColor: '#9fcf62',
-    backgroundColor: '#ffffff',
-    sidebarBackgroundColor: '#11181b',
-    sidebarTextColor: '#f4f1e8',
-    dividerColor: '#d8ded7',
+    headingFont: 'caprasimo',
+    bodyFont: 'figtree',
+    nameColor: '#201e1d',
+    titleColor: '#8c491a',
+    headingColor: '#201e1d',
+    bodyColor: '#474238',
+    mutedColor: '#82796a',
+    accentColor: '#c67139',
+    backgroundColor: '#fffdf8',
+    sidebarBackgroundColor: '#ebddc5',
+    sidebarTextColor: '#201e1d',
+    dividerColor: '#dcd3c4',
   },
 };

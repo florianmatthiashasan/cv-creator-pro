@@ -1,10 +1,8 @@
 import { useRef } from 'react';
 import { CVData, CVTemplate } from '@/types/cv';
 import { Button } from '@/components/ui/button';
-import { Download, FileText } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 import CVPreviewCanvas from './CVPreviewCanvas';
-import { templateOptions } from './templates/registry';
 import DesignControls from './DesignControls';
 import { cvPrintFontHref } from '@/lib/cv-design';
 import { trackEvent } from '@/lib/analytics';
@@ -12,7 +10,6 @@ import { trackEvent } from '@/lib/analytics';
 interface Props {
   data: CVData;
   template: CVTemplate;
-  onTemplateChange: (t: CVTemplate) => void;
   onDesignChange: (data: CVData['design']) => void;
 }
 
@@ -30,7 +27,7 @@ const getSectionCount = (data: CVData) => {
   ].filter(Boolean).length;
 };
 
-const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) => {
+const CVPreview = ({ data, template, onDesignChange }: Props) => {
   const printRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = () => {
@@ -73,31 +70,8 @@ const CVPreview = ({ data, template, onTemplateChange, onDesignChange }: Props) 
       <DesignControls data={data.design} onChange={onDesignChange} />
 
       <div className="soft-panel p-4">
-        <p className="section-kicker">Template selection</p>
-        <p className="mt-1.5 text-sm font-medium text-foreground">Choose a layout, then export your CV as a PDF.</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-        {templateOptions.map((t) => (
-          <motion.button
-            key={t.id}
-            onClick={() => onTemplateChange(t.id)}
-            className={`relative rounded-md border p-4 text-left transition-all duration-200 ${
-              template === t.id
-                ? 'border-accent bg-accent/[0.07] ring-1 ring-accent/15'
-                : 'border-white/10 bg-white/[0.045] hover:-translate-y-0.5 hover:border-accent/30 hover:bg-white/[0.08]'
-            }`}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-md ${
-              template === t.id ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
-            }`}>
-              <FileText size={18} />
-            </div>
-            <p className={`text-sm font-medium ${template === t.id ? 'text-foreground' : 'text-foreground/80'}`}>{t.label}</p>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">{t.desc}</p>
-          </motion.button>
-        ))}
+        <p className="section-kicker">Export</p>
+        <p className="mt-1.5 text-sm font-medium text-foreground">Review the selected layout above, adjust design details, then export your CV as a PDF.</p>
       </div>
 
       <Button onClick={handleDownload} className="w-full">

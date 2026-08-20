@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;800&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Playfair+Display:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,47 +6,76 @@
 
 @layer base {
   :root {
-    --background: 220 18% 7%;
-    --foreground: 42 32% 94%;
+    --background: 35 53% 90%;
+    --foreground: 20 5% 12%;
 
-    --card: 220 17% 10%;
-    --card-foreground: 42 32% 94%;
+    --card: 37 39% 85%;
+    --card-foreground: 20 5% 12%;
 
-    --popover: 220 17% 11%;
-    --popover-foreground: 42 32% 94%;
+    --popover: 37 39% 85%;
+    --popover-foreground: 20 5% 12%;
 
-    --primary: 42 32% 94%;
-    --primary-foreground: 220 18% 7%;
+    --primary: 23 54% 50%;
+    --primary-foreground: 35 53% 90%;
 
-    --secondary: 219 13% 17%;
-    --secondary-foreground: 42 32% 94%;
+    --secondary: 37 39% 85%;
+    --secondary-foreground: 20 5% 12%;
 
-    --muted: 219 13% 16%;
-    --muted-foreground: 215 11% 66%;
+    --muted: 36 36% 81%;
+    --muted-foreground: 32 13% 43%;
 
-    --accent: 76 67% 66%;
-    --accent-foreground: 220 18% 7%;
+    --accent: 23 54% 50%;
+    --accent-foreground: 35 53% 90%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 218 13% 22%;
-    --input: 218 13% 22%;
-    --ring: 76 67% 66%;
+    --border: 34 15% 73%;
+    --input: 34 15% 73%;
+    --ring: 23 54% 50%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 142 44% 93%;
-    --sidebar-accent-foreground: 142 40% 20%;
-    --sidebar-border: 0 0% 91%;
-    --sidebar-ring: 0 0% 9%;
+    --sidebar-background: 37 39% 85%;
+    --sidebar-foreground: 20 5% 12%;
+    --sidebar-primary: 23 54% 50%;
+    --sidebar-primary-foreground: 35 53% 90%;
+    --sidebar-accent: 82 30% 65%;
+    --sidebar-accent-foreground: 87 25% 22%;
+    --sidebar-border: 34 15% 73%;
+    --sidebar-ring: 23 54% 50%;
 
-    --surface: 219 16% 12%;
-    --surface-foreground: 42 32% 94%;
+    --surface: 37 39% 85%;
+    --surface-foreground: 20 5% 12%;
+
+    --organic-bg: #f5ead8;
+    --organic-surface: #ebddc5;
+    --organic-text: #201e1d;
+    --organic-accent: #c67139;
+    --organic-accent-2: #7a8a5e;
+    --organic-divider: color-mix(in srgb, #201e1d 16%, transparent);
+    --organic-neutral-100: #f9f4ed;
+    --organic-neutral-200: #eee7db;
+    --organic-neutral-300: #dcd3c4;
+    --organic-neutral-400: #c0b6a5;
+    --organic-neutral-500: #a19786;
+    --organic-neutral-600: #82796a;
+    --organic-neutral-700: #645c50;
+    --organic-neutral-800: #474238;
+    --organic-neutral-900: #2e2b25;
+    --organic-accent-100: #fff2eb;
+    --organic-accent-200: #ffe1d0;
+    --organic-accent-600: #b2622d;
+    --organic-accent-700: #8c491a;
+    --organic-accent-800: #643312;
+    --organic-accent-2-100: #f0fae1;
+    --organic-accent-2-200: #e1eecc;
+    --organic-accent-2-300: #ccdbb2;
+    --organic-accent-2-700: #56633f;
+    --organic-accent-2-800: #3d472b;
+    --organic-shadow-sm: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent);
+    --organic-shadow-md: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent);
+    --organic-shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
   }
 }
 
@@ -65,10 +94,9 @@
     @apply bg-background text-foreground font-body antialiased;
     font-variant-numeric: tabular-nums;
     background:
-      radial-gradient(circle at 18% 10%, hsl(76 67% 66% / 0.18), transparent 28rem),
-      radial-gradient(circle at 86% 4%, hsl(24 88% 67% / 0.12), transparent 24rem),
-      radial-gradient(circle at 78% 82%, hsl(199 73% 58% / 0.08), transparent 32rem),
-      linear-gradient(135deg, hsl(220 19% 6%), hsl(224 18% 9%) 44%, hsl(220 18% 7%));
+      radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--organic-accent-200) 78%, transparent), transparent 24rem),
+      radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--organic-accent-2-200) 72%, transparent), transparent 25rem),
+      linear-gradient(135deg, var(--organic-bg), #f2e2c9 58%, var(--organic-bg));
   }
 
   #root {
@@ -98,53 +126,53 @@
     position: fixed;
     inset: 0;
     z-index: 1;
-    opacity: 0.34;
-    mix-blend-mode: screen;
+    opacity: 0.24;
+    mix-blend-mode: multiply;
     background-image:
-      linear-gradient(hsl(42 32% 94% / 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(42 32% 94% / 0.025) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, var(--organic-text) 4%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--organic-text) 3%, transparent) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
   .editor-card {
-    @apply rounded-lg border border-white/10 bg-card/90 shadow-[0_34px_100px_-60px_hsl(0_0%_0%/0.95)] backdrop-blur-xl;
+    @apply rounded-[28px] bg-card shadow-[var(--organic-shadow-md)];
   }
 
   .soft-panel {
-    @apply rounded-lg border border-white/10 bg-white/[0.045] shadow-[inset_0_1px_0_hsl(0_0%_100%/0.08)];
+    @apply rounded-[28px] bg-card shadow-[var(--organic-shadow-sm)];
   }
 
   .meta-label {
-    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+    @apply text-[12px] font-medium text-muted-foreground;
   }
 
   .section-kicker {
-    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground;
+    @apply text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
   }
 
   .step-tab-shell {
-    @apply rounded-lg border border-white/10 bg-black/20 p-1 shadow-[inset_0_1px_8px_hsl(0_0%_0%/0.28)];
+    @apply rounded-full border border-border/70 bg-card p-1 shadow-[var(--organic-shadow-sm)];
   }
 
   .preview-shell {
-    @apply overflow-hidden rounded-lg border border-white/10 bg-card/90 shadow-[0_32px_100px_-58px_hsl(0_0%_0%/0.95)] backdrop-blur-xl;
+    @apply overflow-hidden rounded-[28px] bg-card shadow-[var(--organic-shadow-lg)];
   }
 
   .ink-panel {
-    @apply rounded-lg border border-foreground/5 bg-foreground text-white;
+    @apply rounded-[28px] bg-[#fffdf8] text-foreground shadow-[var(--organic-shadow-md)];
   }
 
   .glass-panel {
-    @apply rounded-lg border border-white/10 bg-white/[0.055] shadow-[0_24px_80px_-58px_hsl(0_0%_0%/0.9)] backdrop-blur-xl;
+    @apply rounded-[28px] bg-card/85 shadow-[var(--organic-shadow-lg)] backdrop-blur-xl;
   }
 
   .hero-feature {
-    @apply relative rounded-lg border border-white/10 bg-white/[0.045] p-5 shadow-[0_20px_70px_-54px_hsl(0_0%_0%/0.9)] transition-all duration-300;
+    @apply relative rounded-[28px] bg-card p-5 shadow-[var(--organic-shadow-sm)] transition-all duration-300;
   }
 
   .hero-feature:hover {
-    border-color: hsl(76 67% 66% / 0.36);
     transform: translateY(-2px);
+    box-shadow: var(--organic-shadow-md);
   }
 
   .hero-feature-line {
@@ -156,15 +184,139 @@
   }
 
   .field-card {
-    @apply rounded-lg border border-white/10 bg-black/20 p-3 shadow-[inset_0_1px_0_hsl(0_0%_100%/0.06)];
+    @apply rounded-[22px] bg-background/60 p-3 shadow-[inset_0_0_0_1px_var(--organic-divider)];
   }
 
   .empty-state {
-    @apply rounded-lg border border-dashed border-white/20 bg-white/[0.035] p-6 text-center;
+    @apply rounded-[28px] border border-dashed border-border bg-background/50 p-6 text-center;
   }
 
   .studio-band {
-    @apply border-y border-white/10 bg-white/[0.025];
+    @apply border-y border-border/60 bg-card/65;
+  }
+
+  .organic-tag {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] tracking-[0.02em];
+    background: var(--organic-accent-2-100);
+    color: var(--organic-accent-2-800);
+  }
+
+  .organic-tag-accent {
+    background: var(--organic-accent-100);
+    color: var(--organic-accent-800);
+  }
+
+  .organic-page-shell {
+    @apply relative min-h-screen overflow-hidden font-body text-foreground;
+    background: var(--organic-bg);
+  }
+
+  .organic-container {
+    @apply mx-auto max-w-[1180px] px-5 sm:px-8;
+  }
+
+  .organic-card {
+    @apply rounded-[28px] bg-card shadow-[var(--organic-shadow-sm)];
+  }
+
+  .organic-paper {
+    background: #fffdf8;
+    color: var(--organic-text);
+    box-shadow: var(--organic-shadow-lg);
+  }
+
+  .organic-dark {
+    background: var(--organic-neutral-900);
+    color: var(--organic-neutral-100);
+  }
+
+  .folio-app-shell {
+    @apply min-h-screen grid bg-background text-foreground;
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .folio-sidebar {
+    @apply sticky top-0 flex h-screen flex-col gap-7 overflow-y-auto bg-card px-5 py-6 shadow-[var(--organic-shadow-sm)];
+  }
+
+  .folio-sidebar-link {
+    @apply flex w-full items-center rounded-full px-4 py-2.5 text-left text-sm text-foreground transition-all duration-200;
+  }
+
+  .folio-sidebar-link:hover {
+    @apply bg-background text-accent;
+  }
+
+  .folio-sidebar-link.is-active {
+    @apply bg-accent font-semibold text-accent-foreground shadow-[var(--organic-shadow-sm)];
+  }
+
+  .folio-segmented {
+    @apply inline-flex overflow-hidden rounded-full border border-border bg-card shadow-[var(--organic-shadow-sm)];
+  }
+
+  .folio-segmented button {
+    @apply px-4 py-2 text-sm text-muted-foreground transition-colors;
+  }
+
+  .folio-segmented button + button {
+    @apply border-l border-border;
+  }
+
+  .folio-segmented button:hover,
+  .folio-segmented button.is-active {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .folio-chip {
+    @apply rounded-full border border-border bg-transparent px-4 py-2 font-display text-sm text-foreground transition-all duration-200;
+  }
+
+  .folio-chip:hover,
+  .folio-chip.is-active {
+    @apply border-accent bg-accent text-accent-foreground shadow-[var(--organic-shadow-sm)];
+  }
+
+  .folio-table {
+    @apply w-full min-w-[860px] border-collapse text-sm;
+  }
+
+  .folio-table th {
+    @apply border-b border-border px-3 py-3 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  .folio-table td {
+    @apply border-b border-border/60 px-3 py-3 align-middle;
+  }
+
+  .folio-table tbody tr:hover {
+    @apply bg-background/55;
+  }
+
+  .folio-dialog-backdrop {
+    @apply fixed inset-0 z-[80] grid place-items-center bg-[color-mix(in_srgb,var(--organic-neutral-900)_55%,transparent)] p-4;
+  }
+
+  .folio-dialog {
+    @apply flex w-full max-w-xl flex-col gap-5 rounded-[32px] bg-card p-6 shadow-[var(--organic-shadow-lg)];
+  }
+
+  @media (max-width: 860px) {
+    .folio-app-shell {
+      grid-template-columns: 1fr;
+    }
+
+    .folio-sidebar {
+      @apply static h-auto flex-row flex-wrap items-center gap-3 px-4 py-4;
+    }
+
+    .folio-sidebar nav {
+      @apply order-3 grid w-full grid-cols-2 gap-2;
+    }
+
+    .folio-sidebar-link {
+      @apply justify-center;
+    }
   }
 }
 

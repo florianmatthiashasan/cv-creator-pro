@@ -1,0 +1,376 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "app": "Folio CV",
+    "description": "Local mock database for Folio CV dashboard, guest mode, CV simulator, templates, matches, and tracker data."
+  },
+  "plans": [
+    {
+      "id": "guest",
+      "name": "Guest",
+      "canCreateCv": true,
+      "canExportPdf": true,
+      "canSaveCvVersions": false,
+      "canUseDashboard": false,
+      "canUseMatches": false,
+      "canUseTracker": false,
+      "canUseSettings": false
+    },
+    {
+      "id": "free",
+      "name": "Free",
+      "canCreateCv": true,
+      "canExportPdf": true,
+      "canSaveCvVersions": false,
+      "canUseDashboard": false,
+      "canUseMatches": false,
+      "canUseTracker": false,
+      "canUseSettings": false
+    },
+    {
+      "id": "authenticated",
+      "name": "Authenticated",
+      "canCreateCv": true,
+      "canExportPdf": true,
+      "canSaveCvVersions": true,
+      "canUseDashboard": true,
+      "canUseMatches": true,
+      "canUseTracker": true,
+      "canUseSettings": true
+    }
+  ],
+  "users": [
+    {
+      "id": "guest",
+      "planId": "guest",
+      "displayName": "Gast",
+      "email": null,
+      "isLoggedIn": false,
+      "createdAt": null
+    },
+    {
+      "id": "user_demo_mara",
+      "planId": "authenticated",
+      "displayName": "Mara Ellison",
+      "email": "mara@example.com",
+      "isLoggedIn": true,
+      "createdAt": "2026-08-18T00:00:00.000Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "session_guest",
+      "userId": "guest",
+      "mode": "guest",
+      "cvStartedTracked": false,
+      "createdAt": "2026-08-18T00:00:00.000Z"
+    }
+  ],
+  "cvTemplates": [
+    {
+      "id": "modern",
+      "label": "Modern",
+      "description": "Clean and distinctive",
+      "category": "general",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "classic",
+      "label": "Classic",
+      "description": "Timeless and elegant",
+      "category": "general",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "creative",
+      "label": "Creative",
+      "description": "With sidebar layout",
+      "category": "general",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "minimal",
+      "label": "Minimal",
+      "description": "Reduced and airy",
+      "category": "general",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "executive",
+      "label": "Executive",
+      "description": "Polished business look",
+      "category": "business",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "mono",
+      "label": "Mono",
+      "description": "Technical and precise",
+      "category": "technical",
+      "isDeveloperFocused": true
+    },
+    {
+      "id": "atlas",
+      "label": "Atlas",
+      "description": "Timeline editorial",
+      "category": "editorial",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "studio",
+      "label": "Studio",
+      "description": "Bold sidebar profile",
+      "category": "creative",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "compact",
+      "label": "Compact",
+      "description": "Dense one-page layout",
+      "category": "general",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "grid",
+      "label": "Grid",
+      "description": "Modular portfolio blocks",
+      "category": "portfolio",
+      "isDeveloperFocused": false
+    },
+    {
+      "id": "dev",
+      "label": "Dev",
+      "description": "Developer-focused profile",
+      "category": "technical",
+      "isDeveloperFocused": true
+    }
+  ],
+  "cvs": [
+    {
+      "id": "cv_guest_draft",
+      "userId": "guest",
+      "name": "Guest CV draft",
+      "templateId": "dev",
+      "status": "draft",
+      "createdAt": "2026-08-18T00:00:00.000Z",
+      "updatedAt": "2026-08-18T00:00:00.000Z",
+      "data": {
+        "personalInfo": {
+          "firstName": "",
+          "lastName": "",
+          "email": "",
+          "phone": "",
+          "address": "",
+          "title": "",
+          "summary": "",
+          "website": "",
+          "linkedin": "",
+          "photo": ""
+        },
+        "experiences": [],
+        "education": [],
+        "skills": [],
+        "languages": [],
+        "design": {
+          "headingFont": "caprasimo",
+          "bodyFont": "figtree",
+          "nameColor": "#201e1d",
+          "titleColor": "#8c491a",
+          "headingColor": "#201e1d",
+          "bodyColor": "#474238",
+          "mutedColor": "#82796a",
+          "accentColor": "#c67139",
+          "backgroundColor": "#fffdf8",
+          "sidebarBackgroundColor": "#ebddc5",
+          "sidebarTextColor": "#201e1d",
+          "dividerColor": "#dcd3c4"
+        }
+      }
+    },
+    {
+      "id": "cv_demo_operations",
+      "userId": "user_demo_mara",
+      "name": "Operations Lead - general",
+      "templateId": "classic",
+      "status": "demo",
+      "createdAt": "2026-08-18T00:00:00.000Z",
+      "updatedAt": "2026-08-16T00:00:00.000Z",
+      "format": "Classic",
+      "pages": "1 page",
+      "strength": 92,
+      "data": {
+        "personalInfo": {
+          "firstName": "Mara",
+          "lastName": "Ellison",
+          "email": "mara@example.com",
+          "phone": "",
+          "address": "Rotterdam",
+          "title": "Operations Lead",
+          "summary": "Operations lead with seven years in freight and last-mile logistics. Runs planning for a 40-person depot, cut late deliveries by a third in two years, and likes fixing a process more than escalating it.",
+          "website": "",
+          "linkedin": "",
+          "photo": ""
+        },
+        "experiences": [
+          {
+            "id": "exp_demo_1",
+            "company": "Kestrel Logistics",
+            "position": "Operations Lead",
+            "startDate": "2022-09",
+            "endDate": "",
+            "current": true,
+            "description": "Runs depot planning for 40 staff and 120 daily routes. Rebuilt the shift model and cut late deliveries 34%."
+          },
+          {
+            "id": "exp_demo_2",
+            "company": "Nord Freight",
+            "position": "Logistics Coordinator",
+            "startDate": "2019-01",
+            "endDate": "2022-08",
+            "current": false,
+            "description": "Owned carrier scheduling for the Benelux lane and renegotiated vendor contracts for a 9% unit saving."
+          }
+        ],
+        "education": [],
+        "skills": [
+          {
+            "id": "skill_demo_1",
+            "name": "Capacity planning",
+            "level": 5
+          },
+          {
+            "id": "skill_demo_2",
+            "name": "S&OP",
+            "level": 4
+          },
+          {
+            "id": "skill_demo_3",
+            "name": "SQL",
+            "level": 3
+          }
+        ],
+        "languages": [],
+        "design": {
+          "headingFont": "caprasimo",
+          "bodyFont": "figtree",
+          "nameColor": "#201e1d",
+          "titleColor": "#8c491a",
+          "headingColor": "#201e1d",
+          "bodyColor": "#474238",
+          "mutedColor": "#82796a",
+          "accentColor": "#c67139",
+          "backgroundColor": "#fffdf8",
+          "sidebarBackgroundColor": "#ebddc5",
+          "sidebarTextColor": "#201e1d",
+          "dividerColor": "#dcd3c4"
+        }
+      }
+    }
+  ],
+  "applications": [
+    {
+      "id": "app_demo_1",
+      "userId": "user_demo_mara",
+      "cvId": "cv_demo_operations",
+      "title": "Operations Manager",
+      "company": "Maersk NL",
+      "location": "Rotterdam",
+      "salary": "EUR 62k",
+      "score": "94%",
+      "stage": "Interview",
+      "when": "yesterday",
+      "sourceUrl": null,
+      "isDemo": true
+    },
+    {
+      "id": "app_demo_2",
+      "userId": "user_demo_mara",
+      "cvId": "cv_demo_operations",
+      "title": "Regional Planner",
+      "company": "Picnic",
+      "location": "Utrecht",
+      "salary": "EUR 58k",
+      "score": "88%",
+      "stage": "Applied",
+      "when": "3 days ago",
+      "sourceUrl": null,
+      "isDemo": true
+    },
+    {
+      "id": "app_demo_3",
+      "userId": "user_demo_mara",
+      "cvId": "cv_demo_operations",
+      "title": "Supply Chain Lead",
+      "company": "Vanderlande",
+      "location": "Veghel",
+      "salary": "EUR 68k",
+      "score": "81%",
+      "stage": "Saved",
+      "when": "today",
+      "sourceUrl": null,
+      "isDemo": true
+    }
+  ],
+  "matches": [
+    {
+      "id": "match_demo_1",
+      "userId": "user_demo_mara",
+      "cvId": "cv_demo_operations",
+      "title": "Head of Operations",
+      "company": "Fastned",
+      "location": "Amsterdam",
+      "salary": "EUR 72k",
+      "score": "91%",
+      "reason": "S&OP match",
+      "isDemo": true
+    },
+    {
+      "id": "match_demo_2",
+      "userId": "user_demo_mara",
+      "cvId": "cv_demo_operations",
+      "title": "Logistics Manager",
+      "company": "Coolblue",
+      "location": "Rotterdam",
+      "salary": "EUR 64k",
+      "score": "89%",
+      "reason": "Same city",
+      "isDemo": true
+    },
+    {
+      "id": "match_demo_3",
+      "userId": "user_demo_mara",
+      "cvId": "cv_demo_operations",
+      "title": "Planning Lead",
+      "company": "Jumbo",
+      "location": "Veghel",
+      "salary": "EUR 61k",
+      "score": "84%",
+      "reason": "Depot exp.",
+      "isDemo": true
+    }
+  ],
+  "dashboardSettings": [
+    {
+      "id": "settings_guest",
+      "userId": "guest",
+      "mode": "guest",
+      "showDemoDashboard": true,
+      "showDemoMatches": true,
+      "showDemoTracker": true,
+      "defaultTemplateId": "dev",
+      "defaultDashboardRoute": "/dashboard/simulator",
+      "lockedMessage": "This is demo data. Guest users can create and export CVs. Saved CVs, matches, application tracking, and real dashboard data require login."
+    },
+    {
+      "id": "settings_demo_mara",
+      "userId": "user_demo_mara",
+      "mode": "authenticated",
+      "showDemoDashboard": true,
+      "showDemoMatches": true,
+      "showDemoTracker": true,
+      "defaultTemplateId": "classic",
+      "defaultDashboardRoute": "/dashboard",
+      "lockedMessage": null
+    }
+  ]
+}
