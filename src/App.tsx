@@ -36,7 +36,7 @@ const App = () => (
           <Route path="/dashboard" element={<Index initialScreen="dashboard" />} />
           <Route path="/dashboard/simulator" element={<Index initialScreen="editor" />} />
           <Route path="/dashboard/tracker" element={<Index initialScreen="tracker" />} />
-          <Route path="/dashboard/matches" element={<Index initialScreen="matches" />} />
+          <Route path="/dashboard/writer" element={<Index initialScreen="writer" />} />
           <Route path="/features" element={<StaticPageRedirect to="/features/" />} />
           <Route path="/faq" element={<StaticPageRedirect to="/faq/" />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

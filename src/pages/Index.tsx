@@ -9,13 +9,18 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Coffee,
+  Copy,
   FileDown,
   LayoutTemplate,
+  Mail,
   Palette,
+  Printer,
   Sparkles,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import CVPreview from '@/components/cv/CVPreview';
 import CVPreviewCanvas from '@/components/cv/CVPreviewCanvas';
 import EducationForm from '@/components/cv/EducationForm';
@@ -27,11 +32,10 @@ import StepIndicator from '@/components/cv/StepIndicator';
 import { templateOptions } from '@/components/cv/templates/registry';
 import { useSeo } from '@/hooks/use-seo';
 import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
-import { fetchArbeitnowJobFromUrl, fetchArbeitnowMatches, getProfileCity } from '@/lib/job-matching';
+import { fetchArbeitnowJobFromUrl, getProfileCity } from '@/lib/job-matching';
 import {
   ApplicationStage,
   DbApplication,
-  convertMatchToApplication,
   fetchDashboardData,
   getInitialAuthUser,
   onAuthUserChange,
@@ -56,9 +60,20 @@ const stepDescriptions = [
   'Adjust fonts and colors, choose a template, and download your CV',
 ];
 
-type AppScreen = 'landing' | 'dashboard' | 'tracker' | 'editor' | 'matches';
+type AppScreen = 'landing' | 'dashboard' | 'tracker' | 'editor' | 'writer';
 type TrackerView = 'kanban' | 'table';
 type Application = DbApplication;
+
+type ApplicationWriterResult = {
+  coverLetter: string;
+  motivation: string;
+  email: string;
+  notes?: string;
+  source: 'openai' | 'local';
+};
+
+type WriterTone = 'Professional' | 'Warm' | 'Direct';
+type WriterLanguage = 'English' | 'German';
 
 type IndexProps = {
   initialScreen?: AppScreen;
@@ -69,7 +84,7 @@ const screenPaths: Record<AppScreen, string> = {
   dashboard: '/dashboard',
   editor: '/dashboard/simulator',
   tracker: '/dashboard/tracker',
-  matches: '/dashboard/matches',
+  writer: '/dashboard/writer',
 };
 
 const stages: ApplicationStage[] = ['Saved', 'Applied', 'No response', 'Interview', 'Offer', 'Closed'];
@@ -158,19 +173,12 @@ const dashboardCvs = [
 ];
 
 const initialApplications: Application[] = [
-  { id: '1', title: 'Operations Manager', company: 'Maersk NL', location: 'Rotterdam', salary: 'EUR 62k', score: '94%', stage: 'Interview', when: 'yesterday' },
-  { id: '2', title: 'Regional Planner', company: 'Picnic', location: 'Utrecht', salary: 'EUR 58k', score: '88%', stage: 'Applied', when: '3 days ago' },
-  { id: '3', title: 'Depot Lead', company: 'DHL Parcel', location: 'Amsterdam', salary: 'EUR 55k', score: '85%', stage: 'Applied', when: '4 days ago' },
-  { id: '4', title: 'Supply Chain Lead', company: 'Vanderlande', location: 'Veghel', salary: 'EUR 68k', score: '81%', stage: 'Saved', when: 'today' },
-  { id: '5', title: 'Ops Consultant', company: 'Districon', location: 'Hybrid', salary: 'EUR 60k', score: '76%', stage: 'Offer', when: '2 days ago' },
-  { id: '6', title: 'Warehouse Manager', company: 'Bol', location: 'Waalwijk', salary: 'EUR 57k', score: '72%', stage: 'Closed', when: 'last week' },
-];
-
-const initialMatches: Application[] = [
-  { id: '11', title: 'Head of Operations', company: 'Fastned', location: 'Amsterdam', salary: 'EUR 72k', score: '91%', stage: 'Saved', when: 'new', reason: 'S&OP match' },
-  { id: '12', title: 'Logistics Manager', company: 'Coolblue', location: 'Rotterdam', salary: 'EUR 64k', score: '89%', stage: 'Saved', when: 'new', reason: 'Same city' },
-  { id: '13', title: 'Planning Lead', company: 'Jumbo', location: 'Veghel', salary: 'EUR 61k', score: '84%', stage: 'Saved', when: 'new', reason: 'Depot exp.' },
-  { id: '14', title: 'Network Planner', company: 'PostNL', location: 'The Hague', salary: 'EUR 59k', score: '80%', stage: 'Saved', when: 'new', reason: 'SQL listed' },
+  { id: '1', title: 'Operations Manager', company: 'Maersk NL', location: 'Rotterdam', salary: 'EUR 62k', score: '94%', stage: 'Interview', when: 'yesterday', isDemo: true },
+  { id: '2', title: 'Regional Planner', company: 'Picnic', location: 'Utrecht', salary: 'EUR 58k', score: '88%', stage: 'Applied', when: '3 days ago', isDemo: true },
+  { id: '3', title: 'Depot Lead', company: 'DHL Parcel', location: 'Amsterdam', salary: 'EUR 55k', score: '85%', stage: 'Applied', when: '4 days ago', isDemo: true },
+  { id: '4', title: 'Supply Chain Lead', company: 'Vanderlande', location: 'Veghel', salary: 'EUR 68k', score: '81%', stage: 'Saved', when: 'today', isDemo: true },
+  { id: '5', title: 'Ops Consultant', company: 'Districon', location: 'Hybrid', salary: 'EUR 60k', score: '76%', stage: 'Offer', when: '2 days ago', isDemo: true },
+  { id: '6', title: 'Warehouse Manager', company: 'Bol', location: 'Waalwijk', salary: 'EUR 57k', score: '72%', stage: 'Closed', when: 'last week', isDemo: true },
 ];
 
 const sampleRoles = [
@@ -214,12 +222,72 @@ const DemoNotice = () => (
   <div className="organic-card border border-accent/25 bg-[var(--organic-accent-100)] px-5 py-4 text-[var(--organic-accent-800)]">
     <p className="text-sm font-semibold">This is demo data.</p>
     <p className="mt-1 text-sm leading-6">
-      Guest users can create and export CVs. Saved CVs, matches, application tracking, and real dashboard data require login.
+      Guest users can create and export CVs. Saved CVs, AI writing, and application tracking require login.
     </p>
   </div>
 );
 
 const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
+
+type CvSuggestion =
+  | {
+      id: string;
+      label: string;
+      issue: string;
+      current: string;
+      suggestion: string;
+      target: 'summary';
+    }
+  | {
+      id: string;
+      label: string;
+      issue: string;
+      current: string;
+      suggestion: string;
+      target: 'experience';
+      experienceId: string;
+    };
+
+const weakVerbReplacements: Array<[RegExp, string]> = [
+  [/\bresponsible for\b/gi, 'Owned'],
+  [/\bworked on\b/gi, 'Delivered'],
+  [/\bhelped with\b/gi, 'Supported'],
+  [/\bhelped\b/gi, 'Supported'],
+  [/\bmade\b/gi, 'Built'],
+  [/\bdid\b/gi, 'Completed'],
+  [/\bhandled\b/gi, 'Managed'],
+];
+
+const hasMetric = (text: string) => /\d+([.,]\d+)?%?|\b(k|m|eur|usd|gbp|hours?|days?|weeks?|months?|people|users|clients|routes|orders)\b/i.test(text);
+
+const cleanSentence = (text: string) => text.replace(/\s+/g, ' ').trim().replace(/[.。]+$/, '');
+
+const addPeriod = (text: string) => {
+  const value = text.trim();
+  if (!value) return value;
+  return /[.!?]$/.test(value) ? value : `${value}.`;
+};
+
+const strengthenText = (text: string, fallback: string) => {
+  const current = cleanSentence(text);
+  if (!current) return addPeriod(fallback);
+
+  const rewritten = weakVerbReplacements.reduce(
+    (value, [pattern, replacement]) => value.replace(pattern, replacement),
+    current,
+  );
+
+  if (rewritten !== current) return addPeriod(rewritten);
+  if (/^(i\s+)?(was|am|were|are)\b/i.test(current)) return addPeriod(current.replace(/^(i\s+)?(was|am|were)\s+/i, 'Led '));
+  return addPeriod(current);
+};
+
+const buildSummarySuggestion = (cvData: CVData) => {
+  const role = cvData.personalInfo.title.trim() || 'Professional';
+  const skills = cvData.skills.map((skill) => skill.name.trim()).filter(Boolean).slice(0, 3);
+  const skillText = skills.length ? ` across ${skills.join(', ')}` : '';
+  return `${role} with practical experience${skillText}. Focused on clear execution, measurable outcomes, and reliable delivery across teams and stakeholders.`;
+};
 
 const buildCvReview = (cvData: CVData) => {
   const summary = cvData.personalInfo.summary || '';
@@ -230,6 +298,7 @@ const buildCvReview = (cvData: CVData) => {
   const hasHeader = Boolean((cvData.personalInfo.firstName || cvData.personalInfo.lastName) && cvData.personalInfo.email);
   let score = 54;
   const items: { kind: 'Good' | 'Fix' | 'Tip'; title: string; body: string }[] = [];
+  const suggestions: CvSuggestion[] = [];
 
   if (numbers.length >= 2) {
     score += 14;
@@ -243,6 +312,14 @@ const buildCvReview = (cvData: CVData) => {
     items.push({ kind: 'Good', title: 'Summary length is readable', body: `${words} words is enough context without becoming a cover letter.` });
   } else {
     items.push({ kind: 'Fix', title: 'Tune the summary length', body: 'Aim for roughly 45 to 80 words: role, scope, proof point, and what you do well.' });
+    suggestions.push({
+      id: 'summary-length',
+      label: 'Summary',
+      issue: summary.trim() ? 'Make the summary more recruiter-friendly.' : 'Add a focused summary.',
+      current: summary.trim() || 'No summary written yet.',
+      suggestion: buildSummarySuggestion(cvData),
+      target: 'summary',
+    });
   }
 
   if (skills.length >= 6) score += 10;
@@ -250,6 +327,32 @@ const buildCvReview = (cvData: CVData) => {
 
   if (hasHeader) score += 8;
   else items.push({ kind: 'Fix', title: 'Complete the header', body: 'Name and email should be present before export.' });
+
+  cvData.experiences.forEach((experience) => {
+    const description = experience.description.trim();
+    const fallback = `Led ${experience.position || 'role'} work${experience.company ? ` at ${experience.company}` : ''}, improving execution, coordination, and delivery quality.`;
+    const strengthened = strengthenText(description, fallback);
+    const weakText = weakVerbReplacements.some(([pattern]) => {
+      pattern.lastIndex = 0;
+      return pattern.test(description);
+    });
+
+    if (!description || weakText || countWords(description) < 12 || !hasMetric(description)) {
+      suggestions.push({
+        id: `experience-${experience.id}`,
+        label: experience.position || experience.company || 'Experience',
+        issue: !description
+          ? 'Add an achievement-focused description.'
+          : !hasMetric(description)
+            ? 'Add stronger impact and measurable scope.'
+            : 'Use stronger action verbs.',
+        current: description || 'No description written yet.',
+        suggestion: strengthened,
+        target: 'experience',
+        experienceId: experience.id,
+      });
+    }
+  });
 
   items.push({ kind: 'Tip', title: 'Match the role wording', body: 'Mirror two or three phrases from the job ad in your summary when you apply.' });
 
@@ -259,8 +362,121 @@ const buildCvReview = (cvData: CVData) => {
     label: finalScore >= 85 ? 'Strong — send it' : finalScore >= 70 ? 'Solid, with easy wins' : 'Needs a pass before sending',
     summary: `${items.filter((item) => item.kind === 'Fix').length} things to fix, ${items.filter((item) => item.kind === 'Good').length} working well`,
     items,
+    suggestions: suggestions.slice(0, 5),
   };
 };
+
+const getFullName = (data: CVData) =>
+  `${data.personalInfo.firstName} ${data.personalInfo.lastName}`.trim() || 'Your Name';
+
+const buildCvProfileForAi = (data: CVData) => {
+  const personal = data.personalInfo;
+  const skills = data.skills.map((skill) => skill.name).filter(Boolean).join(', ');
+  const experiences = data.experiences
+    .map((item) => `${item.position || 'Role'} at ${item.company || 'Company'}: ${item.description || 'No description'}`)
+    .join('\n');
+
+  return [
+    `Name: ${getFullName(data)}`,
+    `Target title: ${personal.title || 'Not specified'}`,
+    `Location: ${personal.address || 'Not specified'}`,
+    `Summary: ${personal.summary || 'Not specified'}`,
+    `Skills: ${skills || 'Not specified'}`,
+    `Experience:\n${experiences || 'Not specified'}`,
+  ].join('\n');
+};
+
+const getCompanyFromJobAd = (jobAd: string) => {
+  const companyLine = jobAd
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => /company|unternehmen|firma|employer/i.test(line));
+  return companyLine?.replace(/^(company|unternehmen|firma|employer)\s*[:-]\s*/i, '').slice(0, 80) || 'your team';
+};
+
+const getRoleFromJobAd = (jobAd: string, fallback: string) => {
+  const firstUsefulLine = jobAd
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.length >= 6 && line.length <= 90);
+  return firstUsefulLine || fallback || 'the open role';
+};
+
+const generateLocalApplicationDraft = ({
+  cvData,
+  jobAd,
+  motivation,
+  tone,
+  language,
+}: {
+  cvData: CVData;
+  jobAd: string;
+  motivation: string;
+  tone: WriterTone;
+  language: WriterLanguage;
+}): ApplicationWriterResult => {
+  const name = getFullName(cvData);
+  const role = getRoleFromJobAd(jobAd, cvData.personalInfo.title);
+  const company = getCompanyFromJobAd(jobAd);
+  const summary = cvData.personalInfo.summary || `${cvData.personalInfo.title || 'professional'} with hands-on experience and a practical delivery mindset`;
+  const skills = cvData.skills.map((skill) => skill.name).filter(Boolean).slice(0, 4).join(', ');
+  const topExperience = cvData.experiences[0];
+  const proof = topExperience?.description || `experience in ${skills || 'the relevant work areas'}`;
+  const motive = motivation.trim() || `The role connects well with my background and the problems your team is working on.`;
+  const greeting = language === 'German' ? 'Sehr geehrte Damen und Herren,' : 'Dear hiring team,';
+  const close = language === 'German' ? 'Mit freundlichen Grüßen' : 'Best regards';
+  const intro =
+    language === 'German'
+      ? `ich bewerbe mich auf die Position ${role}, weil die Aufgabe bei ${company} sehr gut zu meinem Profil passt.`
+      : `I am applying for ${role} because the opportunity at ${company} aligns closely with my background.`;
+  const toneLine =
+    tone === 'Direct'
+      ? language === 'German'
+        ? 'Ich arbeite strukturiert, übernehme Verantwortung und bringe Themen konsequent in die Umsetzung.'
+        : 'I work with clear ownership, structured execution, and a strong bias toward delivery.'
+      : tone === 'Warm'
+        ? language === 'German'
+          ? 'Besonders wichtig ist mir eine Zusammenarbeit, in der klare Kommunikation und verlässliche Umsetzung zusammenkommen.'
+          : 'I value teams where clear communication and reliable execution matter.'
+        : language === 'German'
+          ? 'Ich bringe eine professionelle, strukturierte Arbeitsweise und einen klaren Blick für messbare Ergebnisse mit.'
+          : 'I bring a professional, structured working style and a clear focus on measurable outcomes.';
+
+  const coverLetter =
+    language === 'German'
+      ? `${greeting}\n\n${intro} ${summary}. In meiner bisherigen Arbeit konnte ich vor allem durch ${proof} Wirkung erzielen. ${toneLine}\n\n${motive}\n\nGerne erläutere ich in einem Gespräch, wie ich meine Erfahrung für diese Rolle einbringen kann.\n\n${close}\n${name}`
+      : `${greeting}\n\n${intro} ${summary}. In my previous work, I created impact through ${proof}. ${toneLine}\n\n${motive}\n\nI would welcome the opportunity to discuss how my experience can support this role.\n\n${close},\n${name}`;
+
+  const motivationText =
+    language === 'German'
+      ? `Mich motiviert an ${company}, dass die Rolle ${role} praktische Verantwortung mit sichtbarer Wirkung verbindet. ${motive} Ich kann meine Erfahrung in ${skills || 'relevanten Arbeitsbereichen'} einbringen und schnell in konkrete Ergebnisse übersetzen.`
+      : `I am motivated by ${company} because ${role} combines practical ownership with visible impact. ${motive} I can bring my experience in ${skills || 'relevant work areas'} and translate it into concrete results quickly.`;
+
+  const email =
+    language === 'German'
+      ? `${greeting}\n\nanbei sende ich Ihnen meine Bewerbung für die Position ${role}. Über eine Rückmeldung und die Möglichkeit zu einem persönlichen Gespräch freue ich mich.\n\n${close}\n${name}`
+      : `${greeting}\n\nPlease find my application for ${role}. I would be happy to discuss the role and my background in more detail.\n\n${close},\n${name}`;
+
+  return {
+    coverLetter,
+    motivation: motivationText,
+    email,
+    notes: 'Local draft generated without OpenAI. Configure OPENAI_API_KEY on the server for model-written output.',
+    source: 'local',
+  };
+};
+
+const formatApplicationDraft = (result: ApplicationWriterResult) =>
+  [
+    'Cover letter',
+    result.coverLetter,
+    '',
+    'Motivation',
+    result.motivation,
+    '',
+    'Email',
+    result.email,
+  ].join('\n');
 
 const humanizeSlug = (value: string) =>
   decodeURIComponent(value)
@@ -351,9 +567,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
   const [selectedCvName, setSelectedCvName] = useState('Untitled CV');
   const [applications, setApplications] = useState<Application[]>(initialApplications);
-  const [matches, setMatches] = useState<Application[]>(initialMatches);
-  const [trackedMatchIds, setTrackedMatchIds] = useState<string[]>([]);
   const [trackerView, setTrackerView] = useState<TrackerView>('kanban');
+  const [draggedApplicationId, setDraggedApplicationId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<ApplicationStage | null>(null);
   const [filters, setFilters] = useState({ role: '', location: '', salary: '' });
   const [addOpen, setAddOpen] = useState(false);
   const [addUrl, setAddUrl] = useState('');
@@ -361,6 +577,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [addReadStatus, setAddReadStatus] = useState<'idle' | 'imported' | 'draft'>('idle');
   const [draftApplication, setDraftApplication] = useState<Application | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [writerJobAd, setWriterJobAd] = useState('');
+  const [writerMotivation, setWriterMotivation] = useState('');
+  const [writerTone, setWriterTone] = useState<WriterTone>('Professional');
+  const [writerLanguage, setWriterLanguage] = useState<WriterLanguage>('English');
+  const [writerResult, setWriterResult] = useState<ApplicationWriterResult | null>(null);
+  const [writerLoading, setWriterLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -413,29 +635,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     enabled: Boolean(authUser && supabaseConfigured),
   });
 
-  const hasMatchProfile = hasMeaningfulCvContent(cvData);
-  const arbeitnowMatchesQuery = useQuery({
-    queryKey: [
-      'arbeitnow-matches',
-      cvData.personalInfo.title,
-      cvData.personalInfo.address,
-      cvData.skills.map((skill) => skill.name).join('|'),
-      cvData.experiences.map((item) => item.position).join('|'),
-    ],
-    queryFn: () => fetchArbeitnowMatches(cvData),
-    enabled: hasMatchProfile,
-    staleTime: 10 * 60 * 1000,
-    retry: 1,
-  });
-
   useEffect(() => {
     if (!authUser) {
       hydratedUserIdRef.current = null;
       setSelectedCvId(null);
       setSelectedCvName('Untitled CV');
       setApplications(initialApplications);
-      setMatches(initialMatches);
-      setTrackedMatchIds([]);
       return;
     }
 
@@ -459,7 +664,6 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     }
 
     setApplications(data.applications);
-    setMatches(data.matches);
     hydratedUserIdRef.current = authUser.id;
   }, [authUser, dashboardQuery.data, cvData]);
 
@@ -467,11 +671,6 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     if (!dashboardQuery.error) return;
     toast.error(dashboardQuery.error instanceof Error ? dashboardQuery.error.message : 'Supabase-Daten konnten nicht geladen werden.');
   }, [dashboardQuery.error]);
-
-  useEffect(() => {
-    if (!arbeitnowMatchesQuery.error) return;
-    toast.error(arbeitnowMatchesQuery.error instanceof Error ? arbeitnowMatchesQuery.error.message : 'Job matches could not be loaded.');
-  }, [arbeitnowMatchesQuery.error]);
 
   const saveCvMutation = useMutation({
     mutationFn: () =>
@@ -516,34 +715,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
   const stageUpdateMutation = useMutation({
     mutationFn: ({ id, stage }: { id: string; stage: ApplicationStage }) => updateApplicationStage(id, stage),
+    onMutate: ({ id, stage }) => {
+      const previousApplications = applications;
+      setApplications((current) => current.map((item) => (item.id === id ? { ...item, stage } : item)));
+      return { previousApplications };
+    },
     onSuccess: (application) => {
       setApplications((current) => current.map((item) => (item.id === application.id ? application : item)));
       queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previousApplications) setApplications(context.previousApplications);
       toast.error(error instanceof Error ? error.message : 'Status konnte nicht gespeichert werden.');
-    },
-  });
-
-  const matchTrackMutation = useMutation({
-    mutationFn: async (match: Application) => {
-      const application = await convertMatchToApplication({
-        userId: authUser?.id || '',
-        cvId: selectedCvId,
-        match,
-      });
-
-      return { application, matchId: match.id };
-    },
-    onSuccess: ({ application, matchId }) => {
-      setApplications((current) => [application, ...current]);
-      setMatches((current) => current.filter((match) => match.id !== matchId));
-      setTrackedMatchIds((current) => [...new Set([...current, matchId])]);
-      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
-      toast.success('Match wurde in den Tracker verschoben.');
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Match konnte nicht gespeichert werden.');
     },
   });
 
@@ -568,17 +751,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     }));
   }, [authUser, dashboardQuery.data]);
 
-  const visibleMatches = useMemo(() => {
-    const apiMatches = arbeitnowMatchesQuery.data || [];
-    const shouldUseProfileMatches =
-      hasMatchProfile && (arbeitnowMatchesQuery.isFetching || arbeitnowMatchesQuery.isSuccess || Boolean(arbeitnowMatchesQuery.data));
-    const sourceMatches = shouldUseProfileMatches ? apiMatches : matches;
-    return sourceMatches.filter((match) => !trackedMatchIds.includes(match.id));
-  }, [arbeitnowMatchesQuery.data, arbeitnowMatchesQuery.isFetching, arbeitnowMatchesQuery.isSuccess, hasMatchProfile, matches, trackedMatchIds]);
-
   const profileCity = getProfileCity(cvData);
   const profileRole = cvData.personalInfo.title.trim() || 'Your target role';
-  const profileLocationLabel = profileCity ? `${profileCity} radius` : 'Location from CV';
 
   const isLoggedIn = Boolean(authUser);
   const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
@@ -722,26 +896,167 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     saveCvMutation.mutate();
   };
 
+  const applyCvSuggestion = (suggestion: CvSuggestion) => {
+    setCvData((current) => {
+      if (suggestion.target === 'summary') {
+        return {
+          ...current,
+          personalInfo: {
+            ...current.personalInfo,
+            summary: suggestion.suggestion,
+          },
+        };
+      }
+
+      return {
+        ...current,
+        experiences: current.experiences.map((experience) =>
+          experience.id === suggestion.experienceId
+            ? { ...experience, description: suggestion.suggestion }
+            : experience,
+        ),
+      };
+    });
+    toast.success('Suggestion applied to your CV.');
+  };
+
+  const generateApplicationText = async () => {
+    if (writerJobAd.trim().length < 40) {
+      toast.error('Paste a longer job ad first.');
+      return;
+    }
+
+    setWriterLoading(true);
+    try {
+      const payload = {
+        cvProfile: buildCvProfileForAi(cvData),
+        jobAd: writerJobAd,
+        motivation: writerMotivation,
+        tone: writerTone,
+        language: writerLanguage,
+      };
+
+      const response = await fetch('/api/ai-application-writer', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error((await response.json())?.error || 'AI writer is not configured.');
+      const data = await response.json();
+      setWriterResult({
+        coverLetter: data.coverLetter || '',
+        motivation: data.motivation || '',
+        email: data.email || '',
+        notes: data.notes,
+        source: 'openai',
+      });
+      toast.success('AI application text generated.');
+    } catch {
+      const localDraft = generateLocalApplicationDraft({
+        cvData,
+        jobAd: writerJobAd,
+        motivation: writerMotivation,
+        tone: writerTone,
+        language: writerLanguage,
+      });
+      setWriterResult(localDraft);
+      toast.message('Local draft created. Add OPENAI_API_KEY on the server for OpenAI output.');
+    } finally {
+      setWriterLoading(false);
+    }
+  };
+
+  const copyApplicationText = async (value: string) => {
+    await navigator.clipboard.writeText(value);
+    toast.success('Copied.');
+  };
+
+  const printApplicationText = () => {
+    if (!writerResult) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Popup blocked. Allow popups to export as PDF.');
+      return;
+    }
+
+    const escaped = formatApplicationDraft(writerResult)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Application Text - ${getFullName(cvData)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #1f1d1b; margin: 36px; line-height: 1.55; }
+            pre { white-space: pre-wrap; font: inherit; }
+          </style>
+        </head>
+        <body><pre>${escaped}</pre></body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 250);
+  };
+
+  const moveApplicationToStage = (id: string, stage: ApplicationStage) => {
+    const application = applications.find((item) => item.id === id);
+    if (!application || application.stage === stage) return;
+
+    if (!isLoggedIn || application.isDemo) {
+      setApplications((current) => current.map((item) => (item.id === id ? { ...item, stage } : item)));
+      return;
+    }
+
+    stageUpdateMutation.mutate({ id, stage });
+  };
+
   const advanceApplication = (id: string) => {
+    const application = applications.find((item) => item.id === id);
+    if (!application) return;
+
     if (!isLoggedIn) {
       requestLogin();
       return;
     }
 
-    const application = applications.find((item) => item.id === id);
-    if (!application) return;
     const stageIndex = stages.indexOf(application.stage);
     const nextStage = stages[(stageIndex + 1) % stages.length];
+
+    if (application.isDemo) {
+      setApplications((current) => current.map((item) => (item.id === id ? { ...item, stage: nextStage } : item)));
+      return;
+    }
+
     stageUpdateMutation.mutate({ id, stage: nextStage });
   };
 
-  const trackMatch = (match: Application) => {
-    if (!isLoggedIn) {
-      requestLogin();
-      return;
-    }
+  const handleApplicationDragStart = (event: React.DragEvent<HTMLElement>, id: string) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', id);
+    setDraggedApplicationId(id);
+  };
 
-    matchTrackMutation.mutate(match);
+  const handleApplicationDragEnd = () => {
+    setDraggedApplicationId(null);
+    setDragOverStage(null);
+  };
+
+  const handleStageDragOver = (event: React.DragEvent<HTMLElement>, stage: ApplicationStage) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    if (dragOverStage !== stage) setDragOverStage(stage);
+  };
+
+  const handleStageDrop = (event: React.DragEvent<HTMLElement>, stage: ApplicationStage) => {
+    event.preventDefault();
+    const applicationId = event.dataTransfer.getData('text/plain') || draggedApplicationId;
+    setDraggedApplicationId(null);
+    setDragOverStage(null);
+    if (applicationId) moveApplicationToStage(applicationId, stage);
   };
 
   const createDraftApplication = async () => {
@@ -851,7 +1166,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               { label: 'Dashboard', target: 'dashboard' as AppScreen, active: screen === 'dashboard' },
               { label: 'CV simulator', target: 'editor' as AppScreen, active: screen === 'editor' },
               { label: 'Job tracker', target: 'tracker' as AppScreen, active: screen === 'tracker' },
-              { label: 'Matches', target: 'matches' as AppScreen, active: screen === 'matches' },
+              { label: 'AI writer', target: 'writer' as AppScreen, active: screen === 'writer' },
             ].map((item) => (
               <button
                 key={item.label}
@@ -899,7 +1214,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
                   <h1 className="font-display text-4xl font-normal">Good afternoon, {displayName}.</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">{openCount} applications still open · {visibleMatches.length} job matches ready</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{openCount} applications still open · AI writer ready for tailored applications</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setScreen('tracker')}>Open tracker</Button>
@@ -916,7 +1231,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   ['CVs', String(visibleDashboardCvs.length), 'one per role family'],
                   ['Applications', String(applications.length), 'across six stages'],
                   ['Interviews', String(applications.filter((item) => item.stage === 'Interview').length), 'currently active'],
-                  ['New matches', String(visibleMatches.length), 'from your profile'],
+                  ['AI drafts', writerResult ? '3' : '0', 'cover letter, motivation, email'],
                 ].map(([label, value, note]) => (
                   <article key={label} className="organic-card p-5">
                     <p className="section-kicker">{label}</p>
@@ -959,34 +1274,36 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                 <section>
                   <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 className="font-display text-2xl font-normal">Matched to your CV</h2>
-                    <span className="organic-tag organic-tag-accent-2">{arbeitnowMatchesQuery.isFetching ? 'Refreshing' : 'Profile based'}</span>
+                    <h2 className="font-display text-2xl font-normal">AI writer</h2>
+                    <span className="organic-tag organic-tag-accent-2">Job ad based</span>
                   </div>
-                  <div className="organic-card p-3">
-                    {visibleMatches.map((job) => (
-                      <article key={job.id} className="flex items-center gap-3 border-b border-border/70 px-1 py-4 last:border-0">
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">
-                          {job.score}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-sm font-semibold">{job.title}</h3>
-                          <p className="truncate text-xs text-muted-foreground">{job.company} · {job.location} · {job.salary}</p>
+                  <div className="organic-card p-5">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                        <Wand2 size={18} />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-semibold">Create application text</h3>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          Paste a job ad and get a cover letter, motivation answer, and email from your CV.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      {[
+                        ['Cover letter', 'Long-form application letter'],
+                        ['Motivation', 'Short answer for forms'],
+                        ['Email', 'Ready-to-send message'],
+                      ].map(([label, note]) => (
+                        <div key={label} className="flex items-center justify-between gap-3 border-t border-border/70 pt-3">
+                          <span className="text-sm font-semibold">{label}</span>
+                          <span className="text-xs text-muted-foreground">{note}</span>
                         </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          {job.sourceUrl && (
-                            <Button size="sm" variant="ghost" asChild>
-                              <a href={job.sourceUrl} target="_blank" rel="noreferrer">
-                                Open
-                              </a>
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline" onClick={() => trackMatch(job)}>
-                            {isLoggedIn ? 'Track' : 'Login required'}
-                          </Button>
-                        </div>
-                      </article>
-                    ))}
-                    <Button variant="ghost" className="mt-2" onClick={() => setScreen('tracker')}>All matches and filters</Button>
+                      ))}
+                    </div>
+                    <Button className="mt-5 w-full" onClick={() => setScreen('writer')}>
+                      Open AI writer
+                    </Button>
                   </div>
                 </section>
               </div>
@@ -1026,14 +1343,27 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               {trackerView === 'kanban' ? (
                 <div className="mt-7 grid gap-4 xl:grid-cols-6">
                   {stageColumns.map((column) => (
-                    <section key={column.stage} className="rounded-[24px] bg-card p-3 shadow-[var(--organic-shadow-sm)]">
+                    <section
+                      key={column.stage}
+                      className={`tracker-column rounded-[24px] bg-card p-3 shadow-[var(--organic-shadow-sm)] ${dragOverStage === column.stage ? 'is-drop-target' : ''}`}
+                      aria-label={`${column.stage} drop zone`}
+                      onDragOver={(event) => handleStageDragOver(event, column.stage)}
+                      onDragLeave={() => setDragOverStage((current) => (current === column.stage ? null : current))}
+                      onDrop={(event) => handleStageDrop(event, column.stage)}
+                    >
                       <div className="mb-3 flex items-center justify-between px-1">
                         <h2 className="font-display text-base font-normal">{column.stage}</h2>
                         <span className="organic-tag">{column.items.length}</span>
                       </div>
                       <div className="space-y-3">
                         {column.items.map((job) => (
-                          <article key={job.id} className="rounded-[18px] bg-background p-4 shadow-[var(--organic-shadow-sm)]">
+                          <article
+                            key={job.id}
+                            className={`tracker-card rounded-[18px] bg-background p-4 shadow-[var(--organic-shadow-sm)] ${draggedApplicationId === job.id ? 'is-dragging' : ''}`}
+                            draggable
+                            onDragStart={(event) => handleApplicationDragStart(event, job.id)}
+                            onDragEnd={handleApplicationDragEnd}
+                          >
                             <h3 className="text-sm font-semibold leading-tight">{job.title}</h3>
                             <p className="mt-1 text-xs text-muted-foreground">{job.company} · {job.location}</p>
                             <div className="mt-3 flex items-center justify-between gap-2">
@@ -1061,6 +1391,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           </article>
                         ))}
                       </div>
+                      {column.items.length === 0 && (
+                        <div className="tracker-drop-empty mt-3">
+                          Drop job here
+                        </div>
+                      )}
                     </section>
                   ))}
                 </div>
@@ -1162,18 +1497,21 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             </section>
           )}
 
-          {screen === 'matches' && (
+          {screen === 'writer' && (
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">Matches</h1>
+                  <h1 className="font-display text-4xl font-normal">AI application writer</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Roles are matched against your CV details and location. Track a role to move it into the application board.
+                    Paste a job ad and your motivation, then generate a cover letter, motivation text, and application email.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setScreen('dashboard')}>Back to dashboard</Button>
-                  <Button onClick={openEditor}>Edit CV</Button>
+                  <Button variant="outline" onClick={openEditor}>Edit CV</Button>
+                  <Button onClick={generateApplicationText} disabled={writerLoading || writerJobAd.trim().length < 40}>
+                    <Wand2 size={16} />
+                    {writerLoading ? 'Writing...' : 'Generate'}
+                  </Button>
                 </div>
               </div>
 
@@ -1181,65 +1519,129 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <DemoNotice />
               </div>}
 
-              <div className="mt-7 grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
-                <aside className="organic-card p-5">
-                  <p className="section-kicker">Filters</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="organic-tag">{profileRole}</span>
-                    <span className="organic-tag">{profileLocationLabel}</span>
-                    <span className="organic-tag">Live listings</span>
-                    <span className="organic-tag border border-accent bg-transparent text-accent">Remote included</span>
-                  </div>
-                  <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                    Matches are ranked from your CV role, skills, and location. Remote roles are included when they fit the profile.
-                  </p>
-                </aside>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  {visibleMatches.map((job) => (
-                    <article key={job.id} className="organic-card p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h2 className="font-display text-2xl font-normal">{job.title}</h2>
-                          <p className="mt-1 text-sm text-muted-foreground">{job.company} · {job.location} · {job.salary}</p>
+              <div className="mt-7 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+                <div className="space-y-4">
+                  <article className="organic-card p-5">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                        <Mail size={18} />
+                      </span>
+                      <div>
+                        <p className="section-kicker">Input</p>
+                        <h2 className="font-display text-2xl font-normal">Job ad and notes</h2>
+                      </div>
+                    </div>
+                    <div className="mt-5 space-y-4">
+                      <label className="field-card block space-y-1.5">
+                        <span className="meta-label">Job ad</span>
+                        <Textarea
+                          value={writerJobAd}
+                          onChange={(event) => setWriterJobAd(event.target.value)}
+                          placeholder="Paste the full job description here..."
+                          rows={9}
+                        />
+                      </label>
+                      <label className="field-card block space-y-1.5">
+                        <span className="meta-label">Your motivation</span>
+                        <Textarea
+                          value={writerMotivation}
+                          onChange={(event) => setWriterMotivation(event.target.value)}
+                          placeholder="Why this company, why this role, what should the letter emphasize?"
+                          rows={4}
+                        />
+                      </label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="field-card">
+                          <p className="meta-label">Tone</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(['Professional', 'Warm', 'Direct'] as WriterTone[]).map((tone) => (
+                              <button
+                                key={tone}
+                                className={`folio-chip ${writerTone === tone ? 'is-active' : ''}`}
+                                onClick={() => setWriterTone(tone)}
+                              >
+                                {tone}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">
-                          {job.score}
-                        </span>
+                        <div className="field-card">
+                          <p className="meta-label">Language</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(['English', 'German'] as WriterLanguage[]).map((language) => (
+                              <button
+                                key={language}
+                                className={`folio-chip ${writerLanguage === language ? 'is-active' : ''}`}
+                                onClick={() => setWriterLanguage(language)}
+                              >
+                                {language}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <span className="organic-tag organic-tag-accent">{job.reason}</span>
-                        <span className="organic-tag">CV version: {visibleDashboardCvs[0]?.format || template}</span>
-                      </div>
-                      <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                        {job.sourceUrl && (
-                          <Button variant="outline" asChild>
-                            <a href={job.sourceUrl} target="_blank" rel="noreferrer">
-                              Open job
-                            </a>
-                          </Button>
-                        )}
-                        <Button variant="outline" onClick={() => trackMatch(job)} disabled={matchTrackMutation.isPending}>
-                          {isLoggedIn ? 'Track role' : 'Login required'}
-                        </Button>
-                      </div>
-                    </article>
-                  ))}
-
-                  {visibleMatches.length === 0 && (
-                    <article className="organic-card p-8 md:col-span-2">
-                      <h2 className="font-display text-2xl font-normal">
-                        {hasMatchProfile ? 'No strong matches found yet.' : 'Add CV details to get matches.'}
-                      </h2>
-                      <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                        {hasMatchProfile
-                          ? 'Try adding a clearer role title, more skills, or a nearby city in your address.'
-                          : 'Your role, skills, and location are used to rank nearby and remote roles.'}
-                      </p>
-                      <Button className="mt-6" onClick={hasMatchProfile ? openEditor : openEditor}>Edit CV</Button>
-                    </article>
-                  )}
+                    </div>
+                  </article>
                 </div>
+
+                <article className="organic-card p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="section-kicker">Output</p>
+                      <h2 className="font-display text-2xl font-normal">Application package</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {writerResult?.source === 'openai' ? 'Generated with OpenAI.' : writerResult ? 'Local fallback draft.' : 'Generate text to unlock copy and PDF export.'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        disabled={!writerResult}
+                        onClick={() => writerResult && copyApplicationText(formatApplicationDraft(writerResult))}
+                      >
+                        <Copy size={16} />
+                        Copy all
+                      </Button>
+                      <Button variant="outline" disabled={!writerResult} onClick={printApplicationText}>
+                        <Printer size={16} />
+                        PDF
+                      </Button>
+                    </div>
+                  </div>
+
+                  {writerResult ? (
+                    <div className="mt-5 space-y-4">
+                      {[
+                        ['Cover letter', writerResult.coverLetter],
+                        ['Motivation', writerResult.motivation],
+                        ['Email', writerResult.email],
+                      ].map(([label, value]) => (
+                        <section key={label} className="writer-output-section">
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="text-sm font-semibold">{label}</h3>
+                            <Button size="sm" variant="ghost" onClick={() => copyApplicationText(value)}>
+                              <Copy size={14} />
+                              Copy
+                            </Button>
+                          </div>
+                          <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">{value}</p>
+                        </section>
+                      ))}
+                      {writerResult.notes && (
+                        <p className="rounded-[18px] bg-background/55 px-4 py-3 text-xs leading-5 text-muted-foreground">
+                          {writerResult.notes}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="empty-state mt-5">
+                      <p className="text-sm font-semibold text-foreground">No application text yet</p>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                        Use your current CV as the profile source, then paste a job ad and generate a tailored package.
+                      </p>
+                    </div>
+                  )}
+                </article>
               </div>
             </section>
           )}
@@ -1253,7 +1655,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setReviewOpen((current) => !current)}>
-                    {reviewOpen ? 'Hide CV check' : 'Run CV check'}
+                    {reviewOpen ? 'Hide AI Judge' : 'AI Judge'}
                   </Button>
                   <Button variant="outline" onClick={saveCurrentCv} disabled={saveCvMutation.isPending}>
                     {saveCvMutation.isPending ? 'Saving...' : isLoggedIn ? 'Save CV' : 'Login to save'}
@@ -1278,6 +1680,49 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <p className="mt-1 text-sm text-muted-foreground">{cvReview.summary}</p>
                         </div>
                       </div>
+
+                      <div className="mt-5 rounded-[22px] bg-background/55 p-4 shadow-[inset_0_0_0_1px_var(--organic-divider)]">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="section-kicker">AI Judge</p>
+                            <h3 className="font-display text-xl font-normal">Text suggestions</h3>
+                          </div>
+                          <span className="organic-tag organic-tag-accent-2">{cvReview.suggestions.length} rewrites</span>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                          {cvReview.suggestions.length ? cvReview.suggestions.map((suggestion) => (
+                            <div key={suggestion.id} className="ai-suggestion">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                  <span className="organic-tag organic-tag-accent">{suggestion.label}</span>
+                                  <h4 className="mt-2 text-sm font-semibold">{suggestion.issue}</h4>
+                                </div>
+                                <Button size="sm" onClick={() => applyCvSuggestion(suggestion)}>
+                                  Replace
+                                </Button>
+                              </div>
+                              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                                <div>
+                                  <p className="meta-label">Current</p>
+                                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{suggestion.current}</p>
+                                </div>
+                                <div>
+                                  <p className="meta-label">Suggested</p>
+                                  <p className="mt-1 text-sm leading-6 text-foreground">{suggestion.suggestion}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )) : (
+                            <div className="empty-state">
+                              <p className="text-sm font-semibold text-foreground">No rewrite needed right now</p>
+                              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                                The judge will show replaceable suggestions when summary or role descriptions look weak, short, or generic.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="mt-4 space-y-2">
                         {cvReview.items.map((item) => (
                           <div key={item.title} className="flex gap-3 border-t border-border/70 pt-3">
@@ -1525,33 +1970,31 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
         </section>
 
-        <section id="jobs" className="organic-container grid gap-12 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:py-20">
+        <section id="writer" className="organic-container grid gap-12 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:py-20">
           <div>
-            <span className="organic-tag organic-tag-accent">Job matching</span>
+            <span className="organic-tag organic-tag-accent">AI application writer</span>
             <h2 className="mt-4 max-w-[14em] font-display text-4xl font-normal leading-[1.08] md:text-5xl">
-              Jobs shown from what your CV already says.
+              Cover letter, motivation, and email from one job ad.
             </h2>
             <p className="mt-5 max-w-[34em] text-base leading-8 text-foreground/80">
-              We read the role, skills, and location from your CV, then rank open jobs by fit,
-              distance, and remote availability.
+              Paste the job description, add your motivation, and generate application text from the CV you already built.
             </p>
-            <Button className="mt-6" onClick={() => setScreen('matches')}>Browse matches</Button>
+            <Button className="mt-6" onClick={() => setScreen('writer')}>Open AI writer</Button>
           </div>
           <div className="organic-card p-6">
             <div className="mb-2 flex flex-wrap gap-2">
               <span className="organic-tag">{profileRole}</span>
-              <span className="organic-tag">{profileLocationLabel}</span>
-              <span className="organic-tag">Live listings</span>
-              <span className="organic-tag border border-accent bg-transparent text-accent">Remote included</span>
+              <span className="organic-tag">Job ad input</span>
+              <span className="organic-tag border border-accent bg-transparent text-accent">Copy or PDF</span>
             </div>
-            {visibleMatches.slice(0, 3).map((job) => (
-              <article key={job.id} className="flex items-center gap-4 border-t border-border/70 py-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">{job.score}</span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-sm font-semibold">{job.title}</h3>
-                  <p className="truncate text-xs text-muted-foreground">{job.company} · {job.location} · {job.salary}</p>
-                </div>
-                <span className="organic-tag organic-tag-accent">{job.reason}</span>
+            {[
+              ['Cover letter', 'Formal letter tailored to the role and CV profile.'],
+              ['Motivation', 'Short answer for forms asking why this company or role.'],
+              ['Email', 'Compact application email ready to copy.'],
+            ].map(([label, body]) => (
+              <article key={label} className="border-t border-border/70 py-4">
+                <h3 className="text-sm font-semibold">{label}</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
               </article>
             ))}
           </div>
@@ -1635,11 +2078,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <article className="rounded-[32px] bg-[var(--organic-neutral-900)] p-8 text-[var(--organic-neutral-100)] shadow-[var(--organic-shadow-lg)]">
                 <p className="section-kicker text-[var(--organic-accent-200)]">Dashboard</p>
                 <p className="mt-3 font-display text-4xl">Preview</p>
-                <p className="mt-3 text-sm leading-7 text-[var(--organic-neutral-300)]">The design shell from the redesign folder: saved CV cards, matched roles, and the application tracker.</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--organic-neutral-300)]">The product shell around saved CVs, AI writing, and the application tracker.</p>
                 <div className="mt-5 flex flex-col gap-2 text-sm">
                   <span>Saved CV versions</span>
+                  <span>AI cover letter writer</span>
                   <span>Application board and table</span>
-                  <span>Job match cards as demo data</span>
                 </div>
                 <Button className="mt-6 w-full" onClick={() => setScreen('dashboard')}>Open the dashboard</Button>
               </article>
@@ -1709,7 +2152,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <nav className="flex flex-col gap-2">
               <span className="font-semibold">Product</span>
               <a href="#how" className="text-muted-foreground transition-colors hover:text-accent">How it works</a>
-              <a href="#jobs" className="text-muted-foreground transition-colors hover:text-accent">Job matching</a>
+              <a href="#writer" className="text-muted-foreground transition-colors hover:text-accent">AI writer</a>
               <a href="#pricing" className="text-muted-foreground transition-colors hover:text-accent">Pricing</a>
             </nav>
             <nav className="flex flex-col gap-2">

@@ -2,7 +2,6 @@ import { CVData } from '@/types/cv';
 import { DbApplication } from '@/lib/supabase-db';
 
 const ARBEITNOW_API_URL = 'https://www.arbeitnow.com/api/job-board-api';
-const MAX_MATCHES = 12;
 
 type ArbeitnowJob = {
   slug: string;
@@ -75,23 +74,11 @@ const normalize = (value: string) =>
     .replace(/ü/g, 'u')
     .replace(/ß/g, 'ss');
 
-const stripHtml = (value: string) => value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
-const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
-
 const toStringArray = (value: unknown) => {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
   if (typeof value === 'string' && value.trim()) return [value.trim()];
   return [];
 };
-
-const tokenize = (value: string) =>
-  unique(
-    normalize(value)
-      .split(/[^a-z0-9+#.]+/i)
-      .map((token) => token.trim())
-      .filter((token) => token.length >= 3),
-  );
 
 const findCity = (value: string) => {
   const normalizedValue = normalize(value);
@@ -112,152 +99,10 @@ export const getProfileCity = (data: CVData) => {
   return candidate.replace(/\b\d{4,6}\b/g, '').trim();
 };
 
-const getProfileCountry = (data: CVData) => findCity(data.personalInfo.address)?.country;
-
-const isAllowedByProfileCountry = (profileCountry: CityCoordinates['country'] | undefined, job: ArbeitnowJob) => {
-  if (!profileCountry) return true;
-  if (job.remote) return true;
-
-  const jobCity = findCity(job.location || '');
-  if (jobCity) return jobCity.country === profileCountry;
-
-  return profileCountry === 'DE';
-};
-
-const getProfileKeywords = (data: CVData) => {
-  const explicitSkills = data.skills.map((skill) => skill.name);
-  const roleWords = tokenize(data.personalInfo.title);
-  const summaryWords = tokenize(data.personalInfo.summary);
-  const experienceWords = tokenize(
-    data.experiences.map((item) => `${item.position} ${item.description}`).join(' '),
-  );
-
-  return unique([...explicitSkills.map(normalize), ...roleWords, ...summaryWords, ...experienceWords])
-    .filter((word) => !['and', 'the', 'with', 'for', 'und', 'der', 'die', 'das', 'ein', 'eine'].includes(word))
-    .slice(0, 28);
-};
-
-const distanceKm = (from: CityCoordinates, to: CityCoordinates) => {
-  const earthRadius = 6371;
-  const latDelta = ((to.lat - from.lat) * Math.PI) / 180;
-  const lonDelta = ((to.lon - from.lon) * Math.PI) / 180;
-  const fromLat = (from.lat * Math.PI) / 180;
-  const toLat = (to.lat * Math.PI) / 180;
-
-  const a =
-    Math.sin(latDelta / 2) ** 2 +
-    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(lonDelta / 2) ** 2;
-
-  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-const scoreLocation = (profileCity: string, job: ArbeitnowJob) => {
-  const userCity = normalize(profileCity);
-  const jobLocation = normalize(job.location || '');
-  if (!userCity) {
-    return job.remote ? { points: 12, reason: 'Remote option' } : { points: 0, reason: '' };
-  }
-
-  if (jobLocation.includes(userCity) || userCity.includes(jobLocation)) {
-    return { points: 35, reason: `Near ${profileCity}` };
-  }
-
-  const userCoordinates = cityCoordinates[userCity];
-  const jobCoordinates = cityCoordinates[jobLocation];
-  if (userCoordinates && jobCoordinates) {
-    const distance = distanceKm(userCoordinates, jobCoordinates);
-    if (distance <= 75) return { points: 28, reason: `${Math.round(distance)} km away` };
-    if (distance <= 150) return { points: 20, reason: `${Math.round(distance)} km away` };
-    if (distance <= 250) return { points: 12, reason: `${Math.round(distance)} km away` };
-  }
-
-  if (job.remote) return { points: 16, reason: 'Remote option' };
-  return { points: 0, reason: '' };
-};
-
-const scoreJob = (job: ArbeitnowJob, data: CVData) => {
-  const keywords = getProfileKeywords(data);
-  const profileTitle = normalize(data.personalInfo.title);
-  const profileCity = getProfileCity(data);
-  const tags = toStringArray(job.tags);
-  const jobTypes = toStringArray(job.job_types);
-  const haystack = normalize(
-    [
-      job.title,
-      job.company_name,
-      job.location,
-      ...tags,
-      ...jobTypes,
-      stripHtml(job.description || ''),
-    ].join(' '),
-  );
-
-  let points = 0;
-  const reasons: string[] = [];
-
-  if (profileTitle && haystack.includes(profileTitle)) {
-    points += 38;
-    reasons.push('Role match');
-  }
-
-  const matchedKeywords = keywords.filter((keyword) => haystack.includes(keyword)).slice(0, 5);
-  points += Math.min(40, matchedKeywords.length * 8);
-  if (matchedKeywords.length) reasons.push(`Skills: ${matchedKeywords.slice(0, 2).join(', ')}`);
-
-  const locationScore = scoreLocation(profileCity, job);
-  points += locationScore.points;
-  if (locationScore.reason) reasons.push(locationScore.reason);
-
-  if (job.remote) points += 4;
-  if (tags.length) points += 3;
-
-  return {
-    score: Math.max(35, Math.min(98, points)),
-    reason: reasons[0] || (job.remote ? 'Remote option' : 'Recent listing'),
-  };
-};
-
-const mapJobToMatch = (job: ArbeitnowJob, data: CVData): DbApplication => {
-  const match = scoreJob(job, data);
-  const jobTypes = toStringArray(job.job_types);
-  const tags = toStringArray(job.tags);
-  const jobType = job.remote ? 'Remote' : jobTypes[0] || tags[0] || 'Listed';
-
-  return {
-    id: job.slug,
-    title: job.title,
-    company: job.company_name,
-    location: job.location || (job.remote ? 'Remote' : ''),
-    salary: jobType,
-    score: `${match.score}%`,
-    stage: 'Saved',
-    when: 'new',
-    reason: match.reason,
-    sourceUrl: job.url,
-  };
-};
-
 const fetchArbeitnowPage = async (page: number) => {
   const response = await fetch(`${ARBEITNOW_API_URL}?page=${page}`);
   if (!response.ok) throw new Error(`Arbeitnow jobs could not be loaded (${response.status})`);
   return (await response.json()) as ArbeitnowResponse;
-};
-
-export const fetchArbeitnowMatches = async (data: CVData, maxPages = 2) => {
-  const pages = await Promise.all(
-    Array.from({ length: maxPages }, (_item, index) => fetchArbeitnowPage(index + 1)),
-  );
-
-  const jobs = pages.flatMap((page) => page.data || []);
-  const profileCountry = getProfileCountry(data);
-  const scored = jobs
-    .filter((job) => isAllowedByProfileCountry(profileCountry, job))
-    .map((job) => ({ job, ...scoreJob(job, data) }))
-    .filter((item) => item.score >= 42)
-    .sort((a, b) => b.score - a.score || b.job.created_at - a.job.created_at)
-    .slice(0, MAX_MATCHES);
-
-  return scored.map((item) => mapJobToMatch(item.job, data));
 };
 
 export const fetchArbeitnowJobFromUrl = async (url: string) => {

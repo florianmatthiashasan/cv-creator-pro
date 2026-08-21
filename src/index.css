@@ -219,6 +219,42 @@
     @apply rounded-[28px] bg-card shadow-[var(--organic-shadow-sm)];
   }
 
+  .ai-suggestion {
+    @apply rounded-[20px] bg-card p-4 shadow-[var(--organic-shadow-sm)];
+  }
+
+  .writer-output-section {
+    @apply rounded-[22px] bg-background/55 p-4 shadow-[inset_0_0_0_1px_var(--organic-divider)];
+  }
+
+  .tracker-column {
+    @apply min-h-[180px] transition-all duration-200;
+  }
+
+  .tracker-column.is-drop-target {
+    @apply bg-[var(--organic-accent-2-100)] shadow-[var(--organic-shadow-md)];
+    outline: 2px solid color-mix(in srgb, var(--organic-accent-2) 42%, transparent);
+    outline-offset: 2px;
+  }
+
+  .tracker-card {
+    @apply cursor-grab select-none transition-all duration-200 active:cursor-grabbing;
+  }
+
+  .tracker-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--organic-shadow-md);
+  }
+
+  .tracker-card.is-dragging {
+    @apply opacity-55;
+    transform: rotate(-1deg) scale(0.98);
+  }
+
+  .tracker-drop-empty {
+    @apply rounded-[18px] border border-dashed border-border/80 px-3 py-6 text-center text-xs text-muted-foreground;
+  }
+
   .organic-paper {
     background: #fffdf8;
     color: var(--organic-text);

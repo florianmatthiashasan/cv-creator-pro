@@ -120,24 +120,34 @@ type ApplicationRow = {
   created_at?: string | null;
 };
 
-type MatchRow = {
-  id: string;
-  title: string | null;
-  company: string | null;
-  location: string | null;
-  salary: string | null;
-  score: string | null;
-  reason: string | null;
-  source_url: string | null;
-  is_demo: boolean | null;
-  created_at?: string | null;
-};
-
 const ensureSupabase = () => createSupabaseClient();
 
+const getErrorField = (error: unknown, key: string) => {
+  if (!error || typeof error !== 'object' || !(key in error)) return '';
+  const value = (error as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : '';
+};
+
 const toError = (message: string, error: unknown) => {
-  const detail = error instanceof Error ? error.message : String(error);
-  return new Error(`${message}: ${detail}`);
+  const code = getErrorField(error, 'code');
+  const constraintMessage = getErrorField(error, 'message');
+  const migrationHint =
+    code === '23514' && constraintMessage.includes('applications_stage_check')
+      ? 'Run supabase-application-status-migration.sql so the database accepts the current application stages.'
+      : '';
+  const detail = [
+    error instanceof Error ? error.message : getErrorField(error, 'message'),
+    getErrorField(error, 'details'),
+    getErrorField(error, 'hint'),
+    migrationHint,
+    code,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  if (detail) return new Error(`${message}: ${detail}`);
+  if (error && typeof error === 'object') return new Error(`${message}: ${JSON.stringify(error)}`);
+  return new Error(`${message}: ${String(error)}`);
 };
 
 const normalizeTemplateId = (value?: string | null): CVTemplate =>
@@ -232,20 +242,6 @@ const mapApplicationRow = (row: ApplicationRow): DbApplication => ({
   isDemo: Boolean(row.is_demo),
 });
 
-const mapMatchRow = (row: MatchRow): DbApplication => ({
-  id: row.id,
-  title: row.title || '',
-  company: row.company || '',
-  location: row.location || '',
-  salary: row.salary || '',
-  score: row.score || '',
-  stage: 'Saved',
-  when: formatRelativeDate(row.created_at),
-  reason: row.reason || undefined,
-  sourceUrl: row.source_url || undefined,
-  isDemo: Boolean(row.is_demo),
-});
-
 export const supabaseConfigured = hasSupabaseConfig;
 
 export const getInitialAuthUser = async () => {
@@ -329,7 +325,7 @@ export const fetchDashboardData = async (user: User) => {
   await ensureProfile(user);
   const supabase = ensureSupabase();
 
-  const [templates, cvsResult, applicationsResult, matchesResult, settingsResult] = await Promise.all([
+  const [templates, cvsResult, applicationsResult, settingsResult] = await Promise.all([
     fetchTemplates(),
     supabase
       .from('cvs')
@@ -344,11 +340,6 @@ export const fetchDashboardData = async (user: User) => {
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false }),
     supabase
-      .from('job_matches')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false }),
-    supabase
       .from('dashboard_settings')
       .select('*')
       .eq('user_id', user.id)
@@ -357,7 +348,6 @@ export const fetchDashboardData = async (user: User) => {
 
   if (cvsResult.error) throw toError('CVs konnten nicht geladen werden', cvsResult.error);
   if (applicationsResult.error) throw toError('Bewerbungen konnten nicht geladen werden', applicationsResult.error);
-  if (matchesResult.error) throw toError('Matches konnten nicht geladen werden', matchesResult.error);
   if (settingsResult.error) throw toError('Dashboard-Settings konnten nicht geladen werden', settingsResult.error);
 
   if (!settingsResult.data) {
@@ -375,7 +365,6 @@ export const fetchDashboardData = async (user: User) => {
     templates,
     cvs: ((cvsResult.data || []) as CvRow[]).map((row) => mapCvRow(row, templates)),
     applications: ((applicationsResult.data || []) as ApplicationRow[]).map(mapApplicationRow),
-    matches: ((matchesResult.data || []) as MatchRow[]).map(mapMatchRow),
   };
 };
 
@@ -557,31 +546,4 @@ export const updateApplicationStage = async (applicationId: string, stage: Appli
 
   if (error) throw toError('Bewerbungsstatus konnte nicht gespeichert werden', error);
   return mapApplicationRow(data as ApplicationRow);
-};
-
-export const convertMatchToApplication = async ({
-  userId,
-  cvId,
-  match,
-}: {
-  userId: string;
-  cvId?: string | null;
-  match: DbApplication;
-}) => {
-  const application = await saveApplication({
-    userId,
-    cvId,
-    application: {
-      ...match,
-      stage: 'Saved',
-      isDemo: false,
-    },
-  });
-
-  const supabase = ensureSupabase();
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(match.id)) {
-    await supabase.from('job_matches').delete().eq('id', match.id).eq('user_id', userId);
-  }
-
-  return application;
 };
