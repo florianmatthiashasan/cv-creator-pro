@@ -196,14 +196,19 @@
   }
 
   .organic-tag {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] tracking-[0.02em];
-    background: var(--organic-accent-2-100);
-    color: var(--organic-accent-2-800);
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium tracking-[0.02em];
+    background: var(--organic-neutral-200);
+    color: var(--organic-neutral-800);
   }
 
   .organic-tag-accent {
     background: var(--organic-accent-100);
     color: var(--organic-accent-800);
+  }
+
+  .organic-tag-accent-2 {
+    background: var(--organic-accent-2-200);
+    color: var(--organic-accent-2-800);
   }
 
   .organic-page-shell {
@@ -311,6 +316,13 @@
   .folio-chip:hover,
   .folio-chip.is-active {
     @apply border-accent bg-accent text-accent-foreground shadow-[var(--organic-shadow-sm)];
+  }
+
+  .folio-sidebar-link:focus-visible,
+  .folio-chip:focus-visible,
+  .folio-segmented button:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   .folio-table {

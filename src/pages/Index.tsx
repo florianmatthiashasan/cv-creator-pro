@@ -2498,8 +2498,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       </p>
                     </div>
                   ) : (
-                    <div className="empty-state min-h-[420px]">
-                      <p className="text-sm font-semibold text-foreground">{t.pasteJobToStart}</p>
+                    <div className="empty-state flex min-h-[420px] flex-col items-center justify-center">
+                      <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                        <FileSearch size={22} />
+                      </span>
+                      <p className="mt-4 text-sm font-semibold text-foreground">{t.pasteJobToStart}</p>
                       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                         {t.matcherEmptyHelp}
                       </p>
@@ -2707,8 +2710,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       </p>
                     </div>
                   ) : (
-                    <div className="empty-state mt-5">
-                      <p className="text-sm font-semibold text-foreground">{t.noApplicationText}</p>
+                    <div className="empty-state mt-5 flex min-h-[360px] flex-col items-center justify-center">
+                      <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                        <Sparkles size={22} />
+                      </span>
+                      <p className="mt-4 text-sm font-semibold text-foreground">{t.noApplicationText}</p>
                       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                         {t.noApplicationTextHelp}
                       </p>
@@ -2923,16 +2929,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </div>
 
                 <aside className="min-w-0 xl:sticky xl:top-8 xl:self-start">
-                  <div className="organic-card mb-3 flex items-center justify-between px-4 py-3">
-                    <div>
-                      <p className="section-kicker">{t.livePreview}</p>
-                      <p className="mt-0.5 text-sm font-semibold text-foreground">{template} {t.template}</p>
-                    </div>
-                    <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-                  </div>
                   <CVPreviewCanvas
                     data={cvData}
                     template={template}
+                    eyebrow={t.livePreview}
+                    title={`${template} ${t.template}`}
                     maxHeightClassName="max-h-[calc(100vh-7rem)]"
                     scaleClassName="scale-[0.38] sm:scale-[0.48] lg:scale-[0.54] xl:scale-[0.48] 2xl:scale-[0.58]"
                   />
