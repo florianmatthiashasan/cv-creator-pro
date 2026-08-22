@@ -7,6 +7,8 @@ interface Props {
   template: CVTemplate;
   maxHeightClassName?: string;
   scaleClassName?: string;
+  eyebrow?: string;
+  title?: string;
 }
 
 const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
@@ -16,6 +18,8 @@ const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
       template,
       maxHeightClassName = 'max-h-[70vh]',
       scaleClassName = 'scale-[0.42] lg:scale-[0.5] xl:scale-[0.62]',
+      eyebrow = 'Live preview',
+      title,
     },
     ref,
   ) => {
@@ -25,13 +29,13 @@ const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
       <div className="preview-shell animate-fade-up">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Preview</p>
-            <p className="mt-0.5 text-[13px] font-medium text-foreground">Live preview</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">{eyebrow}</p>
+            <p className="mt-0.5 text-[13px] font-medium text-foreground">{title ?? 'Live preview'}</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--organic-accent)' }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--organic-accent-2)' }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--organic-neutral-400)' }} />
           </div>
         </div>
 

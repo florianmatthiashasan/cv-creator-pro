@@ -38,7 +38,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
         <div className="relative group">
           <div
             onClick={() => fileRef.current?.click()}
-            className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-md border-2 border-dashed border-white/15 bg-black/20 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-white/[0.06]"
+            className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-background/50 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:bg-accent/10"
           >
             {data.photo ? (
               <img src={data.photo} alt="Profile photo" className="w-full h-full object-cover" />

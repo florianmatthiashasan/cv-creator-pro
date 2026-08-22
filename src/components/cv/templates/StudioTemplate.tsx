@@ -1,6 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
-import { contactItems, dateRange, fullName } from './template-utils';
+import { contactItems, dateRange, fullName, renderAdditionalSections } from './template-utils';
 
 const StudioTemplate = ({ data }: { data: CVData }) => {
   const { personalInfo: p, experiences, education, skills, languages } = data;
@@ -91,6 +91,7 @@ const StudioTemplate = ({ data }: { data: CVData }) => {
             </div>
           </section>
         )}
+        {renderAdditionalSections(data)}
       </main>
     </div>
   );

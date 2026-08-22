@@ -1,6 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
-import { contactItems, dateRange, fullName } from './template-utils';
+import { contactItems, dateRange, fullName, renderAdditionalSections } from './template-utils';
 
 const AtlasTemplate = ({ data }: { data: CVData }) => {
   const { personalInfo: p, experiences, education, skills, languages } = data;
@@ -49,6 +49,11 @@ const AtlasTemplate = ({ data }: { data: CVData }) => {
           </div>
         </section>
       )}
+
+      <section className="grid grid-cols-[9rem_1fr] gap-7 border-b py-6" style={{ borderColor: design.dividerColor }}>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: design.headingColor }}>Proof</h2>
+        <div>{renderAdditionalSections(data)}</div>
+      </section>
 
       <section className="grid grid-cols-[9rem_1fr] gap-7 py-6">
         <h2 className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: design.headingColor }}>Details</h2>

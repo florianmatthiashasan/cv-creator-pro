@@ -1,6 +1,7 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
 import { Mail, Phone, MapPin, Globe, Linkedin } from 'lucide-react';
+import { renderAdditionalSections } from './template-utils';
 
 const formatDate = (d: string) => {
   if (!d) return '';
@@ -137,6 +138,7 @@ const CreativeTemplate = ({ data }: { data: CVData }) => {
             ))}
           </div>
         )}
+        {renderAdditionalSections(data)}
       </div>
     </div>
   );
