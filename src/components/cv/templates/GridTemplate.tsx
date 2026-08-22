@@ -1,6 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
-import { contactItems, dateRange, fullName } from './template-utils';
+import { contactItems, dateRange, fullName, renderAdditionalSections } from './template-utils';
 
 const GridTemplate = ({ data }: { data: CVData }) => {
   const { personalInfo: p, experiences, education, skills, languages } = data;
@@ -45,6 +45,10 @@ const GridTemplate = ({ data }: { data: CVData }) => {
             </div>
           </section>
         )}
+
+        <section className="col-span-8">
+          {renderAdditionalSections(data)}
+        </section>
 
         <aside className="col-span-4 space-y-4">
           {skills.length > 0 && (

@@ -1,5 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
+import { renderAdditionalSections } from './template-utils';
 
 const formatDate = (d: string) => {
   if (!d) return '';
@@ -81,6 +82,8 @@ const ClassicTemplate = ({ data }: { data: CVData }) => {
           ))}
         </div>
       )}
+
+      {renderAdditionalSections(data)}
 
       <div className="grid grid-cols-2 gap-8">
         {skills.length > 0 && (

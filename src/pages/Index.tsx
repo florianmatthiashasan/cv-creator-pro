@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@supabase/supabase-js';
@@ -7,15 +7,25 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  BadgeCheck,
+  CalendarClock,
   CheckCircle2,
   Coffee,
   Copy,
   FileDown,
+  FileSearch,
+  Globe2,
+  Headphones,
   LayoutTemplate,
   Mail,
+  MessageSquareText,
   Palette,
   Printer,
+  SearchCheck,
+  Settings,
   Sparkles,
+  Target,
+  UserRound,
   Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import CVPreview from '@/components/cv/CVPreview';
 import CVPreviewCanvas from '@/components/cv/CVPreviewCanvas';
+import AdditionalSectionsForm from '@/components/cv/AdditionalSectionsForm';
 import EducationForm from '@/components/cv/EducationForm';
 import ExperienceForm from '@/components/cv/ExperienceForm';
 import LanguagesForm from '@/components/cv/LanguagesForm';
@@ -44,23 +55,33 @@ import {
   signInWithEmail,
   signOut,
   supabaseConfigured,
+  updateApplicationFollowUp,
   updateApplicationStage,
 } from '@/lib/supabase-db';
 import { toast } from '@/components/ui/sonner';
 import { CVData, CVTemplate, emptyCVData } from '@/types/cv';
+import {
+  buildAtsCheck,
+  buildInterviewPrep,
+  buildJobMatchReport,
+  type AtsCheck,
+  type InterviewPrep,
+  type JobMatchReport,
+} from '@/lib/cv-analysis';
 
-const TOTAL_STEPS = 6;
-const stepTitles = ['Personal details', 'Work experience', 'Education', 'Skills & strengths', 'Languages', 'Design, preview & download'];
+const TOTAL_STEPS = 7;
+const stepTitles = ['Personal details', 'Work experience', 'Education', 'Skills & strengths', 'Languages', 'Extra proof', 'Design, preview & download'];
 const stepDescriptions = [
   'Tell us a bit about yourself',
   'Add the roles that shaped your career',
   'Outline your academic background',
   'Show what you do best',
   'List the languages you speak',
+  'Add projects, certificates, awards, volunteering, or publications',
   'Adjust fonts and colors, choose a template, and download your CV',
 ];
 
-type AppScreen = 'landing' | 'dashboard' | 'tracker' | 'editor' | 'writer';
+type AppScreen = 'landing' | 'dashboard' | 'tracker' | 'editor' | 'matcher' | 'writer';
 type TrackerView = 'kanban' | 'table';
 type Application = DbApplication;
 
@@ -69,20 +90,286 @@ type ApplicationWriterResult = {
   motivation: string;
   email: string;
   notes?: string;
-  source: 'openai' | 'local';
+  source: 'openai';
 };
 
 type WriterTone = 'Professional' | 'Warm' | 'Direct';
 type WriterLanguage = 'English' | 'German';
+type UiLanguage = WriterLanguage;
 
 type IndexProps = {
   initialScreen?: AppScreen;
+};
+
+const uiCopy = {
+  English: {
+    dashboard: 'Dashboard',
+    cvSimulator: 'CV simulator',
+    jobMatcher: 'Job matcher',
+    jobTracker: 'Job tracker',
+    aiWriter: 'AI writer',
+    guestMode: 'Guest mode',
+    signedIn: 'Signed in',
+    guestDetail: 'Create CVs for free. Save versions and track jobs after signing in.',
+    signedInDetail: 'Your CVs and applications are saved to your account.',
+    notLoggedIn: 'not logged in',
+    logIn: 'Log in',
+    logOut: 'Log out',
+    backToSite: 'Back to site',
+    language: 'Language',
+    settings: 'Settings',
+    settingsTitle: 'Settings',
+    profile: 'Profile',
+    support: 'Support',
+    close: 'Close',
+    profileSignedOut: 'Sign in to save CVs, applications, and AI versions.',
+    supportText: 'Need help or spotted a problem? Contact support with the current page and what you expected.',
+    aiWorking: 'AI is working...',
+    aiMatcherWorking: 'AI is reading your CV and the job ad. Results will appear here when the analysis is ready.',
+    aiWriterWorking: 'AI is writing your application package. This can take a few seconds.',
+    aiJudgeWorking: 'AI is reviewing your CV. Suggestions will appear here when ready.',
+    aiUnavailable: 'AI is unavailable right now. Please try again.',
+    english: 'English',
+    german: 'German',
+    backToCv: 'Back to CV',
+    editCv: 'Edit CV',
+    exportPdf: 'Export PDF',
+    saveCv: 'Save CV',
+    loginToSave: 'Login to save',
+    loginRequired: 'Login required',
+    format: 'Format',
+    livePreview: 'Live preview',
+    template: 'template',
+    step: 'Step',
+    back: 'Back',
+    next: 'Next',
+    aiJudge: 'AI Judge',
+    hideAiJudge: 'Hide AI Judge',
+    analyzing: 'Analyzing...',
+    openAiUnavailableLocal: 'AI is unavailable right now. No estimate is shown.',
+    openAiUnavailableReview: 'AI is unavailable right now. No review is shown.',
+    openAiUnavailablePrep: 'AI is unavailable right now. No interview prep is shown.',
+    matcherTitle: 'Job matcher',
+    matcherDescription: 'Compare your current CV with a posting, then apply only the changes that make sense.',
+    input: 'Input',
+    pastePosting: 'Paste the posting',
+    pastePostingHelp: 'Use the full job ad for better keyword and interview suggestions.',
+    jobAd: 'Job ad',
+    jobAdPlaceholder: 'Paste the job description here...',
+    currentCv: 'Current CV',
+    currentCvHelp: 'Matching against the CV currently open in the simulator.',
+    createAiTailoredVersion: 'Create AI tailored version',
+    creatingWithAi: 'Creating with AI...',
+    pasteJobToStart: 'Paste a job ad to start',
+    matcherEmptyHelp: 'The matcher will calculate keyword coverage, ATS risks, CV rewrite suggestions, and interview prep.',
+    matchScore: 'Match score',
+    atsCheck: 'ATS check',
+    target: 'Target',
+    aiEstimate: 'AI estimate from CV evidence and job ad.',
+    localEstimate: 'Waiting for AI analysis.',
+    keywordCoverage: 'Keyword coverage',
+    matched: 'Matched',
+    missing: 'Missing',
+    noKeywordOverlap: 'No strong keyword overlap yet.',
+    noMissingKeywords: 'No major missing keywords detected.',
+    suggestions: 'Suggestions',
+    applySelectively: 'Apply selectively',
+    changes: 'changes',
+    apply: 'Apply',
+    atsChecklist: 'ATS checklist',
+    interviewPrep: 'Interview prep',
+    writerTitle: 'AI application writer',
+    writerDescription: 'Paste a job ad and your motivation, then generate a cover letter, motivation text, and application email.',
+    writeNow: 'Write now',
+    writing: 'Writing...',
+    regenerate: 'Regenerate',
+    jobAdAndNotes: 'Job ad and notes',
+    writerJobPlaceholder: 'Paste the full job description here...',
+    yourMotivation: 'Your motivation',
+    motivationPlaceholder: 'Why this company, why this role, what should the letter emphasize?',
+    tone: 'Tone',
+    outputLanguage: 'Output language',
+    questionAngles: 'Question angles',
+    noInterviewPrep: 'No interview prep yet',
+    noInterviewPrepHelp: 'Paste a job ad above to generate role-specific interview questions and answer angles.',
+    output: 'Output',
+    applicationPackage: 'Application package',
+    generatedWithOpenAi: 'Generated with OpenAI.',
+    localFallbackDraft: 'AI unavailable.',
+    autoWriterHint: 'Paste a job ad and the writer starts automatically.',
+    copyAll: 'Copy all',
+    copy: 'Copy',
+    pdf: 'PDF',
+    coverLetter: 'Cover letter',
+    motivation: 'Motivation',
+    email: 'Email',
+    noApplicationText: 'No application text yet',
+    noApplicationTextHelp: 'Use your current CV as the profile source, then paste a job ad and generate a tailored package.',
+    cvContentNeeded: 'Add CV content first',
+    cvContentNeededHelp: 'AI needs real profile information before it can judge your CV. Add your experience, skills, or summary first.',
+    editorTitle: 'CV simulator',
+    editorDescription: 'Free to use. Build with the real Folio CV editor and export from the preview step.',
+    textSuggestions: 'Text suggestions',
+    rewrites: 'rewrites',
+    replace: 'Replace',
+    current: 'Current',
+    suggested: 'Suggested',
+    noRewriteNeeded: 'No rewrite needed right now',
+    noRewriteNeededHelp: 'The judge will show replaceable suggestions when summary or role descriptions look weak, short, or generic.',
+    notEnoughCvInfo: 'Your CV does not contain enough real information yet. AI will not invent missing experience, skills, metrics, or tools. Add what you have first, then create the tailored version.',
+    notEnoughCvInfoTracker: 'Your CV does not contain enough real information yet. AI will not invent missing experience, skills, metrics, or tools. Add what you have first, then tailor this job.',
+    localTailoredFallback: 'AI tailoring is unavailable right now. No AI version was created.',
+    localTailoredTrackerFallback: 'AI tailoring is unavailable right now. No AI tracker version was created.',
+    pasteJobFirstError: 'Paste a job ad first.',
+    pasteLongerJobError: 'Paste a longer job ad first.',
+  },
+  German: {
+    dashboard: 'Dashboard',
+    cvSimulator: 'CV-Simulator',
+    jobMatcher: 'Job-Matcher',
+    jobTracker: 'Job-Tracker',
+    aiWriter: 'AI-Writer',
+    guestMode: 'Gastmodus',
+    signedIn: 'Angemeldet',
+    guestDetail: 'Erstelle CVs kostenlos. Versionen speichern und Jobs tracken nach dem Login.',
+    signedInDetail: 'Deine CVs und Bewerbungen sind in deinem Account gespeichert.',
+    notLoggedIn: 'nicht angemeldet',
+    logIn: 'Einloggen',
+    logOut: 'Ausloggen',
+    backToSite: 'Zurück zur Seite',
+    language: 'Sprache',
+    settings: 'Einstellungen',
+    settingsTitle: 'Einstellungen',
+    profile: 'Profil',
+    support: 'Support',
+    close: 'Schließen',
+    profileSignedOut: 'Melde dich an, um CVs, Bewerbungen und AI-Versionen zu speichern.',
+    supportText: 'Brauchst du Hilfe oder hast du ein Problem gefunden? Kontaktiere den Support mit aktueller Seite und Erwartung.',
+    aiWorking: 'AI arbeitet...',
+    aiMatcherWorking: 'AI liest deinen CV und die Stellenanzeige. Die Ergebnisse erscheinen hier, sobald die Analyse fertig ist.',
+    aiWriterWorking: 'AI schreibt dein Bewerbungspaket. Das kann ein paar Sekunden dauern.',
+    aiJudgeWorking: 'AI prüft deinen CV. Vorschläge erscheinen hier, sobald sie fertig sind.',
+    aiUnavailable: 'AI ist gerade nicht verfügbar. Bitte versuche es erneut.',
+    english: 'Englisch',
+    german: 'Deutsch',
+    backToCv: 'Zurück zum CV',
+    editCv: 'CV bearbeiten',
+    exportPdf: 'PDF exportieren',
+    saveCv: 'CV speichern',
+    loginToSave: 'Login zum Speichern',
+    loginRequired: 'Login nötig',
+    format: 'Format',
+    livePreview: 'Live-Vorschau',
+    template: 'Template',
+    step: 'Schritt',
+    back: 'Zurück',
+    next: 'Weiter',
+    aiJudge: 'AI Judge',
+    hideAiJudge: 'AI Judge ausblenden',
+    analyzing: 'Analysiert...',
+    openAiUnavailableLocal: 'AI ist gerade nicht verfügbar. Es wird keine Schätzung angezeigt.',
+    openAiUnavailableReview: 'AI ist gerade nicht verfügbar. Es wird keine Bewertung angezeigt.',
+    openAiUnavailablePrep: 'AI ist gerade nicht verfügbar. Es wird keine Interview-Vorbereitung angezeigt.',
+    matcherTitle: 'Job-Matcher',
+    matcherDescription: 'Vergleiche deinen aktuellen CV mit einer Stellenanzeige und übernimm nur sinnvolle Änderungen.',
+    input: 'Eingabe',
+    pastePosting: 'Stellenanzeige einfügen',
+    pastePostingHelp: 'Nutze die komplette Anzeige für bessere Keywords und Interview-Vorschläge.',
+    jobAd: 'Stellenanzeige',
+    jobAdPlaceholder: 'Stellenbeschreibung hier einfügen...',
+    currentCv: 'Aktueller CV',
+    currentCvHelp: 'Vergleich mit dem CV, der gerade im Simulator geöffnet ist.',
+    createAiTailoredVersion: 'AI-Version für Job erstellen',
+    creatingWithAi: 'AI erstellt Version...',
+    pasteJobToStart: 'Stellenanzeige einfügen',
+    matcherEmptyHelp: 'Der Matcher berechnet Keyword-Abdeckung, ATS-Risiken, CV-Vorschläge und Interview-Vorbereitung.',
+    matchScore: 'Match-Score',
+    atsCheck: 'ATS-Check',
+    target: 'Ziel',
+    aiEstimate: 'AI-Schätzung aus CV-Belegen und Stellenanzeige.',
+    localEstimate: 'Warten auf AI-Analyse.',
+    keywordCoverage: 'Keyword-Abdeckung',
+    matched: 'Gefunden',
+    missing: 'Fehlt',
+    noKeywordOverlap: 'Noch keine starke Keyword-Überschneidung.',
+    noMissingKeywords: 'Keine großen fehlenden Keywords erkannt.',
+    suggestions: 'Vorschläge',
+    applySelectively: 'Gezielt übernehmen',
+    changes: 'Änderungen',
+    apply: 'Übernehmen',
+    atsChecklist: 'ATS-Checkliste',
+    interviewPrep: 'Interview-Vorbereitung',
+    writerTitle: 'AI-Bewerbungswriter',
+    writerDescription: 'Füge eine Stellenanzeige und deine Motivation ein, dann entstehen Anschreiben, Motivationstext und E-Mail.',
+    writeNow: 'Jetzt schreiben',
+    writing: 'Schreibt...',
+    regenerate: 'Neu generieren',
+    jobAdAndNotes: 'Stellenanzeige und Notizen',
+    writerJobPlaceholder: 'Komplette Stellenbeschreibung hier einfügen...',
+    yourMotivation: 'Deine Motivation',
+    motivationPlaceholder: 'Warum diese Firma, warum diese Rolle, was soll betont werden?',
+    tone: 'Ton',
+    outputLanguage: 'Ausgabesprache',
+    questionAngles: 'Antwortansätze',
+    noInterviewPrep: 'Noch keine Interview-Vorbereitung',
+    noInterviewPrepHelp: 'Füge oben eine Stellenanzeige ein, um rollenspezifische Fragen und Antwortansätze zu erhalten.',
+    output: 'Ausgabe',
+    applicationPackage: 'Bewerbungspaket',
+    generatedWithOpenAi: 'Mit OpenAI generiert.',
+    localFallbackDraft: 'AI nicht verfügbar.',
+    autoWriterHint: 'Füge eine Stellenanzeige ein, der Writer startet automatisch.',
+    copyAll: 'Alles kopieren',
+    copy: 'Kopieren',
+    pdf: 'PDF',
+    coverLetter: 'Anschreiben',
+    motivation: 'Motivation',
+    email: 'E-Mail',
+    noApplicationText: 'Noch kein Bewerbungstext',
+    noApplicationTextHelp: 'Nutze deinen aktuellen CV als Profilquelle, füge eine Stellenanzeige ein und generiere ein passendes Paket.',
+    cvContentNeeded: 'Erst CV-Inhalt hinzufügen',
+    cvContentNeededHelp: 'AI braucht echte Profilinformationen, bevor sie deinen CV bewerten kann. Füge Erfahrung, Skills oder Summary hinzu.',
+    editorTitle: 'CV-Simulator',
+    editorDescription: 'Kostenlos nutzbar. Baue deinen CV im echten Editor und exportiere ihn im Vorschau-Schritt.',
+    textSuggestions: 'Textvorschläge',
+    rewrites: 'Umschreibungen',
+    replace: 'Ersetzen',
+    current: 'Aktuell',
+    suggested: 'Vorschlag',
+    noRewriteNeeded: 'Gerade keine Umschreibung nötig',
+    noRewriteNeededHelp: 'Der Judge zeigt ersetzbare Vorschläge, wenn Summary oder Rollenbeschreibungen schwach, kurz oder generisch wirken.',
+    notEnoughCvInfo: 'Dein CV enthält noch nicht genug echte Informationen. AI erfindet keine fehlende Erfahrung, Skills, Metriken oder Tools. Füge zuerst ein, was du wirklich hast, dann erstelle die Job-Version.',
+    notEnoughCvInfoTracker: 'Dein CV enthält noch nicht genug echte Informationen. AI erfindet keine fehlende Erfahrung, Skills, Metriken oder Tools. Füge zuerst ein, was du wirklich hast, dann passe diesen Job an.',
+    localTailoredFallback: 'AI-Tailoring ist gerade nicht verfügbar. Es wurde keine AI-Version erstellt.',
+    localTailoredTrackerFallback: 'AI-Tailoring ist gerade nicht verfügbar. Es wurde keine AI-Tracker-Version erstellt.',
+    pasteJobFirstError: 'Füge zuerst eine Stellenanzeige ein.',
+    pasteLongerJobError: 'Füge zuerst eine längere Stellenanzeige ein.',
+  },
+} as const;
+
+const uiStepText: Record<UiLanguage, { titles: string[]; descriptions: string[] }> = {
+  English: {
+    titles: stepTitles,
+    descriptions: stepDescriptions,
+  },
+  German: {
+    titles: ['Persönliche Daten', 'Berufserfahrung', 'Ausbildung', 'Skills & Stärken', 'Sprachen', 'Zusätzliche Nachweise', 'Design, Vorschau & Download'],
+    descriptions: [
+      'Erzähl kurz, wer du bist',
+      'Füge Rollen hinzu, die deine Erfahrung zeigen',
+      'Zeige deinen Bildungsweg',
+      'Zeige, was du gut kannst',
+      'Liste deine Sprachen auf',
+      'Füge Projekte, Zertifikate, Awards, Ehrenamt oder Publikationen hinzu',
+      'Passe Fonts und Farben an, wähle ein Template und lade deinen CV herunter',
+    ],
+  },
 };
 
 const screenPaths: Record<AppScreen, string> = {
   landing: '/',
   dashboard: '/dashboard',
   editor: '/dashboard/simulator',
+  matcher: '/dashboard/matcher',
   tracker: '/dashboard/tracker',
   writer: '/dashboard/writer',
 };
@@ -206,9 +493,22 @@ const hasMeaningfulCvContent = (data: CVData) => {
     data.experiences.length > 0 ||
     data.education.length > 0 ||
     data.skills.length > 0 ||
-    data.languages.length > 0
+    data.languages.length > 0 ||
+    (data.additionalSections || []).length > 0
   );
 };
+
+const hasTailoringEvidence = (data: CVData) =>
+  Boolean(
+    data.personalInfo.summary.trim() ||
+    data.skills.some((skill) => skill.name.trim()) ||
+    data.experiences.some((experience) =>
+      [experience.position, experience.company, experience.description].some((value) => value.trim()),
+    ) ||
+    (data.additionalSections || []).some((section) =>
+      [section.title, section.organization, section.description].some((value) => value.trim()),
+    ),
+  );
 
 const getStageClassName = (stage: ApplicationStage) => {
   if (stage === 'Interview') return 'organic-tag organic-tag-accent-2';
@@ -218,11 +518,13 @@ const getStageClassName = (stage: ApplicationStage) => {
   return 'organic-tag';
 };
 
-const DemoNotice = () => (
+const DemoNotice = ({ language }: { language: UiLanguage }) => (
   <div className="organic-card border border-accent/25 bg-[var(--organic-accent-100)] px-5 py-4 text-[var(--organic-accent-800)]">
-    <p className="text-sm font-semibold">This is demo data.</p>
+    <p className="text-sm font-semibold">{language === 'German' ? 'Das sind Demo-Daten.' : 'This is demo data.'}</p>
     <p className="mt-1 text-sm leading-6">
-      Guest users can create and export CVs. Saved CVs, AI writing, and application tracking require login.
+      {language === 'German'
+        ? 'Gäste können CVs erstellen und exportieren. Gespeicherte CVs, AI-Texte und Bewerbungs-Tracking benötigen Login.'
+        : 'Guest users can create and export CVs. Saved CVs, AI writing, and application tracking require login.'}
     </p>
   </div>
 );
@@ -366,6 +668,35 @@ const buildCvReview = (cvData: CVData) => {
   };
 };
 
+type CvReview = ReturnType<typeof buildCvReview>;
+
+type AiJobAnalysis = {
+  jobMatchReport: JobMatchReport;
+  atsCheck: AtsCheck;
+  interviewPrep: InterviewPrep;
+  notes?: string;
+  source?: 'openai';
+};
+
+type AiTailoredCvResult = {
+  role: string;
+  company: string;
+  cvName: string;
+  matchScore: number;
+  matchLabel: string;
+  dataUseNote: string;
+  gapNote: string;
+  changes: string[];
+  summary: string;
+  skillsToAdd: string[];
+  experienceRewrites: Array<{
+    experienceId: string;
+    description: string;
+    reason: string;
+  }>;
+  source?: 'openai';
+};
+
 const getFullName = (data: CVData) =>
   `${data.personalInfo.firstName} ${data.personalInfo.lastName}`.trim() || 'Your Name';
 
@@ -400,70 +731,6 @@ const getRoleFromJobAd = (jobAd: string, fallback: string) => {
     .map((line) => line.trim())
     .find((line) => line.length >= 6 && line.length <= 90);
   return firstUsefulLine || fallback || 'the open role';
-};
-
-const generateLocalApplicationDraft = ({
-  cvData,
-  jobAd,
-  motivation,
-  tone,
-  language,
-}: {
-  cvData: CVData;
-  jobAd: string;
-  motivation: string;
-  tone: WriterTone;
-  language: WriterLanguage;
-}): ApplicationWriterResult => {
-  const name = getFullName(cvData);
-  const role = getRoleFromJobAd(jobAd, cvData.personalInfo.title);
-  const company = getCompanyFromJobAd(jobAd);
-  const summary = cvData.personalInfo.summary || `${cvData.personalInfo.title || 'professional'} with hands-on experience and a practical delivery mindset`;
-  const skills = cvData.skills.map((skill) => skill.name).filter(Boolean).slice(0, 4).join(', ');
-  const topExperience = cvData.experiences[0];
-  const proof = topExperience?.description || `experience in ${skills || 'the relevant work areas'}`;
-  const motive = motivation.trim() || `The role connects well with my background and the problems your team is working on.`;
-  const greeting = language === 'German' ? 'Sehr geehrte Damen und Herren,' : 'Dear hiring team,';
-  const close = language === 'German' ? 'Mit freundlichen Grüßen' : 'Best regards';
-  const intro =
-    language === 'German'
-      ? `ich bewerbe mich auf die Position ${role}, weil die Aufgabe bei ${company} sehr gut zu meinem Profil passt.`
-      : `I am applying for ${role} because the opportunity at ${company} aligns closely with my background.`;
-  const toneLine =
-    tone === 'Direct'
-      ? language === 'German'
-        ? 'Ich arbeite strukturiert, übernehme Verantwortung und bringe Themen konsequent in die Umsetzung.'
-        : 'I work with clear ownership, structured execution, and a strong bias toward delivery.'
-      : tone === 'Warm'
-        ? language === 'German'
-          ? 'Besonders wichtig ist mir eine Zusammenarbeit, in der klare Kommunikation und verlässliche Umsetzung zusammenkommen.'
-          : 'I value teams where clear communication and reliable execution matter.'
-        : language === 'German'
-          ? 'Ich bringe eine professionelle, strukturierte Arbeitsweise und einen klaren Blick für messbare Ergebnisse mit.'
-          : 'I bring a professional, structured working style and a clear focus on measurable outcomes.';
-
-  const coverLetter =
-    language === 'German'
-      ? `${greeting}\n\n${intro} ${summary}. In meiner bisherigen Arbeit konnte ich vor allem durch ${proof} Wirkung erzielen. ${toneLine}\n\n${motive}\n\nGerne erläutere ich in einem Gespräch, wie ich meine Erfahrung für diese Rolle einbringen kann.\n\n${close}\n${name}`
-      : `${greeting}\n\n${intro} ${summary}. In my previous work, I created impact through ${proof}. ${toneLine}\n\n${motive}\n\nI would welcome the opportunity to discuss how my experience can support this role.\n\n${close},\n${name}`;
-
-  const motivationText =
-    language === 'German'
-      ? `Mich motiviert an ${company}, dass die Rolle ${role} praktische Verantwortung mit sichtbarer Wirkung verbindet. ${motive} Ich kann meine Erfahrung in ${skills || 'relevanten Arbeitsbereichen'} einbringen und schnell in konkrete Ergebnisse übersetzen.`
-      : `I am motivated by ${company} because ${role} combines practical ownership with visible impact. ${motive} I can bring my experience in ${skills || 'relevant work areas'} and translate it into concrete results quickly.`;
-
-  const email =
-    language === 'German'
-      ? `${greeting}\n\nanbei sende ich Ihnen meine Bewerbung für die Position ${role}. Über eine Rückmeldung und die Möglichkeit zu einem persönlichen Gespräch freue ich mich.\n\n${close}\n${name}`
-      : `${greeting}\n\nPlease find my application for ${role}. I would be happy to discuss the role and my background in more detail.\n\n${close},\n${name}`;
-
-  return {
-    coverLetter,
-    motivation: motivationText,
-    email,
-    notes: 'Local draft generated without OpenAI. Configure OPENAI_API_KEY on the server for model-written output.',
-    source: 'local',
-  };
 };
 
 const formatApplicationDraft = (result: ApplicationWriterResult) =>
@@ -556,11 +823,26 @@ const getCvName = (data: CVData) => {
   return role || name || 'Untitled CV';
 };
 
+const formatFollowUpLabel = (value?: string) => {
+  if (!value) return 'No follow-up';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((date.getTime() - today.getTime()) / 86400000);
+  if (diffDays < 0) return `Overdue ${Math.abs(diffDays)}d`;
+  if (diffDays === 0) return 'Due today';
+  if (diffDays === 1) return 'Due tomorrow';
+  return `Due in ${diffDays}d`;
+};
+
 const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hydratedUserIdRef = useRef<string | null>(null);
+  const writerAutoKeyRef = useRef('');
   const [screen, setScreenState] = useState<AppScreen>(initialScreen);
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>('English');
   const [step, setStep] = useState(0);
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
   const [template, setTemplate] = useState<CVTemplate>('modern');
@@ -577,16 +859,27 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [addReadStatus, setAddReadStatus] = useState<'idle' | 'imported' | 'draft'>('idle');
   const [draftApplication, setDraftApplication] = useState<Application | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [matcherJobAd, setMatcherJobAd] = useState('');
   const [writerJobAd, setWriterJobAd] = useState('');
   const [writerMotivation, setWriterMotivation] = useState('');
   const [writerTone, setWriterTone] = useState<WriterTone>('Professional');
   const [writerLanguage, setWriterLanguage] = useState<WriterLanguage>('English');
   const [writerResult, setWriterResult] = useState<ApplicationWriterResult | null>(null);
   const [writerLoading, setWriterLoading] = useState(false);
+  const [writerError, setWriterError] = useState('');
+  const [aiCvReview, setAiCvReview] = useState<CvReview | null>(null);
+  const [aiCvReviewLoading, setAiCvReviewLoading] = useState(false);
+  const [aiCvReviewError, setAiCvReviewError] = useState('');
+  const [aiJobAnalysis, setAiJobAnalysis] = useState<AiJobAnalysis | null>(null);
+  const [aiJobAnalysisLoading, setAiJobAnalysisLoading] = useState(false);
+  const [aiJobAnalysisError, setAiJobAnalysisError] = useState('');
+  const [tailoringLoading, setTailoringLoading] = useState(false);
+  const [tailoringNote, setTailoringNote] = useState('');
   const [openFaq, setOpenFaq] = useState(0);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authSubmitting, setAuthSubmitting] = useState(false);
 
@@ -594,7 +887,32 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
   const prev = () => setStep((s) => Math.max(s - 1, 0));
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const cvReview = useMemo(() => buildCvReview(cvData), [cvData]);
+  const localCvReview = useMemo(() => buildCvReview(cvData), [cvData]);
+  const cvReview = aiCvReview;
+  const activeJobAd = screen === 'writer'
+    ? writerJobAd.trim() || matcherJobAd.trim()
+    : matcherJobAd.trim() || writerJobAd.trim();
+  const localJobMatchReport = useMemo(
+    () => (activeJobAd.length >= 40 ? buildJobMatchReport(cvData, activeJobAd) : null),
+    [activeJobAd, cvData],
+  );
+  const localAtsCheck = useMemo(() => buildAtsCheck(cvData, template, activeJobAd), [activeJobAd, cvData, template]);
+  const localInterviewPrep = useMemo(
+    () => (activeJobAd.length >= 40 ? buildInterviewPrep(cvData, activeJobAd) : null),
+    [activeJobAd, cvData],
+  );
+  const jobMatchReport = aiJobAnalysis?.jobMatchReport || null;
+  const atsCheck = aiJobAnalysis?.atsCheck || null;
+  const interviewPrep = aiJobAnalysis?.interviewPrep || null;
+  const t = uiCopy[uiLanguage];
+  const localizedStepTitles = uiStepText[uiLanguage].titles;
+  const localizedStepDescriptions = uiStepText[uiLanguage].descriptions;
+  const cvReviewSourceLabel = aiCvReview ? 'OpenAI' : t.analyzing;
+  const jobAnalysisSourceLabel = aiJobAnalysis ? 'OpenAI' : t.analyzing;
+  const updateUiLanguage = (language: UiLanguage) => {
+    setUiLanguage(language);
+    setWriterLanguage(language);
+  };
   const setScreen = (nextScreen: AppScreen) => {
     setScreenState(nextScreen);
     navigate(screenPaths[nextScreen]);
@@ -603,6 +921,102 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   useEffect(() => {
     setScreenState(initialScreen);
   }, [initialScreen]);
+
+  useEffect(() => {
+    setAiCvReview(null);
+    setAiCvReviewError('');
+  }, [cvData, uiLanguage]);
+
+  useEffect(() => {
+    if (!reviewOpen || !hasMeaningfulCvContent(cvData)) {
+      setAiCvReviewLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = window.setTimeout(async () => {
+      setAiCvReviewLoading(true);
+      setAiCvReviewError('');
+
+      try {
+        const response = await fetch('/api/ai-career-advisor', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'cv-review',
+            cvData,
+            outputLanguage: uiLanguage,
+            localReview: localCvReview,
+          }),
+        });
+
+        if (!response.ok) throw new Error((await response.json())?.error || 'OpenAI CV review is unavailable.');
+        const data = await response.json();
+        if (!cancelled) setAiCvReview(data as CvReview);
+      } catch (error) {
+        if (!cancelled) {
+          setAiCvReviewError(error instanceof Error ? error.message : 'OpenAI CV review is unavailable.');
+        }
+      } finally {
+        if (!cancelled) setAiCvReviewLoading(false);
+      }
+    }, 800);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [cvData, localCvReview, reviewOpen, uiLanguage]);
+
+  useEffect(() => {
+    setAiJobAnalysis(null);
+    setAiJobAnalysisError('');
+  }, [activeJobAd, cvData, template, uiLanguage]);
+
+  useEffect(() => {
+    if (!['matcher', 'writer'].includes(screen) || !localJobMatchReport || !localInterviewPrep) {
+      setAiJobAnalysisLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = window.setTimeout(async () => {
+      setAiJobAnalysisLoading(true);
+      setAiJobAnalysisError('');
+
+      try {
+        const response = await fetch('/api/ai-career-advisor', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'job-match',
+            cvData,
+            template,
+            jobAd: activeJobAd,
+            outputLanguage: uiLanguage,
+            localJobMatch: localJobMatchReport,
+            localAtsCheck,
+            localInterviewPrep,
+          }),
+        });
+
+        if (!response.ok) throw new Error((await response.json())?.error || 'OpenAI job analysis is unavailable.');
+        const data = await response.json();
+        if (!cancelled) setAiJobAnalysis(data as AiJobAnalysis);
+      } catch (error) {
+        if (!cancelled) {
+          setAiJobAnalysisError(error instanceof Error ? error.message : 'OpenAI job analysis is unavailable.');
+        }
+      } finally {
+        if (!cancelled) setAiJobAnalysisLoading(false);
+      }
+    }, 900);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [activeJobAd, cvData, localAtsCheck, localInterviewPrep, localJobMatchReport, screen, template, uiLanguage]);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -730,6 +1144,24 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     },
   });
 
+  const followUpMutation = useMutation({
+    mutationFn: ({ id, followUpAt }: { id: string; followUpAt: string | null }) => updateApplicationFollowUp(id, followUpAt),
+    onMutate: ({ id, followUpAt }) => {
+      const previousApplications = applications;
+      setApplications((current) => current.map((item) => (item.id === id ? { ...item, followUpAt: followUpAt || undefined } : item)));
+      return { previousApplications };
+    },
+    onSuccess: (application) => {
+      setApplications((current) => current.map((item) => (item.id === application.id ? application : item)));
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
+      toast.success('Follow-up gespeichert.');
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousApplications) setApplications(context.previousApplications);
+      toast.error(error instanceof Error ? error.message : 'Follow-up konnte nicht gespeichert werden.');
+    },
+  });
+
   const dbTemplateOptions = useMemo(() => {
     if (!dashboardQuery.data?.templates.length) return templateOptions;
     return dashboardQuery.data.templates.map((item) => ({
@@ -756,8 +1188,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
   const isLoggedIn = Boolean(authUser);
   const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
-  const authStatusLabel = isLoggedIn ? 'Signed in' : 'Guest mode';
-  const authDetailLabel = isLoggedIn ? authUser?.email || 'logged in' : 'not logged in';
+  const authStatusLabel = isLoggedIn ? t.signedIn : t.guestMode;
+  const authDetailLabel = isLoggedIn ? authUser?.email || (uiLanguage === 'German' ? 'angemeldet' : 'logged in') : t.notLoggedIn;
 
   const filteredApplications = useMemo(() => {
     const roleQuery = filters.role.toLowerCase();
@@ -920,13 +1352,211 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     toast.success('Suggestion applied to your CV.');
   };
 
-  const generateApplicationText = async () => {
+  const applyJobMatchSuggestion = (suggestionId: string) => {
+    if (!jobMatchReport) return;
+    const suggestion = jobMatchReport.suggestions.find((item) => item.id === suggestionId);
+    if (!suggestion) return;
+
+    setCvData((current) => {
+      if (suggestion.target === 'summary') {
+        return {
+          ...current,
+          personalInfo: {
+            ...current.personalInfo,
+            summary: suggestion.suggestion,
+          },
+        };
+      }
+
+      if (suggestion.target === 'skills') {
+        const skills = suggestion.suggestion
+          .split(',')
+          .map((item) => item.trim())
+          .filter((item) => item && !current.skills.some((skill) => skill.name.toLowerCase() === item.toLowerCase()))
+          .map((name) => ({
+            id: crypto.randomUUID(),
+            name,
+            level: 3,
+          }));
+
+        return {
+          ...current,
+          skills: [...current.skills, ...skills],
+        };
+      }
+
+      return {
+        ...current,
+        experiences: current.experiences.map((experience) =>
+          experience.id === suggestion.experienceId
+            ? { ...experience, description: suggestion.suggestion }
+            : experience,
+        ),
+      };
+    });
+    toast.success('Job match suggestion applied.');
+  };
+
+  const applyAiTailoredCvResult = (current: CVData, result: AiTailoredCvResult) => {
+    if (!hasTailoringEvidence(current)) return current;
+
+    const existingSkillNames = new Set(current.skills.map((skill) => skill.name.trim().toLowerCase()).filter(Boolean));
+    const skillsToAdd = result.skillsToAdd
+      .map((skill) => skill.trim())
+      .filter((skill) => skill && !existingSkillNames.has(skill.toLowerCase()))
+      .map((name) => ({
+        id: crypto.randomUUID(),
+        name,
+        level: 3,
+      }));
+    const rewritesById = new Map(
+      result.experienceRewrites
+        .filter((item) => item.experienceId && item.description.trim())
+        .map((item) => [item.experienceId, item.description.trim()]),
+    );
+    const summary = result.summary.trim();
+
+    return {
+      ...current,
+      personalInfo: {
+        ...current.personalInfo,
+        title: result.role.trim() || current.personalInfo.title,
+        summary: summary || current.personalInfo.summary,
+      },
+      skills: [...current.skills, ...skillsToAdd],
+      experiences: current.experiences.map((experience) =>
+        rewritesById.has(experience.id)
+          ? { ...experience, description: rewritesById.get(experience.id) || experience.description }
+          : experience,
+      ),
+    };
+  };
+
+  const createTailoredCvVersion = async () => {
+    const baselineReport = jobMatchReport || localJobMatchReport;
+    if (!baselineReport) {
+      toast.error(t.pasteJobFirstError);
+      return;
+    }
+
+    if (!hasTailoringEvidence(cvData)) {
+      const note = t.notEnoughCvInfo;
+      setTailoringNote(note);
+      toast.message(note);
+      return;
+    }
+
+    setTailoringLoading(true);
+    setTailoringNote('');
+    try {
+      const response = await fetch('/api/ai-career-advisor', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'tailored-cv',
+          cvData,
+          template,
+          jobAd: activeJobAd,
+          outputLanguage: uiLanguage,
+          localJobMatch: baselineReport,
+          localAtsCheck,
+        }),
+      });
+
+      if (!response.ok) throw new Error((await response.json())?.error || 'AI tailoring is unavailable.');
+      const data = (await response.json()) as AiTailoredCvResult;
+
+      setSelectedCvId(null);
+      setSelectedCvName(data.cvName || `${data.role || baselineReport.role} - ${data.company || baselineReport.company}`);
+      setCvData((current) => applyAiTailoredCvResult(current, data));
+      setAiJobAnalysis((current) => current ? {
+        ...current,
+        jobMatchReport: {
+          ...current.jobMatchReport,
+          score: data.matchScore,
+          label: data.matchLabel,
+          role: data.role || current.jobMatchReport.role,
+          company: data.company || current.jobMatchReport.company,
+        },
+      } : current);
+      setTailoringNote(`${data.dataUseNote} ${data.gapNote}`.trim());
+      setStep(0);
+      setScreen('editor');
+      toast.success('AI tailored CV version created.');
+      if (data.gapNote) toast.message(data.gapNote);
+    } catch {
+      setTailoringNote(t.localTailoredFallback);
+      setScreen('matcher');
+      toast.message(t.localTailoredFallback);
+    } finally {
+      setTailoringLoading(false);
+    }
+  };
+
+  const createTailoredCvForApplication = async (application: Application) => {
+    const jobAd = [
+      application.title,
+      `Company: ${application.company}`,
+      `Location: ${application.location}`,
+      application.reason || '',
+      application.salary ? `Compensation or tag: ${application.salary}` : '',
+    ].join('\n');
+    const report = buildJobMatchReport(cvData, jobAd);
+
+    setMatcherJobAd(jobAd);
+    if (!hasTailoringEvidence(cvData)) {
+      const note = t.notEnoughCvInfoTracker;
+      setTailoringNote(note);
+      setScreen('matcher');
+      toast.message(note);
+      return;
+    }
+
+    setTailoringLoading(true);
+    setTailoringNote('');
+    try {
+      const response = await fetch('/api/ai-career-advisor', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'tailored-cv',
+          cvData,
+          template,
+          jobAd,
+          outputLanguage: uiLanguage,
+          localJobMatch: report,
+          localAtsCheck: buildAtsCheck(cvData, template, jobAd),
+        }),
+      });
+
+      if (!response.ok) throw new Error((await response.json())?.error || 'AI tailoring is unavailable.');
+      const data = (await response.json()) as AiTailoredCvResult;
+
+      setSelectedCvId(null);
+      setSelectedCvName(data.cvName || `${application.title} - ${application.company}`);
+      setCvData((current) => applyAiTailoredCvResult(current, data));
+      setTailoringNote(`${data.dataUseNote} ${data.gapNote}`.trim());
+      setStep(0);
+      setScreen('editor');
+      toast.success('AI tailored CV version created from tracker item.');
+      if (data.gapNote) toast.message(data.gapNote);
+    } catch {
+      setTailoringNote(t.localTailoredTrackerFallback);
+      setScreen('matcher');
+      toast.message(t.localTailoredTrackerFallback);
+    } finally {
+      setTailoringLoading(false);
+    }
+  };
+
+  const generateApplicationText = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (writerJobAd.trim().length < 40) {
-      toast.error('Paste a longer job ad first.');
+      if (!silent) toast.error(t.pasteLongerJobError);
       return;
     }
 
     setWriterLoading(true);
+    setWriterError('');
     try {
       const payload = {
         cvProfile: buildCvProfileForAi(cvData),
@@ -951,21 +1581,36 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         notes: data.notes,
         source: 'openai',
       });
-      toast.success('AI application text generated.');
-    } catch {
-      const localDraft = generateLocalApplicationDraft({
-        cvData,
-        jobAd: writerJobAd,
-        motivation: writerMotivation,
-        tone: writerTone,
-        language: writerLanguage,
-      });
-      setWriterResult(localDraft);
-      toast.message('Local draft created. Add OPENAI_API_KEY on the server for OpenAI output.');
+      if (!silent) toast.success('AI application text generated.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t.aiUnavailable;
+      setWriterResult(null);
+      setWriterError(message);
+      if (!silent) toast.message(message);
     } finally {
       setWriterLoading(false);
     }
-  };
+  }, [cvData, t, writerJobAd, writerLanguage, writerMotivation, writerTone]);
+
+  useEffect(() => {
+    if (screen !== 'writer' || writerLoading || writerJobAd.trim().length < 40) return;
+
+    const autoKey = JSON.stringify({
+      cvData,
+      jobAd: writerJobAd.trim(),
+      language: writerLanguage,
+      motivation: writerMotivation.trim(),
+      tone: writerTone,
+    });
+    if (writerAutoKeyRef.current === autoKey) return;
+
+    const timeout = window.setTimeout(() => {
+      writerAutoKeyRef.current = autoKey;
+      generateApplicationText({ silent: true });
+    }, 1400);
+
+    return () => window.clearTimeout(timeout);
+  }, [cvData, generateApplicationText, screen, writerJobAd, writerLanguage, writerLoading, writerMotivation, writerTone]);
 
   const copyApplicationText = async (value: string) => {
     await navigator.clipboard.writeText(value);
@@ -1012,6 +1657,21 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     }
 
     stageUpdateMutation.mutate({ id, stage });
+  };
+
+  const setApplicationFollowUp = (id: string, followUpAt: string) => {
+    const application = applications.find((item) => item.id === id);
+    if (!application) return;
+    const normalizedFollowUp = followUpAt || undefined;
+    if (application.followUpAt === normalizedFollowUp) return;
+
+    if (!isLoggedIn || application.isDemo) {
+      setApplications((current) => current.map((item) => (item.id === id ? { ...item, followUpAt: normalizedFollowUp } : item)));
+      toast.success(followUpAt ? 'Follow-up set locally.' : 'Follow-up cleared locally.');
+      return;
+    }
+
+    followUpMutation.mutate({ id, followUpAt: followUpAt || null });
   };
 
   const advanceApplication = (id: string) => {
@@ -1146,8 +1806,102 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     );
   };
 
+  const renderSettingsDialog = () => {
+    if (!settingsOpen) return null;
+
+    return (
+      <div className="folio-dialog-backdrop">
+        <div className="folio-dialog">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl font-normal">{t.settingsTitle}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {uiLanguage === 'German'
+                  ? 'Steuere Sprache, Profil und Support an einem Ort.'
+                  : 'Manage language, profile, and support in one place.'}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setSettingsOpen(false)}>
+              {t.close}
+            </Button>
+          </div>
+
+          <section className="field-card">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                <Globe2 size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="meta-label">{t.language}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={`folio-chip ${uiLanguage === 'English' ? 'is-active' : ''}`}
+                    onClick={() => updateUiLanguage('English')}
+                  >
+                    {t.english}
+                  </button>
+                  <button
+                    type="button"
+                    className={`folio-chip ${uiLanguage === 'German' ? 'is-active' : ''}`}
+                    onClick={() => updateUiLanguage('German')}
+                  >
+                    {t.german}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="field-card">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]">
+                <UserRound size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="meta-label">{t.profile}</p>
+                <h3 className="mt-2 text-sm font-semibold">{displayName}</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {isLoggedIn ? authDetailLabel : t.profileSignedOut}
+                </p>
+                {!isLoggedIn && (
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      requestLogin();
+                    }}
+                  >
+                    {t.logIn}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="field-card">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-card text-accent shadow-[inset_0_0_0_1px_var(--organic-divider)]">
+                <Headphones size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="meta-label">{t.support}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.supportText}</p>
+                <Button className="mt-3" size="sm" variant="outline" asChild>
+                  <a href="mailto:support@foliocv.local?subject=Folio%20CV%20Support">support@foliocv.local</a>
+                </Button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  };
+
   const renderAppShell = () => {
     const openCount = applications.filter((application) => application.stage !== 'Closed').length;
+    const followUpCount = applications.filter((application) => application.followUpAt).length;
     const stageColumns = stages.map((stage) => ({
       stage,
       items: filteredApplications.filter((application) => application.stage === stage),
@@ -1163,10 +1917,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </button>
           <nav className="space-y-1">
             {[
-              { label: 'Dashboard', target: 'dashboard' as AppScreen, active: screen === 'dashboard' },
-              { label: 'CV simulator', target: 'editor' as AppScreen, active: screen === 'editor' },
-              { label: 'Job tracker', target: 'tracker' as AppScreen, active: screen === 'tracker' },
-              { label: 'AI writer', target: 'writer' as AppScreen, active: screen === 'writer' },
+              { label: t.dashboard, target: 'dashboard' as AppScreen, active: screen === 'dashboard' },
+              { label: t.cvSimulator, target: 'editor' as AppScreen, active: screen === 'editor' },
+              { label: t.jobMatcher, target: 'matcher' as AppScreen, active: screen === 'matcher' },
+              { label: t.jobTracker, target: 'tracker' as AppScreen, active: screen === 'tracker' },
+              { label: t.aiWriter, target: 'writer' as AppScreen, active: screen === 'writer' },
             ].map((item) => (
               <button
                 key={item.label}
@@ -1178,10 +1933,14 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             ))}
           </nav>
           <div className="mt-auto space-y-4">
+            <Button variant="outline" className="w-full justify-start" onClick={() => setSettingsOpen(true)}>
+              <Settings size={16} />
+              {t.settings}
+            </Button>
             <div className="rounded-[20px] bg-background p-4">
               <p className="font-display text-base">{authStatusLabel}</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                {isLoggedIn ? 'Your CVs and applications are saved to your account.' : 'Create CVs for free. Save versions and track jobs after signing in.'}
+                {isLoggedIn ? t.signedInDetail : t.guestDetail}
               </p>
             </div>
             <div className="flex items-center gap-3 px-1">
@@ -1199,11 +1958,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               onClick={isLoggedIn ? handleLogout : requestLogin}
               disabled={authLoading}
             >
-              {isLoggedIn ? 'Log out' : 'Log in'}
+              {isLoggedIn ? t.logOut : t.logIn}
             </Button>
             <Button variant="ghost" className="justify-start px-2 text-accent" onClick={() => setScreen('landing')}>
               <ArrowLeft size={16} />
-              Back to site
+              {t.backToSite}
             </Button>
           </div>
         </aside>
@@ -1223,7 +1982,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
 
               {!isLoggedIn && <div className="mt-6">
-                <DemoNotice />
+                <DemoNotice language={uiLanguage} />
               </div>}
 
               <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -1231,7 +1990,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   ['CVs', String(visibleDashboardCvs.length), 'one per role family'],
                   ['Applications', String(applications.length), 'across six stages'],
                   ['Interviews', String(applications.filter((item) => item.stage === 'Interview').length), 'currently active'],
-                  ['AI drafts', writerResult ? '3' : '0', 'cover letter, motivation, email'],
+                  ['Follow-ups', String(followUpCount), 'reminders scheduled'],
                 ].map(([label, value, note]) => (
                   <article key={label} className="organic-card p-5">
                     <p className="section-kicker">{label}</p>
@@ -1329,7 +2088,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
 
               {!isLoggedIn && <div className="mt-6">
-                <DemoNotice />
+                <DemoNotice language={uiLanguage} />
               </div>}
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -1370,6 +2129,20 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                               <span className="organic-tag organic-tag-accent-2">{job.score}</span>
                               <span className="text-xs text-muted-foreground">{job.when}</span>
                             </div>
+                            <label className="mt-3 block rounded-[14px] bg-card/70 px-3 py-2">
+                              <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                                <CalendarClock size={12} />
+                                {formatFollowUpLabel(job.followUpAt)}
+                              </span>
+                              <Input
+                                type="date"
+                                value={job.followUpAt || ''}
+                                onInput={(event) => setApplicationFollowUp(job.id, event.currentTarget.value)}
+                                onChange={(event) => setApplicationFollowUp(job.id, event.target.value)}
+                                className="mt-1 h-8 bg-background/70 text-xs"
+                                disabled={followUpMutation.isPending}
+                              />
+                            </label>
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                               {job.sourceUrl && (
                                 <Button variant="ghost" size="sm" className="justify-start px-0" asChild>
@@ -1386,6 +2159,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                 disabled={stageUpdateMutation.isPending}
                               >
                                 {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start px-0"
+                                onClick={() => createTailoredCvForApplication(job)}
+                                disabled={tailoringLoading}
+                              >
+                                {tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
                               </Button>
                             </div>
                           </article>
@@ -1410,6 +2192,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         <th>Salary</th>
                         <th>Match</th>
                         <th>Stage</th>
+                        <th>Follow-up</th>
                         <th>Updated</th>
                         <th />
                       </tr>
@@ -1423,6 +2206,19 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <td>{job.salary}</td>
                           <td>{job.score}</td>
                           <td><span className={getStageClassName(job.stage)}>{job.stage}</span></td>
+                          <td>
+                            <div className="min-w-36">
+                              <span className="text-xs text-muted-foreground">{formatFollowUpLabel(job.followUpAt)}</span>
+                              <Input
+                                type="date"
+                                value={job.followUpAt || ''}
+                                onInput={(event) => setApplicationFollowUp(job.id, event.currentTarget.value)}
+                                onChange={(event) => setApplicationFollowUp(job.id, event.target.value)}
+                                className="mt-1 h-8 text-xs"
+                                disabled={followUpMutation.isPending}
+                              />
+                            </div>
+                          </td>
                           <td className="text-muted-foreground">{job.when}</td>
                           <td>
                             {job.sourceUrl && (
@@ -1434,6 +2230,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                             )}
                             <Button size="sm" variant="ghost" onClick={() => advanceApplication(job.id)} disabled={stageUpdateMutation.isPending}>
                               {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => createTailoredCvForApplication(job)} disabled={tailoringLoading}>
+                              {tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
                             </Button>
                           </td>
                         </tr>
@@ -1477,6 +2276,14 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                             </label>
                           ))}
                         </div>
+                        <label className="field-card block space-y-1.5">
+                          <span className="text-xs text-muted-foreground">Follow-up reminder</span>
+                          <Input
+                            type="date"
+                            value={draftApplication.followUpAt || ''}
+                            onChange={(event) => setDraftApplication((current) => current ? { ...current, followUpAt: event.target.value || undefined } : current)}
+                          />
+                        </label>
                         <div className="flex items-center gap-3 rounded-[18px] bg-background p-4 text-sm">
                           <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">
                             {draftApplication.score}
@@ -1497,26 +2304,232 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             </section>
           )}
 
+          {screen === 'matcher' && (
+            <section>
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h1 className="font-display text-4xl font-normal">{t.matcherTitle}</h1>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {t.matcherDescription}
+                  </p>
+                  {activeJobAd.length >= 40 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className={`organic-tag ${aiJobAnalysis ? 'organic-tag-accent-2' : ''}`}>
+                        {jobAnalysisSourceLabel}
+                      </span>
+                      {aiJobAnalysisError && (
+                        <span className="text-xs text-muted-foreground">{t.openAiUnavailableLocal}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={openEditor}>{t.backToCv}</Button>
+                  <Button onClick={createTailoredCvVersion} disabled={activeJobAd.length < 40 || tailoringLoading}>
+                    <Target size={16} />
+                    {tailoringLoading ? t.creatingWithAi : t.createAiTailoredVersion}
+                  </Button>
+                </div>
+              </div>
+              {tailoringNote && (
+                <div className="mt-4 rounded-[18px] bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[var(--organic-shadow-sm)]">
+                  {tailoringNote}
+                </div>
+              )}
+
+              <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(320px,0.75fr)_minmax(0,1.25fr)]">
+                <aside className="space-y-4 xl:sticky xl:top-8 xl:self-start">
+                  <article className="organic-card p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                        <SearchCheck size={18} />
+                      </span>
+                      <div>
+                        <p className="section-kicker">{t.input}</p>
+                        <h2 className="font-display text-2xl font-normal">{t.pastePosting}</h2>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          {t.pastePostingHelp}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="mt-5 block space-y-1.5">
+                      <span className="meta-label">{t.jobAd}</span>
+                      <Textarea
+                        value={matcherJobAd}
+                        onChange={(event) => setMatcherJobAd(event.target.value)}
+                        placeholder={t.jobAdPlaceholder}
+                        rows={16}
+                      />
+                    </label>
+                  </article>
+
+                  <article className="organic-card p-5">
+                    <p className="section-kicker">{t.currentCv}</p>
+                    <h2 className="mt-2 font-display text-2xl font-normal">{selectedCvName}</h2>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {t.currentCvHelp}
+                    </p>
+                    <Button variant="outline" className="mt-4 w-full" onClick={openEditor}>
+                      {t.editCv}
+                    </Button>
+                  </article>
+                </aside>
+
+                <div className="space-y-5">
+                  {jobMatchReport && atsCheck ? (
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <article className="organic-card p-5">
+                          <p className="section-kicker">{t.matchScore}</p>
+                          <p className="mt-3 font-display text-5xl leading-none">{jobMatchReport.score}%</p>
+                          <p className="mt-2 text-sm text-muted-foreground">{jobMatchReport.label}</p>
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                            {t.aiEstimate}
+                          </p>
+                        </article>
+                        <article className="organic-card p-5">
+                          <p className="section-kicker">{t.atsCheck}</p>
+                          <p className="mt-3 font-display text-5xl leading-none">{atsCheck.score}%</p>
+                          <p className="mt-2 text-sm text-muted-foreground">{atsCheck.label}</p>
+                        </article>
+                        <article className="organic-card p-5">
+                          <p className="section-kicker">{t.target}</p>
+                          <p className="mt-3 text-lg font-semibold leading-tight">{jobMatchReport.role}</p>
+                          <p className="mt-2 text-sm text-muted-foreground">{jobMatchReport.company}</p>
+                        </article>
+                      </div>
+
+                      <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+                        <article className="organic-card p-5">
+                          <h2 className="font-display text-2xl font-normal">{t.keywordCoverage}</h2>
+                          <div className="mt-5 space-y-5">
+                            <div>
+                              <h3 className="text-sm font-semibold">{t.matched}</h3>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {jobMatchReport.matchedKeywords.length ? jobMatchReport.matchedKeywords.map((keyword) => (
+                                  <span key={keyword} className="organic-tag organic-tag-accent-2">{keyword}</span>
+                                )) : <p className="text-sm text-muted-foreground">{t.noKeywordOverlap}</p>}
+                              </div>
+                            </div>
+                            <div className="border-t border-border/70 pt-4">
+                              <h3 className="text-sm font-semibold">{t.missing}</h3>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {jobMatchReport.missingKeywords.length ? jobMatchReport.missingKeywords.map((keyword) => (
+                                  <span key={keyword} className="organic-tag organic-tag-accent">{keyword}</span>
+                                )) : <p className="text-sm text-muted-foreground">{t.noMissingKeywords}</p>}
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+
+                        <article className="organic-card p-5">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="section-kicker">{t.suggestions}</p>
+                              <h2 className="font-display text-2xl font-normal">{t.applySelectively}</h2>
+                            </div>
+                            <span className="organic-tag organic-tag-accent-2">{jobMatchReport.suggestions.length} {t.changes}</span>
+                          </div>
+                          <div className="mt-5 space-y-3">
+                            {jobMatchReport.suggestions.map((suggestion) => (
+                              <div key={suggestion.id} className="ai-suggestion">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                  <div>
+                                    <span className="organic-tag organic-tag-accent">{suggestion.label}</span>
+                                    <h3 className="mt-2 text-sm font-semibold">{suggestion.issue}</h3>
+                                  </div>
+                                  <Button size="sm" onClick={() => applyJobMatchSuggestion(suggestion.id)}>
+                                    {t.apply}
+                                  </Button>
+                                </div>
+                                <p className="mt-3 text-sm leading-6 text-foreground">{suggestion.suggestion}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </article>
+                      </div>
+
+                      <div className="grid gap-5 xl:grid-cols-2">
+                        <article className="organic-card p-5">
+                          <div className="flex items-center gap-2">
+                            <FileSearch size={16} className="text-accent" />
+                            <h2 className="font-display text-2xl font-normal">{t.atsChecklist}</h2>
+                          </div>
+                          <div className="mt-4 divide-y divide-border/70">
+                            {atsCheck.checks.map((check) => (
+                              <div key={check.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                                <span className={`organic-tag shrink-0 ${check.status === 'Pass' ? 'organic-tag-accent-2' : check.status === 'Fix' ? 'organic-tag-accent' : ''}`}>
+                                  {check.status}
+                                </span>
+                                <div>
+                                  <p className="text-sm font-semibold">{check.title}</p>
+                                  <p className="text-sm leading-6 text-muted-foreground">{check.detail}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </article>
+
+                        <article className="organic-card p-5">
+                          <div className="flex items-center gap-2">
+                            <MessageSquareText size={16} className="text-accent" />
+                            <h2 className="font-display text-2xl font-normal">{t.interviewPrep}</h2>
+                          </div>
+                          {interviewPrep ? (
+                            <div className="mt-4 space-y-3">
+                              {interviewPrep.questions.map((item) => (
+                                <div key={item.question} className="border-t border-border/70 pt-3 first:border-t-0 first:pt-0">
+                                  <p className="text-sm font-semibold">{item.question}</p>
+                                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.answerAngle}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </article>
+                      </div>
+                    </>
+                  ) : activeJobAd.length >= 40 ? (
+                    <div className="empty-state min-h-[420px]">
+                      <p className="text-sm font-semibold text-foreground">
+                        {aiJobAnalysisError ? t.aiUnavailable : t.aiWorking}
+                      </p>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                        {aiJobAnalysisError ? t.openAiUnavailableLocal : t.aiMatcherWorking}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="empty-state min-h-[420px]">
+                      <p className="text-sm font-semibold text-foreground">{t.pasteJobToStart}</p>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                        {t.matcherEmptyHelp}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
           {screen === 'writer' && (
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">AI application writer</h1>
+                  <h1 className="font-display text-4xl font-normal">{t.writerTitle}</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Paste a job ad and your motivation, then generate a cover letter, motivation text, and application email.
+                    {t.writerDescription}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={openEditor}>Edit CV</Button>
-                  <Button onClick={generateApplicationText} disabled={writerLoading || writerJobAd.trim().length < 40}>
+                  <Button variant="outline" onClick={openEditor}>{t.editCv}</Button>
+                  <Button onClick={() => generateApplicationText()} disabled={writerLoading || writerJobAd.trim().length < 40}>
                     <Wand2 size={16} />
-                    {writerLoading ? 'Writing...' : 'Generate'}
+                    {writerLoading ? t.writing : writerResult ? t.regenerate : t.writeNow}
                   </Button>
                 </div>
               </div>
 
               {!isLoggedIn && <div className="mt-6">
-                <DemoNotice />
+                <DemoNotice language={uiLanguage} />
               </div>}
 
               <div className="mt-7 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -1527,32 +2540,32 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         <Mail size={18} />
                       </span>
                       <div>
-                        <p className="section-kicker">Input</p>
-                        <h2 className="font-display text-2xl font-normal">Job ad and notes</h2>
+                        <p className="section-kicker">{t.input}</p>
+                        <h2 className="font-display text-2xl font-normal">{t.jobAdAndNotes}</h2>
                       </div>
                     </div>
                     <div className="mt-5 space-y-4">
                       <label className="field-card block space-y-1.5">
-                        <span className="meta-label">Job ad</span>
+                        <span className="meta-label">{t.jobAd}</span>
                         <Textarea
                           value={writerJobAd}
                           onChange={(event) => setWriterJobAd(event.target.value)}
-                          placeholder="Paste the full job description here..."
+                          placeholder={t.writerJobPlaceholder}
                           rows={9}
                         />
                       </label>
                       <label className="field-card block space-y-1.5">
-                        <span className="meta-label">Your motivation</span>
+                        <span className="meta-label">{t.yourMotivation}</span>
                         <Textarea
                           value={writerMotivation}
                           onChange={(event) => setWriterMotivation(event.target.value)}
-                          placeholder="Why this company, why this role, what should the letter emphasize?"
+                          placeholder={t.motivationPlaceholder}
                           rows={4}
                         />
                       </label>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="field-card">
-                          <p className="meta-label">Tone</p>
+                          <p className="meta-label">{t.tone}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {(['Professional', 'Warm', 'Direct'] as WriterTone[]).map((tone) => (
                               <button
@@ -1566,7 +2579,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           </div>
                         </div>
                         <div className="field-card">
-                          <p className="meta-label">Language</p>
+                          <p className="meta-label">{t.outputLanguage}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {(['English', 'German'] as WriterLanguage[]).map((language) => (
                               <button
@@ -1574,7 +2587,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                 className={`folio-chip ${writerLanguage === language ? 'is-active' : ''}`}
                                 onClick={() => setWriterLanguage(language)}
                               >
-                                {language}
+                                {language === 'German' ? t.german : t.english}
                               </button>
                             ))}
                           </div>
@@ -1582,16 +2595,62 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       </div>
                     </div>
                   </article>
+
+                  <article className="organic-card p-5">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]">
+                        <MessageSquareText size={18} />
+                      </span>
+                      <div>
+                        <p className="section-kicker">{t.interviewPrep}</p>
+                        <h2 className="font-display text-2xl font-normal">{t.questionAngles}</h2>
+                      </div>
+                      {activeJobAd.length >= 40 && (
+                        <span className={`organic-tag ml-auto ${aiJobAnalysis ? 'organic-tag-accent-2' : ''}`}>
+                          {jobAnalysisSourceLabel}
+                        </span>
+                      )}
+                    </div>
+                    {interviewPrep ? (
+                      <div className="mt-5 space-y-3">
+                        {interviewPrep.questions.map((item) => (
+                          <div key={item.question} className="writer-output-section">
+                            <p className="text-sm font-semibold">{item.question}</p>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.answerAngle}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : activeJobAd.length >= 40 ? (
+                      <div className="empty-state mt-5">
+                        <p className="text-sm font-semibold text-foreground">
+                          {aiJobAnalysisError ? t.aiUnavailable : t.aiWorking}
+                        </p>
+                        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                          {aiJobAnalysisError ? t.openAiUnavailablePrep : t.aiMatcherWorking}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="empty-state mt-5">
+                        <p className="text-sm font-semibold text-foreground">{t.noInterviewPrep}</p>
+                        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                          {t.noInterviewPrepHelp}
+                        </p>
+                      </div>
+                    )}
+                  </article>
                 </div>
 
                 <article className="organic-card p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="section-kicker">Output</p>
-                      <h2 className="font-display text-2xl font-normal">Application package</h2>
+                      <p className="section-kicker">{t.output}</p>
+                      <h2 className="font-display text-2xl font-normal">{t.applicationPackage}</h2>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {writerResult?.source === 'openai' ? 'Generated with OpenAI.' : writerResult ? 'Local fallback draft.' : 'Generate text to unlock copy and PDF export.'}
+                        {writerResult ? t.generatedWithOpenAi : writerLoading ? t.aiWriterWorking : writerError ? t.aiUnavailable : t.autoWriterHint}
                       </p>
+                      {writerError && (
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">{writerError}</p>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -1600,11 +2659,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         onClick={() => writerResult && copyApplicationText(formatApplicationDraft(writerResult))}
                       >
                         <Copy size={16} />
-                        Copy all
+                        {t.copyAll}
                       </Button>
                       <Button variant="outline" disabled={!writerResult} onClick={printApplicationText}>
                         <Printer size={16} />
-                        PDF
+                        {t.pdf}
                       </Button>
                     </div>
                   </div>
@@ -1612,16 +2671,16 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   {writerResult ? (
                     <div className="mt-5 space-y-4">
                       {[
-                        ['Cover letter', writerResult.coverLetter],
-                        ['Motivation', writerResult.motivation],
-                        ['Email', writerResult.email],
+                        [t.coverLetter, writerResult.coverLetter],
+                        [t.motivation, writerResult.motivation],
+                        [t.email, writerResult.email],
                       ].map(([label, value]) => (
                         <section key={label} className="writer-output-section">
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="text-sm font-semibold">{label}</h3>
                             <Button size="sm" variant="ghost" onClick={() => copyApplicationText(value)}>
                               <Copy size={14} />
-                              Copy
+                              {t.copy}
                             </Button>
                           </div>
                           <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">{value}</p>
@@ -1633,11 +2692,25 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </p>
                       )}
                     </div>
+                  ) : writerLoading ? (
+                    <div className="empty-state mt-5">
+                      <p className="text-sm font-semibold text-foreground">{t.aiWorking}</p>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                        {t.aiWriterWorking}
+                      </p>
+                    </div>
+                  ) : writerError ? (
+                    <div className="empty-state mt-5">
+                      <p className="text-sm font-semibold text-foreground">{t.aiUnavailable}</p>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                        {writerError}
+                      </p>
+                    </div>
                   ) : (
                     <div className="empty-state mt-5">
-                      <p className="text-sm font-semibold text-foreground">No application text yet</p>
+                      <p className="text-sm font-semibold text-foreground">{t.noApplicationText}</p>
                       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                        Use your current CV as the profile source, then paste a job ad and generate a tailored package.
+                        {t.noApplicationTextHelp}
                       </p>
                     </div>
                   )}
@@ -1650,23 +2723,32 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">CV simulator</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">Free to use. Build with the real Folio CV editor and export from the preview step.</p>
+                  <h1 className="font-display text-4xl font-normal">{t.editorTitle}</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.editorDescription}</p>
+                  {tailoringNote && (
+                    <p className="mt-3 max-w-3xl rounded-[18px] bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[var(--organic-shadow-sm)]">
+                      {tailoringNote}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setScreen('matcher')}>
+                    <SearchCheck size={16} />
+                    {t.jobMatcher}
+                  </Button>
                   <Button variant="outline" onClick={() => setReviewOpen((current) => !current)}>
-                    {reviewOpen ? 'Hide AI Judge' : 'AI Judge'}
+                    {reviewOpen ? t.hideAiJudge : t.aiJudge}
                   </Button>
                   <Button variant="outline" onClick={saveCurrentCv} disabled={saveCvMutation.isPending}>
-                    {saveCvMutation.isPending ? 'Saving...' : isLoggedIn ? 'Save CV' : 'Login to save'}
+                    {saveCvMutation.isPending ? (uiLanguage === 'German' ? 'Speichert...' : 'Saving...') : isLoggedIn ? t.saveCv : t.loginToSave}
                   </Button>
-                  <Button onClick={openExportStep}>Export PDF</Button>
+                  <Button onClick={openExportStep}>{t.exportPdf}</Button>
                 </div>
               </div>
 
               <div className="mt-7 grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
                 <div className="min-w-0 space-y-5">
-                  {reviewOpen && (
+                  {reviewOpen && cvReview ? (
                     <article className="organic-card p-5">
                       <div className="flex items-center gap-4">
                         <span
@@ -1676,18 +2758,26 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <span className="grid h-[58px] w-[58px] place-items-center rounded-full bg-card font-display text-lg">{cvReview.score}</span>
                         </span>
                         <div>
-                          <h2 className="font-display text-xl font-normal">{cvReview.label}</h2>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="font-display text-xl font-normal">{cvReview.label}</h2>
+                            <span className={`organic-tag ${aiCvReview ? 'organic-tag-accent-2' : ''}`}>
+                              {cvReviewSourceLabel}
+                            </span>
+                          </div>
                           <p className="mt-1 text-sm text-muted-foreground">{cvReview.summary}</p>
+                          {aiCvReviewError && (
+                          <p className="mt-1 text-xs text-muted-foreground">{t.openAiUnavailableReview}</p>
+                          )}
                         </div>
                       </div>
 
                       <div className="mt-5 rounded-[22px] bg-background/55 p-4 shadow-[inset_0_0_0_1px_var(--organic-divider)]">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <p className="section-kicker">AI Judge</p>
-                            <h3 className="font-display text-xl font-normal">Text suggestions</h3>
+                            <p className="section-kicker">{t.aiJudge}</p>
+                            <h3 className="font-display text-xl font-normal">{t.textSuggestions}</h3>
                           </div>
-                          <span className="organic-tag organic-tag-accent-2">{cvReview.suggestions.length} rewrites</span>
+                          <span className="organic-tag organic-tag-accent-2">{cvReview.suggestions.length} {t.rewrites}</span>
                         </div>
                         <div className="mt-4 space-y-3">
                           {cvReview.suggestions.length ? cvReview.suggestions.map((suggestion) => (
@@ -1698,25 +2788,25 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                   <h4 className="mt-2 text-sm font-semibold">{suggestion.issue}</h4>
                                 </div>
                                 <Button size="sm" onClick={() => applyCvSuggestion(suggestion)}>
-                                  Replace
+                                  {t.replace}
                                 </Button>
                               </div>
                               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                                 <div>
-                                  <p className="meta-label">Current</p>
+                                  <p className="meta-label">{t.current}</p>
                                   <p className="mt-1 text-sm leading-6 text-muted-foreground">{suggestion.current}</p>
                                 </div>
                                 <div>
-                                  <p className="meta-label">Suggested</p>
+                                  <p className="meta-label">{t.suggested}</p>
                                   <p className="mt-1 text-sm leading-6 text-foreground">{suggestion.suggestion}</p>
                                 </div>
                               </div>
                             </div>
                           )) : (
                             <div className="empty-state">
-                              <p className="text-sm font-semibold text-foreground">No rewrite needed right now</p>
+                              <p className="text-sm font-semibold text-foreground">{t.noRewriteNeeded}</p>
                               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                                The judge will show replaceable suggestions when summary or role descriptions look weak, short, or generic.
+                                {t.noRewriteNeededHelp}
                               </p>
                             </div>
                           )}
@@ -1735,10 +2825,35 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         ))}
                       </div>
                     </article>
-                  )}
+                  ) : reviewOpen ? (
+                    <article className="organic-card p-5">
+                      <div className="flex items-start gap-3">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                          <Sparkles size={18} />
+                        </span>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="font-display text-xl font-normal">
+                              {!hasMeaningfulCvContent(cvData) ? t.cvContentNeeded : aiCvReviewError ? t.aiUnavailable : t.aiWorking}
+                            </h2>
+                            {hasMeaningfulCvContent(cvData) && (
+                              <span className="organic-tag">{cvReviewSourceLabel}</span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                            {!hasMeaningfulCvContent(cvData)
+                              ? t.cvContentNeededHelp
+                              : aiCvReviewError
+                                ? t.openAiUnavailableReview
+                                : t.aiJudgeWorking}
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+                  ) : null}
 
                   <article className="organic-card p-5">
-                    <p className="section-kicker">Format</p>
+                    <p className="section-kicker">{t.format}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {dbTemplateOptions.map((item) => (
                         <button
@@ -1756,12 +2871,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     <div className="mb-6 flex flex-col gap-4 border-b border-border pb-6">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="section-kicker">Step {step + 1} of {TOTAL_STEPS}</p>
-                          <h2 className="mt-2 font-display text-3xl font-normal text-foreground">{stepTitles[step]}</h2>
-                          <p className="mt-1.5 text-sm text-muted-foreground">{stepDescriptions[step]}</p>
+                          <p className="section-kicker">{t.step} {step + 1} / {TOTAL_STEPS}</p>
+                          <h2 className="mt-2 font-display text-3xl font-normal text-foreground">{localizedStepTitles[step]}</h2>
+                          <p className="mt-1.5 text-sm text-muted-foreground">{localizedStepDescriptions[step]}</p>
                         </div>
                         <div className="rounded-full bg-[var(--organic-accent-100)] px-4 py-2 text-right text-[var(--organic-accent-800)]">
-                          <p className="font-mono text-[10px] uppercase tracking-[0.08em] opacity-70">Step</p>
+                          <p className="font-mono text-[10px] uppercase tracking-[0.08em] opacity-70">{t.step}</p>
                           <p className="font-mono text-lg tabular-nums">{String(step + 1).padStart(2, '0')}<span className="opacity-40">/{TOTAL_STEPS}</span></p>
                         </div>
                       </div>
@@ -1781,7 +2896,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         {step === 2 && <EducationForm data={cvData.education} onChange={(d) => setCvData({ ...cvData, education: d })} />}
                         {step === 3 && <SkillsForm data={cvData.skills} onChange={(d) => setCvData({ ...cvData, skills: d })} />}
                         {step === 4 && <LanguagesForm data={cvData.languages} onChange={(d) => setCvData({ ...cvData, languages: d })} />}
-                        {step === 5 && (
+                        {step === 5 && <AdditionalSectionsForm data={cvData.additionalSections || []} onChange={(d) => setCvData({ ...cvData, additionalSections: d })} />}
+                        {step === 6 && (
                           <div className="space-y-5">
                             <CVPreview
                               data={cvData}
@@ -1795,11 +2911,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                     <div className="mt-8 flex justify-between border-t border-border pt-5">
                       <Button onClick={prev} disabled={step === 0} variant="outline">
-                        <ArrowLeft size={16} className="mr-1.5" /> Back
+                        <ArrowLeft size={16} className="mr-1.5" /> {t.back}
                       </Button>
                       {step < lastStep && (
                         <Button onClick={next}>
-                          Next <ArrowRight size={16} className="ml-1.5" />
+                          {t.next} <ArrowRight size={16} className="ml-1.5" />
                         </Button>
                       )}
                     </div>
@@ -1809,8 +2925,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <aside className="min-w-0 xl:sticky xl:top-8 xl:self-start">
                   <div className="organic-card mb-3 flex items-center justify-between px-4 py-3">
                     <div>
-                      <p className="section-kicker">Live preview</p>
-                      <p className="mt-0.5 text-sm font-semibold text-foreground">{template} template</p>
+                      <p className="section-kicker">{t.livePreview}</p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">{template} {t.template}</p>
                     </div>
                     <span className="h-2.5 w-2.5 rounded-full bg-accent" />
                   </div>
@@ -1827,6 +2943,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         </main>
       </div>
       {renderAuthDialog()}
+      {renderSettingsDialog()}
       </>
     );
   };
@@ -2174,6 +3291,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       </main>
     </div>
     {renderAuthDialog()}
+    {renderSettingsDialog()}
     </>
   );
 };

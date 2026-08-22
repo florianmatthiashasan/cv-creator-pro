@@ -1,7 +1,7 @@
 import { CalendarDays, Link2, Mail, MapPin, Phone } from 'lucide-react';
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
-import { dateRange, fullName } from './template-utils';
+import { dateRange, fullName, renderAdditionalSections } from './template-utils';
 
 const splitDescription = (description: string) =>
   description
@@ -128,6 +128,7 @@ const DevTemplate = ({ data }: { data: CVData }) => {
               ))}
             </section>
           )}
+          {renderAdditionalSections(data)}
         </main>
 
         <aside className="space-y-5">

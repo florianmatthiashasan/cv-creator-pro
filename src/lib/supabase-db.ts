@@ -1,5 +1,5 @@
 import type { User } from '@supabase/supabase-js';
-import { CVData, CVDesign, CVTemplate, Language, emptyCVData } from '@/types/cv';
+import { CVAdditionalSection, CVData, CVDesign, CVTemplate, Language, emptyCVData } from '@/types/cv';
 import { createSupabaseClient, hasSupabaseConfig, tryCreateSupabaseClient } from '@/utils/supabase/client';
 
 const templateIds = new Set<CVTemplate>([
@@ -49,6 +49,8 @@ export type DbApplication = {
   when: string;
   reason?: string;
   sourceUrl?: string;
+  followUpAt?: string;
+  notes?: string;
   isDemo?: boolean;
 };
 
@@ -69,6 +71,7 @@ type CvRow = {
   linkedin: string | null;
   photo_url: string | null;
   design: CVDesign | null;
+  custom_sections?: CVAdditionalSection[] | null;
   updated_at: string | null;
   cv_experiences?: Array<{
     id: string;
@@ -114,6 +117,7 @@ type ApplicationRow = {
   score: string | null;
   stage: ApplicationStage | null;
   source_url: string | null;
+  follow_up_at?: string | null;
   notes?: string | null;
   is_demo: boolean | null;
   updated_at?: string | null;
@@ -224,6 +228,7 @@ const mapCvRow = (row: CvRow, templates: CvTemplateRecord[]): SavedCv => {
         name: item.name || '',
         level: item.level || 'B2',
       })),
+      additionalSections: Array.isArray(row.custom_sections) ? row.custom_sections : [],
       design: row.design || emptyCVData.design,
     },
   };
@@ -239,6 +244,8 @@ const mapApplicationRow = (row: ApplicationRow): DbApplication => ({
   stage: row.stage || 'Saved',
   when: formatRelativeDate(row.updated_at || row.created_at),
   sourceUrl: row.source_url || undefined,
+  followUpAt: row.follow_up_at || undefined,
+  notes: row.notes || undefined,
   isDemo: Boolean(row.is_demo),
 });
 
@@ -397,6 +404,7 @@ export const saveCvSnapshot = async ({
         data.personalInfo.summary,
         data.experiences.length ? 'experience' : '',
         data.skills.length ? 'skills' : '',
+        (data.additionalSections || []).length ? 'additional' : '',
       ].filter(Boolean).length * 14,
     ),
     first_name: data.personalInfo.firstName,
@@ -409,6 +417,7 @@ export const saveCvSnapshot = async ({
     website: data.personalInfo.website || null,
     linkedin: data.personalInfo.linkedin || null,
     photo_url: data.personalInfo.photo || null,
+    custom_sections: data.additionalSections || [],
     design: data.design,
   };
 
@@ -526,6 +535,8 @@ export const saveApplication = async ({
       score: application.score,
       stage: application.stage,
       source_url: application.sourceUrl || null,
+      follow_up_at: application.followUpAt || null,
+      notes: application.notes || null,
       is_demo: false,
     })
     .select('*')
@@ -545,5 +556,18 @@ export const updateApplicationStage = async (applicationId: string, stage: Appli
     .single();
 
   if (error) throw toError('Bewerbungsstatus konnte nicht gespeichert werden', error);
+  return mapApplicationRow(data as ApplicationRow);
+};
+
+export const updateApplicationFollowUp = async (applicationId: string, followUpAt: string | null) => {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('applications')
+    .update({ follow_up_at: followUpAt })
+    .eq('id', applicationId)
+    .select('*')
+    .single();
+
+  if (error) throw toError('Follow-up konnte nicht gespeichert werden', error);
   return mapApplicationRow(data as ApplicationRow);
 };

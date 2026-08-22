@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { User, Briefcase, GraduationCap, Zap, Languages, Eye } from 'lucide-react';
+import { Award, User, Briefcase, GraduationCap, Zap, Languages, Eye } from 'lucide-react';
 
 const steps = [
   { icon: User, label: 'Personal' },
@@ -7,6 +7,7 @@ const steps = [
   { icon: GraduationCap, label: 'Education' },
   { icon: Zap, label: 'Skills' },
   { icon: Languages, label: 'Language' },
+  { icon: Award, label: 'Proof' },
   { icon: Eye, label: 'Preview' },
 ];
 
@@ -18,7 +19,7 @@ interface StepIndicatorProps {
 const StepIndicator = ({ currentStep, onStepClick }: StepIndicatorProps) => {
   return (
     <div className="step-tab-shell">
-      <div role="tablist" className="grid w-full grid-cols-6 gap-1">
+      <div role="tablist" className="grid w-full grid-cols-7 gap-1">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;

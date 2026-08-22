@@ -44,6 +44,20 @@ export interface Language {
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Native';
 }
 
+export type CVAdditionalSectionKind = 'project' | 'certificate' | 'award' | 'volunteering' | 'publication';
+
+export interface CVAdditionalSection {
+  id: string;
+  kind: CVAdditionalSectionKind;
+  title: string;
+  organization: string;
+  startDate: string;
+  endDate: string;
+  current: boolean;
+  description: string;
+  url?: string;
+}
+
 export type CVFontChoice =
   | 'caprasimo'
   | 'figtree'
@@ -78,6 +92,7 @@ export interface CVData {
   education: Education[];
   skills: Skill[];
   languages: Language[];
+  additionalSections: CVAdditionalSection[];
   design: CVDesign;
 }
 
@@ -108,6 +123,7 @@ export const emptyCVData: CVData = {
   education: [],
   skills: [],
   languages: [],
+  additionalSections: [],
   design: {
     headingFont: 'caprasimo',
     bodyFont: 'figtree',

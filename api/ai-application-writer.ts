@@ -39,6 +39,18 @@ const extractOutputText = (data: unknown) => {
     .join('\n');
 };
 
+const writerSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['coverLetter', 'motivation', 'email', 'notes'],
+  properties: {
+    coverLetter: { type: 'string' },
+    motivation: { type: 'string' },
+    email: { type: 'string' },
+    notes: { type: 'string' },
+  },
+};
+
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
@@ -51,8 +63,10 @@ export default async function handler(request: Request) {
 
   const prompt = [
     'You are an expert application writer for European job applications.',
-    'Return only valid JSON with keys: coverLetter, motivation, email, notes.',
-    'Write in the requested language. Be specific, confident, and natural. Do not invent employers, degrees, metrics, or experience not present in the CV profile or user notes.',
+    'Create a complete application package with a cover letter, short motivation answer, application email, and brief notes.',
+    'Write all user-facing text in the requested language. Be specific, confident, and natural. Do not invent employers, degrees, metrics, or experience not present in the CV profile or user notes.',
+    'Understand CV profiles and job ads in any language, including German, English, Turkish, Arabic, Russian, and mixed-language documents.',
+    'Do not translate person names, company names, product names, tool names, certifications, degrees, or quoted job titles unless the requested language clearly requires a localized label.',
     `Language: ${payload.language || 'English'}`,
     `Tone: ${payload.tone || 'Professional'}`,
     `CV profile:\n${payload.cvProfile || 'No CV profile provided.'}`,
@@ -67,9 +81,17 @@ export default async function handler(request: Request) {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+      model: process.env.OPENAI_WRITER_MODEL || process.env.OPENAI_MODEL || 'gpt-4.1-mini',
       input: prompt,
       temperature: 0.45,
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'application_writer',
+          strict: true,
+          schema: writerSchema,
+        },
+      },
     }),
   });
 

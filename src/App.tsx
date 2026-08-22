@@ -35,6 +35,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Index initialScreen="dashboard" />} />
           <Route path="/dashboard/simulator" element={<Index initialScreen="editor" />} />
+          <Route path="/dashboard/matcher" element={<Index initialScreen="matcher" />} />
           <Route path="/dashboard/tracker" element={<Index initialScreen="tracker" />} />
           <Route path="/dashboard/writer" element={<Index initialScreen="writer" />} />
           <Route path="/features" element={<StaticPageRedirect to="/features/" />} />
