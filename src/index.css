@@ -271,6 +271,14 @@
     grid-template-columns: 250px minmax(0, 1fr);
   }
 
+  .folio-sidebar-header {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .folio-mobile-settings {
+    display: none !important;
+  }
+
   .folio-sidebar {
     @apply sticky top-0 flex h-screen flex-col gap-7 overflow-y-auto bg-card px-5 py-6 shadow-[var(--organic-shadow-sm)];
   }
@@ -330,11 +338,11 @@
   }
 
   .folio-dialog-backdrop {
-    @apply fixed inset-0 z-[80] grid place-items-center bg-[color-mix(in_srgb,var(--organic-neutral-900)_55%,transparent)] p-4;
+    @apply fixed inset-0 z-[80] overflow-y-auto bg-[color-mix(in_srgb,var(--organic-neutral-900)_55%,transparent)] p-4;
   }
 
   .folio-dialog {
-    @apply flex w-full max-w-xl flex-col gap-5 rounded-[32px] bg-card p-6 shadow-[var(--organic-shadow-lg)];
+    @apply mx-auto my-6 flex w-full max-w-xl flex-col gap-5 rounded-[32px] bg-card p-6 shadow-[var(--organic-shadow-lg)];
   }
 
   @media (max-width: 860px) {
@@ -343,15 +351,30 @@
     }
 
     .folio-sidebar {
-      @apply static h-auto flex-row flex-wrap items-center gap-3 px-4 py-4;
+      @apply sticky top-0 z-40 h-auto gap-3 overflow-x-hidden border-b border-border/70 px-4 py-3;
+      max-width: 100vw;
     }
 
     .folio-sidebar nav {
-      @apply order-3 grid w-full grid-cols-2 gap-2;
+      @apply flex w-full min-w-0 gap-2 overflow-x-auto pb-1;
+      max-width: 100%;
+      scrollbar-width: none;
+    }
+
+    .folio-sidebar nav::-webkit-scrollbar {
+      display: none;
     }
 
     .folio-sidebar-link {
-      @apply justify-center;
+      @apply w-auto shrink-0 justify-center px-4;
+    }
+
+    .folio-mobile-settings {
+      display: inline-flex !important;
+    }
+
+    .folio-sidebar-footer {
+      display: none;
     }
   }
 }

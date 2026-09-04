@@ -6,9 +6,12 @@ import { componentTagger } from "lovable-tagger";
 const localApiRoutes = new Map([
   ["/api/ai-career-advisor", "/api/ai-career-advisor.ts"],
   ["/api/ai-application-writer", "/api/ai-application-writer.ts"],
+  ["/api/billing-config", "/api/billing-config.ts"],
   ["/api/stripe-checkout", "/api/stripe-checkout.ts"],
+  ["/api/stripe-checkout-success", "/api/stripe-checkout-success.ts"],
   ["/api/stripe-portal", "/api/stripe-portal.ts"],
   ["/api/stripe-subscription-status", "/api/stripe-subscription-status.ts"],
+  ["/api/stripe-trial-action", "/api/stripe-trial-action.ts"],
   ["/api/stripe-webhook", "/api/stripe-webhook.ts"],
 ]);
 
@@ -89,6 +92,8 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, "index.html"),
+          pricing: path.resolve(__dirname, "pricing/index.html"),
+          howItWorks: path.resolve(__dirname, "how-it-works/index.html"),
           features: path.resolve(__dirname, "features/index.html"),
           faq: path.resolve(__dirname, "faq/index.html"),
         },

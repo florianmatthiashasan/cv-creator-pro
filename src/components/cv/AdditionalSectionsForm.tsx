@@ -67,6 +67,7 @@ const AdditionalSectionsForm = ({ data, onChange }: Props) => {
       <AnimatePresence mode="popLayout">
         {data.map((item, index) => {
           const kind = getKindMeta(item.kind);
+          const fieldId = (field: string) => `additional-${item.id}-${field}`;
 
           return (
             <motion.div
@@ -81,20 +82,23 @@ const AdditionalSectionsForm = ({ data, onChange }: Props) => {
                   <p className="section-kicker">{kind.label}</p>
                   <span className="mt-1 inline-block text-sm font-medium text-foreground">Extra section {index + 1}</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => remove(item.id)} className="text-muted-foreground hover:text-destructive">
-                  <Trash2 size={16} />
+                <Button variant="ghost" size="icon" onClick={() => remove(item.id)} className="text-muted-foreground hover:text-destructive" aria-label={`Remove extra section ${index + 1}`}>
+                  <Trash2 size={16} aria-hidden="true" />
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div className="field-card">
-                  <p className="meta-label">Type</p>
+                  <p className="meta-label" id={fieldId('kind-label')}>Type</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {sectionKinds.map((option) => (
                       <button
+                        type="button"
                         key={option.id}
                         className={`folio-chip ${item.kind === option.id ? 'is-active' : ''}`}
                         onClick={() => update(item.id, 'kind', option.id)}
+                        aria-pressed={item.kind === option.id}
+                        aria-describedby={fieldId('kind-label')}
                       >
                         {option.label}
                       </button>
@@ -104,39 +108,41 @@ const AdditionalSectionsForm = ({ data, onChange }: Props) => {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="meta-label">Title</Label>
-                    <Input value={item.title} onChange={(event) => update(item.id, 'title', event.target.value)} placeholder={kind.emptyTitle} />
+                    <Label htmlFor={fieldId('title')} className="meta-label">Title</Label>
+                    <Input id={fieldId('title')} name="additional-title" autoComplete="off" value={item.title} onChange={(event) => update(item.id, 'title', event.target.value)} placeholder={kind.emptyTitle} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="meta-label">Organization</Label>
-                    <Input value={item.organization} onChange={(event) => update(item.id, 'organization', event.target.value)} placeholder="Issuer, company, client, or publisher" />
+                    <Label htmlFor={fieldId('organization')} className="meta-label">Organization</Label>
+                    <Input id={fieldId('organization')} name="additional-organization" autoComplete="organization" value={item.organization} onChange={(event) => update(item.id, 'organization', event.target.value)} placeholder="Issuer, company, client, or publisher" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="meta-label">Start</Label>
-                    <Input type="month" value={item.startDate} onChange={(event) => update(item.id, 'startDate', event.target.value)} />
+                    <Label htmlFor={fieldId('start')} className="meta-label">Start</Label>
+                    <Input id={fieldId('start')} name="additional-start" type="month" value={item.startDate} onChange={(event) => update(item.id, 'startDate', event.target.value)} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="meta-label">End</Label>
-                    <Input type="month" value={item.endDate} onChange={(event) => update(item.id, 'endDate', event.target.value)} disabled={item.current} className="disabled:opacity-40" />
+                    <Label htmlFor={fieldId('end')} className="meta-label">End</Label>
+                    <Input id={fieldId('end')} name="additional-end" type="month" value={item.endDate} onChange={(event) => update(item.id, 'endDate', event.target.value)} disabled={item.current} className="disabled:opacity-40" />
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 rounded-full border border-border bg-background/50 px-3 py-2.5">
-                  <Checkbox checked={item.current} onCheckedChange={(checked) => update(item.id, 'current', !!checked)} />
-                  <Label className="text-sm text-foreground/70">Currently active</Label>
+                  <Checkbox id={fieldId('current')} checked={item.current} onCheckedChange={(checked) => update(item.id, 'current', !!checked)} />
+                  <Label htmlFor={fieldId('current')} className="text-sm text-foreground/70">Currently active</Label>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Link</Label>
-                  <Input value={item.url || ''} onChange={(event) => update(item.id, 'url', event.target.value)} placeholder="https://..." />
+                  <Label htmlFor={fieldId('url')} className="meta-label">Link</Label>
+                  <Input id={fieldId('url')} name="additional-url" autoComplete="url" type="url" value={item.url || ''} onChange={(event) => update(item.id, 'url', event.target.value)} placeholder="https://example.com" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Description</Label>
+                  <Label htmlFor={fieldId('description')} className="meta-label">Description</Label>
                   <Textarea
+                    id={fieldId('description')}
+                    name="additional-description"
                     value={item.description}
                     onChange={(event) => update(item.id, 'description', event.target.value)}
                     placeholder="What did you build, earn, publish, or contribute? Add scope and result where possible."

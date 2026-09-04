@@ -47,10 +47,12 @@ import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
 import { fetchArbeitnowJobFromUrl, getProfileCity } from '@/lib/job-matching';
 import {
   ApplicationStage,
+  BillingPlanId,
   createBillingPortalSession,
   createCheckoutSession,
   DbApplication,
   deleteSavedCv,
+  fetchBillingConfig,
   fetchDashboardData,
   fetchSubscriptionStatus,
   getCurrentAccessToken,
@@ -58,9 +60,9 @@ import {
   onAuthUserChange,
   saveApplication,
   saveCvSnapshot,
-  signInWithEmail,
   signOut,
   supabaseConfigured,
+  updateTrialAction,
   updateApplicationFollowUp,
   updateApplicationStage,
 } from '@/lib/supabase-db';
@@ -116,10 +118,12 @@ const uiCopy = {
     aiWriter: 'AI writer',
     guestMode: 'Guest mode',
     signedIn: 'Signed in',
-    guestDetail: 'Create CVs for free. Save versions and track jobs after signing in.',
-    signedInDetail: 'Your CVs and applications are saved to your account.',
+    subscriptionRequired: 'Subscription required',
+    guestDetail: 'Create and export CVs for free. Pro login and saved work require an active subscription.',
+    signedInDetail: 'Your active Folio CV Pro subscription unlocks saved CVs, AI writing, and application tracking.',
+    subscriptionRequiredDetail: 'This account is signed in, but login access starts only after an active subscription.',
     notLoggedIn: 'not logged in',
-    logIn: 'Log in',
+    logIn: 'Pro login',
     logOut: 'Log out',
     backToSite: 'Back to site',
     language: 'Language',
@@ -128,7 +132,7 @@ const uiCopy = {
     profile: 'Profile',
     support: 'Support',
     close: 'Close',
-    profileSignedOut: 'Sign in to save CVs, applications, and AI versions.',
+    profileSignedOut: 'Open pricing to unlock login, saved CVs, applications, and AI versions.',
     supportText: 'Need help or spotted a problem? Contact support with the current page and what you expected.',
     aiWorking: 'AI is working...',
     aiMatcherWorking: 'AI is reading your CV and the job ad. Results will appear here when the analysis is ready.',
@@ -141,14 +145,18 @@ const uiCopy = {
     editCv: 'Edit CV',
     exportPdf: 'Export PDF',
     saveCv: 'Save CV',
-    loginToSave: 'Login to save',
-    loginRequired: 'Login required',
-    upgradeToPro: 'Upgrade to Pro',
+    loginToSave: 'Pro required to save',
+    loginRequired: 'Pro required',
+    upgradeToPro: 'View pricing',
     manageBilling: 'Manage billing',
     proActive: 'Pro active',
     aiRequiresPro: 'AI features require Folio CV Pro.',
-    aiProDetail: 'Guests can create and export CVs for free. Job matching, AI Judge, AI tailoring, and AI Writer need an active subscription.',
+    aiProDetail: 'Guests can create and export CVs for free. Job matching, AI Judge, AI tailoring, saved CVs, and tracking need an active subscription.',
     startingCheckout: 'Starting checkout...',
+    checkingSubscription: 'Checking subscription...',
+    choosePlan: 'View pricing',
+    proGateTitle: 'Folio CV Pro is required here.',
+    proGateDetail: 'The free simulator stays open for writing and PDF export. Login, saved CVs, AI tools, and the application tracker are available only with an active subscription.',
     format: 'Format',
     livePreview: 'Live preview',
     template: 'template',
@@ -243,10 +251,12 @@ const uiCopy = {
     aiWriter: 'AI-Writer',
     guestMode: 'Gastmodus',
     signedIn: 'Angemeldet',
-    guestDetail: 'Erstelle CVs kostenlos. Versionen speichern und Jobs tracken nach dem Login.',
-    signedInDetail: 'Deine CVs und Bewerbungen sind in deinem Account gespeichert.',
+    subscriptionRequired: 'Abo erforderlich',
+    guestDetail: 'Erstelle und exportiere CVs kostenlos. Pro-Login und gespeicherte Arbeit brauchen ein aktives Abo.',
+    signedInDetail: 'Dein aktives Folio CV Pro Abo schaltet gespeicherte CVs, AI-Texte und Bewerbungs-Tracking frei.',
+    subscriptionRequiredDetail: 'Dieser Account ist angemeldet, aber Login-Zugriff startet erst mit aktivem Abo.',
     notLoggedIn: 'nicht angemeldet',
-    logIn: 'Einloggen',
+    logIn: 'Pro-Login',
     logOut: 'Ausloggen',
     backToSite: 'Zurück zur Seite',
     language: 'Sprache',
@@ -255,7 +265,7 @@ const uiCopy = {
     profile: 'Profil',
     support: 'Support',
     close: 'Schließen',
-    profileSignedOut: 'Melde dich an, um CVs, Bewerbungen und AI-Versionen zu speichern.',
+    profileSignedOut: 'Öffne Pricing, um Login, gespeicherte CVs, Bewerbungen und AI-Versionen freizuschalten.',
     supportText: 'Brauchst du Hilfe oder hast du ein Problem gefunden? Kontaktiere den Support mit aktueller Seite und Erwartung.',
     aiWorking: 'AI arbeitet...',
     aiMatcherWorking: 'AI liest deinen CV und die Stellenanzeige. Die Ergebnisse erscheinen hier, sobald die Analyse fertig ist.',
@@ -268,14 +278,18 @@ const uiCopy = {
     editCv: 'CV bearbeiten',
     exportPdf: 'PDF exportieren',
     saveCv: 'CV speichern',
-    loginToSave: 'Login zum Speichern',
-    loginRequired: 'Login nötig',
-    upgradeToPro: 'Pro aktivieren',
+    loginToSave: 'Pro nötig zum Speichern',
+    loginRequired: 'Pro nötig',
+    upgradeToPro: 'Preise ansehen',
     manageBilling: 'Abo verwalten',
     proActive: 'Pro aktiv',
     aiRequiresPro: 'AI-Funktionen brauchen Folio CV Pro.',
-    aiProDetail: 'Gäste können CVs kostenlos erstellen und exportieren. Job-Matching, AI Judge, AI-Tailoring und AI Writer brauchen ein aktives Abo.',
+    aiProDetail: 'Gäste können CVs kostenlos erstellen und exportieren. Job-Matching, AI Judge, AI-Tailoring, gespeicherte CVs und Tracking brauchen ein aktives Abo.',
     startingCheckout: 'Checkout wird gestartet...',
+    checkingSubscription: 'Abo wird geprüft...',
+    choosePlan: 'Preise ansehen',
+    proGateTitle: 'Hier ist Folio CV Pro nötig.',
+    proGateDetail: 'Der kostenlose Simulator bleibt zum Schreiben und PDF-Export offen. Login, gespeicherte CVs, AI-Tools und Bewerbungs-Tracking gibt es nur mit aktivem Abo.',
     format: 'Format',
     livePreview: 'Live-Vorschau',
     template: 'Template',
@@ -392,6 +406,67 @@ const screenPaths: Record<AppScreen, string> = {
   writer: '/dashboard/writer',
 };
 
+const isBillingPlanId = (value: unknown): value is BillingPlanId =>
+  value === 'weekly' || value === 'monthly' || value === 'yearly';
+
+const billingPlans: Array<{
+  id: BillingPlanId;
+  productName: string;
+  label: string;
+  labelDe: string;
+  price: string;
+  cadence: string;
+  cadenceDe: string;
+  note: string;
+  noteDe: string;
+  badge?: string;
+  badgeDe?: string;
+  cta: string;
+  ctaDe: string;
+}> = [
+  {
+    id: 'weekly',
+    productName: 'Folio Pro Weekly',
+    label: 'Weekly',
+    labelDe: 'Wöchentlich',
+    price: 'EUR 2.99',
+    cadence: 'per week',
+    cadenceDe: 'pro Woche',
+    note: 'Flexible access when you need a CV sprint.',
+    noteDe: 'Flexibler Zugang, wenn du nur kurz intensiv an Bewerbungen arbeitest.',
+    cta: 'Start weekly',
+    ctaDe: 'Wöchentlich starten',
+  },
+  {
+    id: 'monthly',
+    productName: 'Folio Pro Monthly',
+    label: 'Monthly',
+    labelDe: 'Monatlich',
+    price: 'EUR 9.90',
+    cadence: 'per month',
+    cadenceDe: 'pro Monat',
+    note: 'Good for an active search with multiple applications.',
+    noteDe: 'Gut für eine aktive Jobsuche mit mehreren Bewerbungen.',
+    badge: 'Popular',
+    badgeDe: 'Beliebt',
+    cta: 'Start monthly',
+    ctaDe: 'Monatlich starten',
+  },
+  {
+    id: 'yearly',
+    productName: 'Folio Pro Yearly',
+    label: 'Yearly',
+    labelDe: 'Jährlich',
+    price: 'EUR 79.90',
+    cadence: 'per year',
+    cadenceDe: 'pro Jahr',
+    note: 'Best value for ongoing career documents.',
+    noteDe: 'Bester Wert, wenn du deine Karriereunterlagen dauerhaft pflegst.',
+    cta: 'Start yearly',
+    ctaDe: 'Jährlich starten',
+  },
+];
+
 const stages: ApplicationStage[] = ['Saved', 'Applied', 'No response', 'Interview', 'Offer', 'Closed'];
 const nextStageLabel: Record<ApplicationStage, string> = {
   Saved: 'Mark applied',
@@ -430,21 +505,21 @@ const marketingFeatures = [
   {
     icon: CheckCircle2,
     title: 'CV check',
-    description: 'A local read-through names what a recruiter will notice first: evidence, length, weak verbs, and missing header details.',
-    plan: 'Demo',
+    description: 'AI Judge reviews evidence, length, weak verbs, and missing header details when Folio CV Pro is active.',
+    plan: 'Pro',
   },
   {
     icon: ArrowUpRight,
     title: 'Application tracker',
-    description: 'The dashboard preview shows how saved roles, applications, interviews, offers, and closed jobs can be organized.',
-    plan: 'Preview',
+    description: 'Save role-focused CV versions and organize applications, interviews, offers, and closed jobs in Pro.',
+    plan: 'Pro',
   },
 ];
 
 const howItWorks = [
   'Fill in the forms, switch between formats, and see the page update as you type. The simulator stays free and works without an account.',
-  'Use the dashboard view to keep several role-focused versions visible instead of forcing every application into one generic CV.',
-  'Track applications in a board or table view so saved jobs, sent applications, interviews, offers, and closed roles do not blur together.',
+  'Choose Folio CV Pro when you want login access, saved versions, AI writing, AI tailoring, and application tracking.',
+  'Track applications in a board or table view only while your subscription is active, so Pro access is tied to paid status.',
 ];
 
 const faqs = [
@@ -454,7 +529,7 @@ const faqs = [
   },
   {
     question: 'Do I need an account?',
-    answer: 'No. You can start the CV in the browser immediately. The dashboard shown here is a product preview around the same workflow.',
+    answer: 'No account is needed for the free CV simulator and PDF export. Login access, saved CVs, AI tools, and tracking require an active Folio CV Pro subscription.',
   },
   {
     question: 'Is the export suitable for applications and ATS systems?',
@@ -567,8 +642,8 @@ const DemoNotice = ({ language }: { language: UiLanguage }) => (
     <p className="text-sm font-semibold">{language === 'German' ? 'Das sind Demo-Daten.' : 'This is demo data.'}</p>
     <p className="mt-1 text-sm leading-6">
       {language === 'German'
-        ? 'Gäste können CVs erstellen und exportieren. Gespeicherte CVs, AI-Texte und Bewerbungs-Tracking benötigen Login.'
-        : 'Guest users can create and export CVs. Saved CVs, AI writing, and application tracking require login.'}
+        ? 'Gäste können CVs erstellen und exportieren. Gespeicherte CVs, AI-Texte und Bewerbungs-Tracking benötigen ein aktives Pro-Abo.'
+        : 'Guest users can create and export CVs. Saved CVs, AI writing, and application tracking require an active Pro subscription.'}
     </p>
   </div>
 );
@@ -974,10 +1049,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [openFaq, setOpenFaq] = useState(0);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [authOpen, setAuthOpen] = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [preferredBillingPlan, setPreferredBillingPlan] = useState<BillingPlanId | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [authEmail, setAuthEmail] = useState('');
-  const [authSubmitting, setAuthSubmitting] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const lastStep = TOTAL_STEPS - 1;
@@ -1030,16 +1104,34 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     enabled: Boolean(authUser && supabaseConfigured),
     refetchOnWindowFocus: true,
   });
+  const billingConfigQuery = useQuery({
+    queryKey: ['billing-config'],
+    queryFn: fetchBillingConfig,
+    staleTime: 5 * 60 * 1000,
+  });
   const isLoggedIn = Boolean(authUser);
   const hasProSubscription = Boolean(authUser && billingQuery.data?.isActive);
+  const isCheckingSubscription = Boolean(authUser && billingQuery.isLoading);
+  const trialDays = billingConfigQuery.data?.trialDays || 0;
   const canUseAi = hasProSubscription;
   const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
-  const authStatusLabel = isLoggedIn ? t.signedIn : t.guestMode;
+  const authStatusLabel = hasProSubscription ? t.signedIn : isLoggedIn ? t.subscriptionRequired : t.guestMode;
   const authDetailLabel = isLoggedIn ? authUser?.email || (uiLanguage === 'German' ? 'angemeldet' : 'logged in') : t.notLoggedIn;
+  const authAccessDetailLabel = hasProSubscription ? t.signedInDetail : isLoggedIn ? t.subscriptionRequiredDetail : t.guestDetail;
 
   useEffect(() => {
     setScreenState(initialScreen);
   }, [initialScreen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('pricing') === '1') {
+      const plan = params.get('plan');
+      setPreferredBillingPlan(isBillingPlanId(plan) ? plan : null);
+      setPricingOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     setAiCvReview(null);
@@ -1165,7 +1257,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const dashboardQuery = useQuery({
     queryKey: ['dashboard-data', authUser?.id],
     queryFn: () => fetchDashboardData(authUser as User),
-    enabled: Boolean(authUser && supabaseConfigured),
+    enabled: Boolean(authUser && hasProSubscription && supabaseConfigured),
   });
 
   useEffect(() => {
@@ -1385,7 +1477,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   useSeo({
     title: screen === 'landing'
       ? 'Folio CV | Free Resume Builder with Live Preview and PDF Export'
-      : `Folio CV ${screen === 'editor' ? 'Simulator' : screen.charAt(0).toUpperCase() + screen.slice(1)} | Dashboard Preview`,
+      : `Folio CV ${screen === 'editor' ? 'Simulator' : screen.charAt(0).toUpperCase() + screen.slice(1)} | Pro Workspace`,
     description:
       'Create a professional resume online with Folio CV for free. Use live preview, CV templates, design customization, and PDF export without signing up.',
     path: screenPaths[screen],
@@ -1405,24 +1497,16 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     });
   };
 
-  const requestLogin = () => {
-    if (!supabaseConfigured) {
-      toast.error('Supabase ENV fehlt. Bitte VITE_SUPABASE_URL und VITE_SUPABASE_PUBLISHABLE_KEY setzen.');
-      return;
-    }
-
-    setAuthOpen(true);
+  const requestLogin = (planId?: BillingPlanId) => {
+    setPreferredBillingPlan(planId || null);
+    setPricingOpen(true);
   };
 
-  const startCheckout = async () => {
-    if (!authUser) {
-      requestLogin();
-      return;
-    }
-
+  const startCheckout = async (planId: BillingPlanId = 'monthly') => {
     setCheckoutLoading(true);
     try {
-      const url = await createCheckoutSession();
+      setPricingOpen(false);
+      const url = await createCheckoutSession(planId);
       window.location.href = url;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Checkout konnte nicht gestartet werden.');
@@ -1450,8 +1534,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
   const requireAiAccess = () => {
     if (canUseAi) return true;
-    if (!authUser) requestLogin();
-    else void startCheckout();
+    requestLogin();
     return false;
   };
 
@@ -1464,22 +1547,6 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     };
   };
 
-  const handleAuthSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!authEmail.trim()) return;
-
-    setAuthSubmitting(true);
-    try {
-      await signInWithEmail(authEmail.trim());
-      toast.success('Check your inbox for the sign-in link.');
-      setAuthOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Login konnte nicht gestartet werden.');
-    } finally {
-      setAuthSubmitting(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -1490,25 +1557,54 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     }
   };
 
-  const saveCurrentCv = () => {
-    if (!authUser) {
+  const saveCurrentCv = (mode: 'save' | 'new-version' = 'save') => {
+    if (!hasProSubscription) {
       requestLogin();
       return;
     }
 
     const name = selectedCvName && selectedCvName !== 'Untitled CV' ? selectedCvName : getCvName(cvData);
+    const dataToSave = mode === 'new-version' ? cloneCvDataForNewVersion(cvData) : cvData;
     setSelectedCvName(name);
+    if (mode === 'new-version') {
+      setSelectedCvId(null);
+      setCvData(dataToSave);
+    }
+    saveCvMutation.mutate({
+      userId: authUser.id,
+      cvId: mode === 'new-version' ? null : selectedCvId,
+      name,
+      templateId: template,
+      data: dataToSave,
+    });
+  };
+
+  const saveDashboardCvAsNewVersion = (id: string) => {
+    if (!hasProSubscription) {
+      requestLogin();
+      return;
+    }
+
+    const cv = dashboardQuery.data?.cvs.find((item) => item.id === id);
+    if (!cv) return;
+
+    const dataToSave = cloneCvDataForNewVersion(cv.data);
+    setSelectedCvId(null);
+    setSelectedCvName(cv.name);
+    setTemplate(cv.templateId);
+    setCvData(dataToSave);
+
     saveCvMutation.mutate({
       userId: authUser.id,
       cvId: null,
-      name,
-      templateId: template,
-      data: cvData,
+      name: cv.name,
+      templateId: cv.templateId,
+      data: dataToSave,
     });
   };
 
   const deleteCvVersion = (cvId: string, cvName: string) => {
-    if (!authUser) {
+    if (!hasProSubscription) {
       requestLogin();
       return;
     }
@@ -1844,7 +1940,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     const application = applications.find((item) => item.id === id);
     if (!application || application.stage === stage) return;
 
-    if (!isLoggedIn || application.isDemo) {
+    if (!hasProSubscription || application.isDemo) {
       setApplications((current) => current.map((item) => (item.id === id ? { ...item, stage } : item)));
       return;
     }
@@ -1858,7 +1954,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     const normalizedFollowUp = followUpAt || undefined;
     if (application.followUpAt === normalizedFollowUp) return;
 
-    if (!isLoggedIn || application.isDemo) {
+    if (!hasProSubscription || application.isDemo) {
       setApplications((current) => current.map((item) => (item.id === id ? { ...item, followUpAt: normalizedFollowUp } : item)));
       toast.success(followUpAt ? 'Follow-up set locally.' : 'Follow-up cleared locally.');
       return;
@@ -1871,7 +1967,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     const application = applications.find((item) => item.id === id);
     if (!application) return;
 
-    if (!isLoggedIn) {
+    if (!hasProSubscription) {
       requestLogin();
       return;
     }
@@ -1929,7 +2025,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
   const saveDraftApplication = () => {
     if (!draftApplication) return;
-    if (!isLoggedIn) {
+    if (!hasProSubscription) {
       requestLogin();
       return;
     }
@@ -1967,34 +2063,99 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     setStep(lastStep);
   };
 
-  const renderAuthDialog = () => {
-    if (!authOpen) return null;
+  const renderPlanCard = (
+    plan: (typeof billingPlans)[number],
+    options: { dark?: boolean; compact?: boolean } = {},
+  ) => {
+    const isGerman = uiLanguage === 'German';
+    const dark = Boolean(options.dark);
+    const label = isGerman ? plan.labelDe : plan.label;
+    const cadence = isGerman ? plan.cadenceDe : plan.cadence;
+    const note = isGerman ? plan.noteDe : plan.note;
+    const badge = isGerman ? plan.badgeDe : plan.badge;
+    const cta = isGerman ? plan.ctaDe : plan.cta;
+    const selected = preferredBillingPlan === plan.id;
+    const trialBadge = trialDays
+      ? isGerman
+        ? `${trialDays} Tage kostenlos testen`
+        : `${trialDays}-day free trial`
+      : '';
+    const trialNote = trialDays
+      ? isGerman
+        ? 'Im Trial keine Karte nötig.'
+        : 'No card required during trial.'
+      : '';
+
+    return (
+      <article
+        key={plan.id}
+        className={`${dark ? 'rounded-[28px] bg-[var(--organic-neutral-900)] text-[var(--organic-neutral-100)] shadow-[var(--organic-shadow-lg)]' : 'organic-card'} ${options.compact ? 'p-5' : 'p-8'}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className={`section-kicker ${dark ? 'text-[var(--organic-accent-200)]' : ''}`}>{plan.productName}</p>
+            <h2 className="mt-2 font-display text-2xl font-normal">{label}</h2>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            {selected && <span className="organic-tag organic-tag-accent">{isGerman ? 'Ausgewählt' : 'Selected'}</span>}
+            {trialBadge && <span className="organic-tag organic-tag-accent-2">{trialBadge}</span>}
+            {badge && <span className="organic-tag organic-tag-accent">{badge}</span>}
+          </div>
+        </div>
+        <p className="mt-5 font-display text-4xl leading-none">{plan.price}</p>
+        <p className={`mt-2 text-sm ${dark ? 'text-[var(--organic-neutral-300)]' : 'text-muted-foreground'}`}>{cadence}</p>
+        <p className={`mt-4 min-h-[3.25rem] text-sm leading-6 ${dark ? 'text-[var(--organic-neutral-300)]' : 'text-muted-foreground'}`}>{note}</p>
+        {trialNote && (
+          <p className={`mt-3 text-xs font-semibold ${dark ? 'text-[var(--organic-accent-100)]' : 'text-accent'}`}>
+            {trialNote}
+          </p>
+        )}
+        <Button className="mt-5 w-full" onClick={() => startCheckout(plan.id)} disabled={checkoutLoading || isCheckingSubscription}>
+          {checkoutLoading ? t.startingCheckout : cta}
+        </Button>
+      </article>
+    );
+  };
+
+  const renderPricingDialog = () => {
+    if (!pricingOpen) return null;
+    const orderedPlans = preferredBillingPlan
+      ? [
+          ...billingPlans.filter((plan) => plan.id === preferredBillingPlan),
+          ...billingPlans.filter((plan) => plan.id !== preferredBillingPlan),
+        ]
+      : billingPlans;
 
     return (
       <div className="folio-dialog-backdrop">
-        <form className="folio-dialog" onSubmit={handleAuthSubmit}>
-          <div>
-            <h2 className="font-display text-2xl font-normal">Sign in to save your work</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              We will email you a secure sign-in link. No password needed.
-            </p>
-          </div>
-          <Input
-            type="email"
-            placeholder="you@example.com"
-            value={authEmail}
-            onChange={(event) => setAuthEmail(event.target.value)}
-            autoFocus
-          />
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
-              Cancel
+        <div className="folio-dialog max-w-5xl">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <span className="organic-tag organic-tag-accent-2">Folio CV Pro</span>
+              <h2 className="mt-3 font-display text-3xl font-normal">
+                {uiLanguage === 'German' ? 'Wähle einen Plan, bevor du dich anmeldest.' : 'Pick a plan before signing in.'}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                {uiLanguage === 'German'
+                  ? 'Die App fragt hier nicht nach deiner E-Mail. Der nächste Schritt ist der sichere Checkout für dein Abo.'
+                  : 'The app does not ask for your email here. The next step is secure checkout for your subscription.'}
+              </p>
+              {trialDays > 0 && (
+                <p className="mt-3 inline-flex rounded-full bg-[var(--organic-accent-100)] px-3 py-1 text-xs font-semibold text-[var(--organic-accent-800)]">
+                  {uiLanguage === 'German'
+                    ? `${trialDays} Tage kostenlos testen, im Trial keine Karte nötig.`
+                    : `${trialDays}-day free trial, no card required during trial.`}
+                </p>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setPricingOpen(false)}>
+              {t.close}
             </Button>
-            <Button type="submit" disabled={authSubmitting || !authEmail.trim()}>
-              {authSubmitting ? 'Sending...' : 'Continue'}
-            </Button>
           </div>
-        </form>
+          <div className="grid gap-4 md:grid-cols-3">
+            {orderedPlans.map((plan) => renderPlanCard(plan, { compact: true }))}
+          </div>
+        </div>
       </div>
     );
   };
@@ -2055,14 +2216,14 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <p className="meta-label">{t.profile}</p>
                 <h3 className="mt-2 text-sm font-semibold">{displayName}</h3>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {isLoggedIn ? authDetailLabel : t.profileSignedOut}
+                  {hasProSubscription ? authDetailLabel : isLoggedIn ? t.subscriptionRequiredDetail : t.profileSignedOut}
                 </p>
                 {isLoggedIn ? (
                   <Button
                     className="mt-3"
                     size="sm"
                     variant={hasProSubscription ? 'outline' : 'default'}
-                    onClick={hasProSubscription ? openBillingPortal : startCheckout}
+                    onClick={hasProSubscription ? openBillingPortal : () => requestLogin()}
                     disabled={checkoutLoading}
                   >
                     {checkoutLoading ? t.startingCheckout : hasProSubscription ? t.manageBilling : t.upgradeToPro}
@@ -2102,6 +2263,28 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     );
   };
 
+  const renderSubscriptionGate = () => (
+    <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col justify-center py-10">
+      <div className="max-w-3xl">
+        <span className="organic-tag organic-tag-accent-2">Folio CV Pro</span>
+        <h1 className="mt-4 font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+          {isCheckingSubscription ? t.checkingSubscription : t.proGateTitle}
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
+          {isCheckingSubscription ? authDetailLabel : t.proGateDetail}
+        </p>
+      </div>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
+        {billingPlans.map((plan) => renderPlanCard(plan, { compact: true }))}
+      </div>
+
+      <Button className="mt-6 self-start" variant="outline" onClick={openEditor}>
+        {uiLanguage === 'German' ? 'Zum kostenlosen Simulator' : 'Go to the free simulator'}
+      </Button>
+    </section>
+  );
+
   const renderAppShell = () => {
     const openCount = applications.filter((application) => application.stage !== 'Closed').length;
     const followUpCount = applications.filter((application) => application.followUpAt).length;
@@ -2114,10 +2297,22 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       <>
       <div className="folio-app-shell">
         <aside className="folio-sidebar">
-          <button className="flex items-center gap-3 px-2 font-display text-lg text-foreground" onClick={() => setScreen('landing')}>
-            <span className="h-6 w-6 rounded-full bg-accent" />
-            Folio CV
-          </button>
+          <div className="folio-sidebar-header">
+            <button className="flex items-center gap-3 px-2 font-display text-lg text-foreground" onClick={() => setScreen('landing')}>
+              <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
+              Folio CV
+            </button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="folio-mobile-settings"
+              onClick={() => setSettingsOpen(true)}
+              aria-label={t.settings}
+            >
+              <Settings size={16} aria-hidden="true" />
+              {t.settings}
+            </Button>
+          </div>
           <nav className="space-y-1">
             {[
               { label: t.dashboard, target: 'dashboard' as AppScreen, active: screen === 'dashboard' },
@@ -2129,15 +2324,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <button
                 key={item.label}
                 className={`folio-sidebar-link ${item.active ? 'is-active' : ''}`}
-                onClick={() => setScreen(item.target)}
+                onClick={() => (item.target === 'editor' || hasProSubscription ? setScreen(item.target) : requestLogin())}
               >
                 {item.label}
               </button>
             ))}
           </nav>
-          <div className="mt-auto space-y-4">
+          <div className="folio-sidebar-footer mt-auto space-y-4">
             <Button variant="outline" className="w-full justify-start" onClick={() => setSettingsOpen(true)}>
-              <Settings size={16} />
+              <Settings size={16} aria-hidden="true" />
               {t.settings}
             </Button>
             <div className="rounded-[20px] bg-background p-4">
@@ -2146,14 +2341,14 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 {hasProSubscription && <span className="organic-tag organic-tag-accent-2">{t.proActive}</span>}
               </div>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                {isLoggedIn ? t.signedInDetail : t.guestDetail}
+                {authAccessDetailLabel}
               </p>
               {isLoggedIn && (
                 <Button
                   size="sm"
                   className="mt-3 w-full"
                   variant={hasProSubscription ? 'outline' : 'default'}
-                  onClick={hasProSubscription ? openBillingPortal : startCheckout}
+                  onClick={hasProSubscription ? openBillingPortal : () => requestLogin()}
                   disabled={checkoutLoading}
                 >
                   {checkoutLoading ? t.startingCheckout : hasProSubscription ? t.manageBilling : t.upgradeToPro}
@@ -2172,19 +2367,21 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <Button
               variant="outline"
               className="w-full justify-start"
-              onClick={isLoggedIn ? handleLogout : requestLogin}
+              onClick={isLoggedIn ? handleLogout : () => requestLogin()}
               disabled={authLoading}
             >
               {isLoggedIn ? t.logOut : t.logIn}
             </Button>
             <Button variant="ghost" className="justify-start px-2 text-accent" onClick={() => setScreen('landing')}>
-              <ArrowLeft size={16} />
+              <ArrowLeft size={16} aria-hidden="true" />
               {t.backToSite}
             </Button>
           </div>
         </aside>
 
         <main className="min-w-0 px-5 py-7 md:px-10 md:py-8">
+          {screen !== 'editor' && !hasProSubscription ? renderSubscriptionGate() : (
+          <>
           {screen === 'dashboard' && (
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -2239,8 +2436,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </div>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Button size="sm" variant="outline" onClick={() => openSavedCv(cv.id)}>Edit</Button>
-                          <Button size="sm" variant="ghost" onClick={isLoggedIn ? saveCurrentCv : requestLogin}>
-                            {isLoggedIn ? 'Save new version' : 'Login required'}
+                          <Button size="sm" variant="ghost" onClick={() => saveDashboardCvAsNewVersion(cv.id)}>
+                            {hasProSubscription ? 'Save new version' : t.loginRequired}
                           </Button>
                           {isLoggedIn && (
                             <Button
@@ -2288,7 +2485,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </div>
                       ))}
                     </div>
-                    <Button className="mt-5 w-full" onClick={hasProSubscription ? () => setScreen('writer') : startCheckout} disabled={checkoutLoading}>
+                    <Button className="mt-5 w-full" onClick={hasProSubscription ? () => setScreen('writer') : () => requestLogin()} disabled={checkoutLoading}>
                       {hasProSubscription ? 'Open AI writer' : t.upgradeToPro}
                     </Button>
                   </div>
@@ -2309,8 +2506,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     <button className={trackerView === 'kanban' ? 'is-active' : ''} onClick={() => setTrackerView('kanban')}>Board</button>
                     <button className={trackerView === 'table' ? 'is-active' : ''} onClick={() => setTrackerView('table')}>Table</button>
                   </div>
-                  <Button onClick={isLoggedIn ? () => setAddOpen(true) : requestLogin}>
-                    {isLoggedIn ? 'Add application' : 'Login required'}
+                  <Button onClick={hasProSubscription ? () => setAddOpen(true) : () => requestLogin()}>
+                    {hasProSubscription ? 'Add application' : t.loginRequired}
                   </Button>
                 </div>
               </div>
@@ -2320,9 +2517,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>}
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Input className="max-w-60" placeholder="Role or company" value={filters.role} onChange={(event) => setFilters((current) => ({ ...current, role: event.target.value }))} />
-                <Input className="max-w-48" placeholder="Location" value={filters.location} onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))} />
-                <Input className="max-w-40" placeholder="Salary floor" value={filters.salary} onChange={(event) => setFilters((current) => ({ ...current, salary: event.target.value }))} />
+                <Input className="max-w-60" name="application-role-filter" aria-label="Filter by role or company" placeholder="Role or company" value={filters.role} onChange={(event) => setFilters((current) => ({ ...current, role: event.target.value }))} />
+                <Input className="max-w-48" name="application-location-filter" aria-label="Filter by location" placeholder="Location" value={filters.location} onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))} />
+                <Input className="max-w-40" name="application-salary-filter" aria-label="Filter by salary floor" inputMode="numeric" placeholder="Salary floor" value={filters.salary} onChange={(event) => setFilters((current) => ({ ...current, salary: event.target.value }))} />
                 <span className="organic-tag border border-accent bg-transparent text-accent">Remote ok</span>
                 <Button variant="ghost" onClick={() => setFilters({ role: '', location: '', salary: '' })}>Clear</Button>
               </div>
@@ -2363,6 +2560,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                 {formatFollowUpLabel(job.followUpAt)}
                               </span>
                               <Input
+                                name="application-follow-up"
+                                aria-label={`Follow-up date for ${job.title}`}
                                 type="date"
                                 value={job.followUpAt || ''}
                                 onInput={(event) => setApplicationFollowUp(job.id, event.currentTarget.value)}
@@ -2386,7 +2585,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                 onClick={() => advanceApplication(job.id)}
                                 disabled={stageUpdateMutation.isPending}
                               >
-                                {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
+                                {hasProSubscription ? nextStageLabel[job.stage] : t.loginRequired}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -2438,6 +2637,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                             <div className="min-w-36">
                               <span className="text-xs text-muted-foreground">{formatFollowUpLabel(job.followUpAt)}</span>
                               <Input
+                                name="application-follow-up"
+                                aria-label={`Follow-up date for ${job.title}`}
                                 type="date"
                                 value={job.followUpAt || ''}
                                 onInput={(event) => setApplicationFollowUp(job.id, event.currentTarget.value)}
@@ -2457,7 +2658,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                               </Button>
                             )}
                             <Button size="sm" variant="ghost" onClick={() => advanceApplication(job.id)} disabled={stageUpdateMutation.isPending}>
-                              {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
+                              {hasProSubscription ? nextStageLabel[job.stage] : t.loginRequired}
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => createTailoredCvForApplication(job)} disabled={tailoringLoading}>
                               {!hasProSubscription ? t.upgradeToPro : tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
@@ -2480,7 +2681,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      <Input placeholder="https://jobs.example.com/operations-manager" value={addUrl} onChange={(event) => setAddUrl(event.target.value)} />
+                      <Input name="application-source-url" aria-label="Application source URL" type="url" autoComplete="url" placeholder="https://jobs.example.com/operations-manager" value={addUrl} onChange={(event) => setAddUrl(event.target.value)} />
                       <Button className="shrink-0" onClick={createDraftApplication} disabled={addReading}>
                         {addReading ? 'Checking...' : 'Create draft'}
                       </Button>
@@ -2498,6 +2699,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                             <label key={field} className="field-card space-y-1.5">
                               <span className="text-xs capitalize text-muted-foreground">{field}</span>
                               <Input
+                                name={`draft-application-${field}`}
                                 value={draftApplication[field]}
                                 onChange={(event) => setDraftApplication((current) => current ? { ...current, [field]: event.target.value } : current)}
                               />
@@ -2507,6 +2709,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         <label className="field-card block space-y-1.5">
                           <span className="text-xs text-muted-foreground">Follow-up reminder</span>
                           <Input
+                            name="draft-application-follow-up"
+                            aria-label="Draft follow-up reminder"
                             type="date"
                             value={draftApplication.followUpAt || ''}
                             onChange={(event) => setDraftApplication((current) => current ? { ...current, followUpAt: event.target.value || undefined } : current)}
@@ -2554,7 +2758,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={openEditor}>{t.backToCv}</Button>
                   <Button
-                    onClick={hasProSubscription ? createTailoredCvVersion : startCheckout}
+                    onClick={hasProSubscription ? createTailoredCvVersion : () => requestLogin()}
                     disabled={hasProSubscription ? activeJobAd.length < 40 || tailoringLoading || !jobMatchReport || Boolean(aiJobAnalysisError) : checkoutLoading}
                   >
                     <Target size={16} />
@@ -2564,7 +2768,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
               {!hasProSubscription && (
                 <div className="mt-6">
-                  <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                  <AiPaywallNotice language={uiLanguage} onUpgrade={() => requestLogin()} disabled={checkoutLoading} />
                 </div>
               )}
               {tailoringNote && (
@@ -2591,6 +2795,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     <label className="mt-5 block space-y-1.5">
                       <span className="meta-label">{t.jobAd}</span>
                       <Textarea
+                        name="matcher-job-ad"
+                        aria-label={t.jobAd}
                         value={matcherJobAd}
                         onChange={(event) => setMatcherJobAd(event.target.value)}
                         placeholder={t.jobAdPlaceholder}
@@ -2613,7 +2819,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                 <div className="space-y-5">
                   {!hasProSubscription && activeJobAd.length >= 40 ? (
-                    <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                    <AiPaywallNotice language={uiLanguage} onUpgrade={() => requestLogin()} disabled={checkoutLoading} />
                   ) : jobMatchReport && atsCheck ? (
                     <>
                       <div className="grid gap-4 sm:grid-cols-3">
@@ -2760,7 +2966,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={openEditor}>{t.editCv}</Button>
                   <Button
-                    onClick={hasProSubscription ? () => generateApplicationText() : startCheckout}
+                    onClick={hasProSubscription ? () => generateApplicationText() : () => requestLogin()}
                     disabled={hasProSubscription ? writerLoading || writerJobAd.trim().length < 40 : checkoutLoading}
                   >
                     <Wand2 size={16} />
@@ -2770,7 +2976,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
 
               {!hasProSubscription && <div className="mt-6">
-                <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                <AiPaywallNotice language={uiLanguage} onUpgrade={() => requestLogin()} disabled={checkoutLoading} />
               </div>}
 
               <div className="mt-7 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -2789,6 +2995,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       <label className="field-card block space-y-1.5">
                         <span className="meta-label">{t.jobAd}</span>
                         <Textarea
+                          name="writer-job-ad"
+                          aria-label={t.jobAd}
                           value={writerJobAd}
                           onChange={(event) => setWriterJobAd(event.target.value)}
                           placeholder={t.writerJobPlaceholder}
@@ -2798,6 +3006,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       <label className="field-card block space-y-1.5">
                         <span className="meta-label">{t.yourMotivation}</span>
                         <Textarea
+                          name="writer-motivation"
+                          aria-label={t.yourMotivation}
                           value={writerMotivation}
                           onChange={(event) => setWriterMotivation(event.target.value)}
                           placeholder={t.motivationPlaceholder}
@@ -2854,7 +3064,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     </div>
                     {!hasProSubscription && activeJobAd.length >= 40 ? (
                       <div className="mt-5">
-                        <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                        <AiPaywallNotice language={uiLanguage} onUpgrade={() => requestLogin()} disabled={checkoutLoading} />
                       </div>
                     ) : interviewPrep ? (
                       <div className="mt-5 space-y-3">
@@ -2915,7 +3125,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                   {!hasProSubscription ? (
                     <div className="mt-5">
-                      <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                      <AiPaywallNotice language={uiLanguage} onUpgrade={() => requestLogin()} disabled={checkoutLoading} />
                     </div>
                   ) : writerResult ? (
                     <div className="mt-5 space-y-4">
@@ -2987,14 +3197,19 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={hasProSubscription ? () => setReviewOpen((current) => !current) : startCheckout}
+                    onClick={hasProSubscription ? () => setReviewOpen((current) => !current) : () => requestLogin()}
                     disabled={checkoutLoading}
                   >
                     {!hasProSubscription ? t.upgradeToPro : reviewOpen ? t.hideAiJudge : t.aiJudge}
                   </Button>
-                  <Button variant="outline" onClick={saveCurrentCv} disabled={saveCvMutation.isPending}>
-                    {saveCvMutation.isPending ? (uiLanguage === 'German' ? 'Speichert...' : 'Saving...') : isLoggedIn ? t.saveCv : t.loginToSave}
+                  <Button variant="outline" onClick={() => saveCurrentCv('save')} disabled={saveCvMutation.isPending}>
+                    {saveCvMutation.isPending ? (uiLanguage === 'German' ? 'Speichert...' : 'Saving...') : hasProSubscription ? t.saveCv : t.loginToSave}
                   </Button>
+                  {selectedCvId && hasProSubscription && (
+                    <Button variant="outline" onClick={() => saveCurrentCv('new-version')} disabled={saveCvMutation.isPending}>
+                      {uiLanguage === 'German' ? 'Neue Version speichern' : 'Save New Version'}
+                    </Button>
+                  )}
                   <Button onClick={openExportStep}>{t.exportPdf}</Button>
                 </div>
               </div>
@@ -3002,7 +3217,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <div className="mt-7 grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
                 <div className="min-w-0 space-y-5">
                   {reviewOpen && !hasProSubscription ? (
-                    <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                    <AiPaywallNotice language={uiLanguage} onUpgrade={() => requestLogin()} disabled={checkoutLoading} />
                   ) : reviewOpen && cvReview ? (
                     <article className="organic-card p-5">
                       <div className="flex items-center gap-4">
@@ -3195,9 +3410,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
             </section>
           )}
+          </>
+          )}
         </main>
       </div>
-      {renderAuthDialog()}
+      {renderPricingDialog()}
       {renderSettingsDialog()}
       </>
     );
@@ -3212,20 +3429,26 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       <div className="app-noise" aria-hidden="true" />
 
       <header className="sticky inset-x-0 top-0 z-50 bg-background/90 backdrop-blur-xl">
-        <div className="organic-container flex items-center justify-between gap-3 py-3">
-          <a href="/" className="flex items-center gap-3 font-display text-lg text-foreground" aria-label="Folio CV home">
-            <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
-            Folio CV
-          </a>
+          <div className="organic-container flex items-center justify-between gap-3 py-3">
+            <a href="/" className="flex items-center gap-3 font-display text-lg text-foreground" aria-label="Folio CV home">
+              <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
+              Folio CV
+            </a>
 
-          <div className="flex items-center gap-3">
-            <nav className="hidden items-center gap-4 text-sm text-muted-foreground lg:flex">
-              <a href="#how" className="transition-colors hover:text-accent">How it works</a>
-              <a href="#jobs" className="transition-colors hover:text-accent">Jobs</a>
-              <a href="#tracker" className="transition-colors hover:text-accent">Tracker</a>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <nav className="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 text-sm text-muted-foreground shadow-[var(--organic-shadow-sm)] backdrop-blur-xl md:flex">
+              <a href="/how-it-works/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">How it works</a>
+              <a href="/pricing/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Pricing</a>
+              <a href="/features/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Features</a>
+              <a href="/faq/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">FAQ</a>
             </nav>
-            <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={isLoggedIn ? () => setScreen('dashboard') : requestLogin}>
-              {isLoggedIn ? 'Dashboard' : 'Log in'}
+            <Button
+              size="sm"
+              variant="outline"
+              className="hidden sm:inline-flex"
+              onClick={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}
+            >
+              {hasProSubscription ? 'Dashboard' : 'Pro'}
             </Button>
             <Button size="sm" onClick={openEditor}>Try simulator</Button>
           </div>
@@ -3246,15 +3469,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </h1>
               <p className="mt-4 max-w-[34em] text-base leading-7 text-foreground/80 sm:text-lg sm:leading-8">
                 Write your CV in the free simulator, pick a format, export it. When you are ready
-                to keep several versions and track applications, the dashboard view takes over.
+                to keep several versions, use AI, and track applications, Folio CV Pro takes over.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Button size="lg" onClick={openEditor}>
                   Open the free simulator
                   <ArrowUpRight size={16} className="ml-1.5" />
                 </Button>
-                <Button variant="outline" size="lg" onClick={() => setScreen('dashboard')}>
-                  See the dashboard
+                <Button variant="outline" size="lg" onClick={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}>
+                  {hasProSubscription ? 'Open dashboard' : 'View pricing'}
                 </Button>
               </div>
               <p className="mt-4 text-sm text-muted-foreground">
@@ -3309,7 +3532,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               {[
                 ['10', 'CV layouts in the simulator'],
                 ['A4', 'live document preview'],
-                ['Board', 'application tracker preview'],
+                ['Pro', 'saved CVs, AI, and tracking'],
                 ['EUR 0', 'to write and export a CV'],
               ].map(([value, label]) => (
                 <div key={label}>
@@ -3342,6 +3565,80 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
         </section>
 
+        <section className="organic-container py-14 lg:py-20">
+          <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+            <div className="lg:sticky lg:top-24">
+              <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+                Built for the messy middle of applying.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground">
+                A good CV tool is not only a template picker. It has to help when your profile is half-written,
+                the job ad is specific, and every application needs a slightly different angle.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[
+                ['Students and early-career candidates', 'Turn projects, internships, part-time work, education, and skills into a CV that does not feel empty.'],
+                ['Career switchers', 'Use the same background in different formats, then highlight transferable skills for each role family.'],
+                ['Active job seekers', 'Keep one base CV free, then use Pro when you need saved versions, AI rewrites, and tracking.'],
+                ['Freelancers and operators', 'Create a concise profile document, export it as PDF, and keep reusable versions for different clients or roles.'],
+              ].map(([title, body]) => (
+                <article key={title} className="organic-card p-6">
+                  <h3 className="font-display text-2xl font-normal">{title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="studio-band">
+          <div className="organic-container py-14 lg:py-20">
+            <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
+              <div>
+                <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+                  Basic is the builder. Pro is the workspace.
+                </h2>
+                <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">
+                  That separation keeps the product honest. You can create and export a CV for free.
+                  The moment you want persistent account features, AI, or tracking, the product asks you to pick a paid plan first.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Button onClick={openEditor}>Use Basic for free</Button>
+                  <Button variant="outline" onClick={() => requestLogin()}>See Pro plans</Button>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-[28px] bg-card p-4 shadow-[var(--organic-shadow-sm)]">
+                <table className="w-full min-w-[560px] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="py-3 pr-4 text-left font-semibold">Need</th>
+                      <th className="px-4 py-3 text-left font-semibold">Use Basic</th>
+                      <th className="px-4 py-3 text-left font-semibold">Use Pro</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/70">
+                    {[
+                      ['Write one CV', 'Yes', 'Optional'],
+                      ['Export PDF', 'Yes', 'Yes'],
+                      ['Keep multiple versions', 'No', 'Yes'],
+                      ['AI Judge and rewrites', 'No', 'Yes'],
+                      ['Track applications', 'No', 'Yes'],
+                      ['Login access', 'No', 'Only with active subscription'],
+                    ].map(([need, basic, pro]) => (
+                      <tr key={need}>
+                        <td className="py-3 pr-4 font-medium text-foreground">{need}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{basic}</td>
+                        <td className="px-4 py-3 text-foreground">{pro}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="writer" className="organic-container grid gap-12 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:py-20">
           <div>
             <span className="organic-tag organic-tag-accent">AI application writer</span>
@@ -3351,7 +3648,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <p className="mt-5 max-w-[34em] text-base leading-8 text-foreground/80">
               Paste the job description, add your motivation, and generate application text from the CV you already built.
             </p>
-            <Button className="mt-6" onClick={() => setScreen('writer')}>Open AI writer</Button>
+          <Button className="mt-6" onClick={hasProSubscription ? () => setScreen('writer') : () => requestLogin()}>
+            {hasProSubscription ? 'Open AI writer' : 'View pricing'}
+          </Button>
           </div>
           <div className="organic-card p-6">
             <div className="mb-2 flex flex-wrap gap-2">
@@ -3369,6 +3668,38 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="organic-container py-14 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+                Payment happens through secure checkout.
+              </h2>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">
+                Folio CV does not collect card details inside the app. The app opens a secure
+                checkout page, the payment provider handles billing, and the subscription status
+                updates automatically. That keeps weekly, monthly, yearly, and optional short
+                trials simple for the user.
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {[
+                ['1', 'User clicks Pro', 'The app opens the pricing modal instead of asking for an email address.'],
+                ['2', 'User starts a plan', 'Weekly, monthly, or yearly opens the matching secure checkout flow.'],
+                ['3', 'Subscription is confirmed', 'The app stores the active subscription so the Pro workspace unlocks.'],
+                ['4', 'Trial is optional', 'A two or three day trial can be enabled before billing starts.'],
+              ].map(([step, title, body]) => (
+                <article key={step} className="flex gap-4 rounded-[24px] bg-card p-5 shadow-[var(--organic-shadow-sm)]">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-100)] font-display text-sm text-[var(--organic-accent-800)]">{step}</span>
+                  <div>
+                    <h3 className="text-sm font-semibold">{title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -3429,13 +3760,15 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               );
             })}
           </div>
-          <Button className="mt-7" onClick={() => setScreen('tracker')}>Look inside the tracker</Button>
+          <Button className="mt-7" onClick={hasProSubscription ? () => setScreen('tracker') : () => requestLogin()}>
+            {hasProSubscription ? 'Look inside the tracker' : 'View pricing'}
+          </Button>
         </section>
 
         <section id="pricing" className="studio-band">
           <div className="organic-container py-14 lg:py-20">
-            <h2 className="font-display text-4xl font-normal md:text-5xl">What's free, what's previewed.</h2>
-            <div className="mt-9 grid gap-6 lg:grid-cols-2">
+            <h2 className="font-display text-4xl font-normal md:text-5xl">Free simulator. Pro login only with subscription.</h2>
+            <div className="mt-9 grid gap-6 lg:grid-cols-4">
               <article className="organic-card p-8">
                 <p className="section-kicker">Free</p>
                 <p className="mt-3 font-display text-4xl">EUR 0</p>
@@ -3447,17 +3780,36 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </div>
                 <Button className="mt-6 w-full" variant="outline" onClick={openEditor}>Start writing</Button>
               </article>
-              <article className="rounded-[32px] bg-[var(--organic-neutral-900)] p-8 text-[var(--organic-neutral-100)] shadow-[var(--organic-shadow-lg)]">
-                <p className="section-kicker text-[var(--organic-accent-200)]">Dashboard</p>
-                <p className="mt-3 font-display text-4xl">Preview</p>
-                <p className="mt-3 text-sm leading-7 text-[var(--organic-neutral-300)]">The product shell around saved CVs, AI writing, and the application tracker.</p>
-                <div className="mt-5 flex flex-col gap-2 text-sm">
-                  <span>Saved CV versions</span>
-                  <span>AI cover letter writer</span>
-                  <span>Application board and table</span>
-                </div>
-                <Button className="mt-6 w-full" onClick={() => setScreen('dashboard')}>Open the dashboard</Button>
-              </article>
+              {billingPlans.map((plan) => renderPlanCard(plan, { dark: plan.id === 'monthly' }))}
+            </div>
+            <div className="mt-8 overflow-x-auto rounded-[28px] bg-card p-4 shadow-[var(--organic-shadow-sm)]">
+              <table className="w-full min-w-[680px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-semibold">Feature</th>
+                    <th className="px-4 py-3 text-left font-semibold">Basic</th>
+                    <th className="px-4 py-3 text-left font-semibold">Folio CV Pro</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/70">
+                  {[
+                    ['CV editor', 'Included', 'Included'],
+                    ['PDF export', 'Included', 'Included'],
+                    ['Templates and design controls', 'Included', 'Included'],
+                    ['Login access', 'Not included', 'Included with active subscription'],
+                    ['Saved CV versions', 'Browser workflow only', 'Saved to your account'],
+                    ['AI Judge and AI tailoring', 'Not included', 'Included'],
+                    ['Application tracker', 'Not included', 'Included'],
+                    ['Billing options', 'EUR 0', 'Weekly EUR 2.99, monthly EUR 9.90, yearly EUR 79.90'],
+                  ].map(([feature, basic, pro]) => (
+                    <tr key={feature}>
+                      <td className="py-3 pr-4 font-medium text-foreground">{feature}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{basic}</td>
+                      <td className="px-4 py-3 text-foreground">{pro}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
@@ -3468,7 +3820,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               Questions,<br />answered plainly.
             </h2>
             <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">
-              The simulator is the working product. The dashboard screens show the surrounding product direction from the redesign.
+              Basic covers writing and PDF export. Pro covers login, saved work, AI, billing, and the application tracker.
             </p>
           </div>
           <div className="space-y-3">
@@ -3493,7 +3845,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 Write the thing. It takes about ten minutes.
               </h2>
               <p className="mt-4 text-base leading-8 text-accent-foreground/90">
-                No account, no card, no trial countdown. The dashboard is there as the surrounding app shell.
+                No account is needed for the simulator. Pro login, AI, saved CVs, and tracking start with an active subscription.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Button
@@ -3502,8 +3854,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 >
                   Open the free simulator
                 </Button>
-                <Button variant="outline" className="border-white/45 text-accent-foreground hover:bg-white/10" onClick={() => setScreen('dashboard')}>
-                  See dashboard
+                <Button variant="outline" className="border-white/45 text-accent-foreground hover:bg-white/10" onClick={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}>
+                  {hasProSubscription ? 'See dashboard' : 'View pricing'}
                 </Button>
               </div>
             </div>
@@ -3518,7 +3870,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 Folio CV
               </div>
               <p className="mt-3 max-w-sm text-muted-foreground">
-                A CV writer that stays free, and a dashboard design for when the search gets real.
+                A free CV writer with Pro login for saved work, AI, and application tracking.
               </p>
             </div>
             <nav className="flex flex-col gap-2">
@@ -3545,7 +3897,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         </footer>
       </main>
     </div>
-    {renderAuthDialog()}
+    {renderPricingDialog()}
     {renderSettingsDialog()}
     </>
   );

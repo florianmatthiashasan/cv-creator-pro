@@ -8,6 +8,9 @@ export type SubscriptionState = {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  trialStart: string | null;
+  trialEnd: string | null;
 };
 
 export const json = (body: unknown, status = 200) =>
@@ -73,12 +76,15 @@ export const fetchServerSubscriptionState = async (userId: string): Promise<Subs
       currentPeriodEnd: null,
       cancelAtPeriodEnd: false,
       stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      trialStart: null,
+      trialEnd: null,
     };
   }
 
   const { data, error } = await supabase
     .from('user_subscriptions')
-    .select('status,current_period_end,cancel_at_period_end,stripe_customer_id')
+    .select('status,current_period_end,cancel_at_period_end,stripe_customer_id,stripe_subscription_id,trial_start,trial_end')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -89,6 +95,9 @@ export const fetchServerSubscriptionState = async (userId: string): Promise<Subs
       currentPeriodEnd: null,
       cancelAtPeriodEnd: false,
       stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      trialStart: null,
+      trialEnd: null,
     };
   }
 
@@ -99,6 +108,9 @@ export const fetchServerSubscriptionState = async (userId: string): Promise<Subs
     currentPeriodEnd: typeof data.current_period_end === 'string' ? data.current_period_end : null,
     cancelAtPeriodEnd: Boolean(data.cancel_at_period_end),
     stripeCustomerId: typeof data.stripe_customer_id === 'string' ? data.stripe_customer_id : null,
+    stripeSubscriptionId: typeof data.stripe_subscription_id === 'string' ? data.stripe_subscription_id : null,
+    trialStart: typeof data.trial_start === 'string' ? data.trial_start : null,
+    trialEnd: typeof data.trial_end === 'string' ? data.trial_end : null,
   };
 };
 

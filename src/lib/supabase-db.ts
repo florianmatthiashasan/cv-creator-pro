@@ -44,7 +44,16 @@ export type SubscriptionState = {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  trialStart: string | null;
+  trialEnd: string | null;
 };
+
+export type BillingConfig = {
+  trialDays: number;
+};
+
+export type BillingPlanId = 'weekly' | 'monthly' | 'yearly';
 
 export type DbApplication = {
   id: string;
@@ -327,20 +336,33 @@ export const fetchSubscriptionStatus = async (): Promise<SubscriptionState> => {
   return data as SubscriptionState;
 };
 
-export const createCheckoutSession = async () => {
-  const token = await getCurrentAccessToken();
-  if (!token) throw new Error('Login required.');
+export const fetchBillingConfig = async (): Promise<BillingConfig> => {
+  const response = await fetch('/api/billing-config');
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || 'Billing config konnte nicht geladen werden.');
+
+  const trialDays = Number(data?.trialDays || 0);
+  return {
+    trialDays: Number.isInteger(trialDays) && trialDays > 0 ? trialDays : 0,
+  };
+};
+
+export const createCheckoutSession = async (planId: BillingPlanId = 'monthly') => {
+  const token = await getCurrentAccessToken().catch(() => '');
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+  };
+  if (token) headers.authorization = `Bearer ${token}`;
 
   const response = await fetch('/api/stripe-checkout', {
     method: 'POST',
-    headers: {
-      authorization: `Bearer ${token}`,
-    },
+    headers,
+    body: JSON.stringify({ planId }),
   });
 
   const data = await response.json();
   if (!response.ok) throw new Error(data?.error || 'Checkout konnte nicht gestartet werden.');
-  if (!data?.url || typeof data.url !== 'string') throw new Error('Stripe Checkout URL fehlt.');
+  if (!data?.url || typeof data.url !== 'string') throw new Error('Checkout URL fehlt.');
   return data.url as string;
 };
 
@@ -357,8 +379,26 @@ export const createBillingPortalSession = async () => {
 
   const data = await response.json();
   if (!response.ok) throw new Error(data?.error || 'Billing Portal konnte nicht gestartet werden.');
-  if (!data?.url || typeof data.url !== 'string') throw new Error('Stripe Portal URL fehlt.');
+  if (!data?.url || typeof data.url !== 'string') throw new Error('Billing Portal URL fehlt.');
   return data.url as string;
+};
+
+export const updateTrialAction = async (action: 'cancel_trial' | 'extend_trial', days = 2) => {
+  const token = await getCurrentAccessToken();
+  if (!token) throw new Error('Login required.');
+
+  const response = await fetch('/api/stripe-trial-action', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ action, days }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || 'Trial konnte nicht aktualisiert werden.');
+  return data;
 };
 
 export const ensureProfile = async (user: User) => {

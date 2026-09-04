@@ -39,7 +39,55 @@
             "name": "Do I need to create an account?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. You can start building a resume immediately without creating an account. This keeps the process fast and avoids adding a registration step before you can test the editor, templates, preview, and export."
+              "text": "No account is needed for Basic. Login access is part of Folio CV Pro, because saved CVs, AI tools, and the application tracker need an active subscription."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is included in Folio CV Pro?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pro includes login access, saved CV versions, AI Judge, AI tailoring, AI application writing, and the application tracker. Weekly, monthly, and yearly billing options are available on the pricing page."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Pro plans are available?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Folio CV Pro is available as a weekly subscription for 2.99 EUR, a monthly subscription for 9.90 EUR, or a yearly subscription for 79.90 EUR. All three plans unlock the same Pro workspace."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I log in without a Pro subscription?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The intended product rule is no. Basic works without login, while login access belongs to Pro and requires an active subscription."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can Folio CV offer a short trial?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A two or three day trial can be configured through the subscription billing system. The app should create the subscription through secure checkout with a trial period instead of building its own trial payment logic."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who handles payment details?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Secure checkout should handle payment details, billing details, invoices, and subscription creation. Folio CV should only receive subscription status events and should not collect card details inside the app."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens when Pro is canceled?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The subscription should remain active until the paid billing period ends. After that, Pro features should lock again while Basic remains available."
             }
           },
           {
@@ -126,16 +174,18 @@
         <div class="app-noise" aria-hidden="true"></div>
 
         <header class="fixed inset-x-0 top-0 z-50 bg-background/90 backdrop-blur-xl">
-          <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6">
+          <div class="organic-container flex items-center justify-between gap-3 py-3">
             <a href="/" class="flex items-center gap-3 font-display text-lg" aria-label="Folio CV home">
               <span class="h-6 w-6 rounded-full bg-accent" aria-hidden="true"></span>
               Folio CV
             </a>
-            <nav class="flex items-center gap-5 text-sm text-muted-foreground">
-              <a href="/features/" class="transition-colors hover:text-foreground">Features</a>
-              <a href="/faq/" class="text-foreground">FAQ</a>
-              <a href="/" class="transition-colors hover:text-foreground">Builder</a>
+            <nav class="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 text-sm text-muted-foreground shadow-[var(--organic-shadow-sm)] backdrop-blur-xl md:flex">
+              <a href="/how-it-works/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">How it works</a>
+              <a href="/pricing/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Pricing</a>
+              <a href="/features/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Features</a>
+              <a href="/faq/" class="rounded-full bg-background px-3 py-2 text-foreground">FAQ</a>
             </nav>
+            <a href="/dashboard/simulator" class="folio-chip">Free simulator</a>
           </div>
         </header>
 
@@ -147,9 +197,9 @@
                 Frequently asked questions about Folio CV.
               </h1>
               <p class="mt-7 max-w-3xl text-base leading-8 text-muted-foreground">
-                These answers explain how Folio CV works, what is included for free,
-                how export behaves, what to expect from templates, and how to think
-                about privacy when entering resume content in a browser-based builder.
+                These answers explain how Folio CV works, what is included in Basic,
+                what Pro unlocks, how export behaves, and how to think about privacy
+                when entering resume content in a browser-based builder.
               </p>
             </div>
           </section>
@@ -169,9 +219,67 @@
               <article class="soft-panel p-5">
                 <h2 class="text-base font-semibold text-foreground">Do I need to create an account?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
-                  No. You can start building a resume immediately without creating an
-                  account. This keeps the process fast and avoids adding a registration
-                  step before you can test the editor, templates, preview, and export.
+                  No account is needed for Basic. Login access is part of Folio CV Pro,
+                  because saved CVs, AI tools, and the application tracker need an
+                  active subscription.
+                </p>
+              </article>
+
+              <article class="soft-panel p-5">
+                <h2 class="text-base font-semibold text-foreground">What is included in Folio CV Pro?</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">
+                  Pro includes login access, saved CV versions, AI Judge, AI tailoring,
+                  AI application writing, and the application tracker. Weekly, monthly,
+                  and yearly billing options are available on the pricing page.
+                </p>
+              </article>
+
+              <article class="soft-panel p-5">
+                <h2 class="text-base font-semibold text-foreground">Which Pro plans are available?</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">
+                  Folio CV Pro has three subscriptions: weekly for EUR 2.99, monthly for
+                  EUR 9.90, and yearly for EUR 79.90. All three plans unlock the same Pro
+                  workspace. The difference is only the billing period.
+                </p>
+              </article>
+
+              <article class="soft-panel p-5">
+                <h2 class="text-base font-semibold text-foreground">Can I log in without a Pro subscription?</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">
+                  The intended product rule is no. Basic works without login. Login belongs
+                  to Pro because saved CVs, AI tools, and the application tracker need an
+                  active subscription and a persistent account.
+                </p>
+              </article>
+
+              <article class="soft-panel p-5">
+                <h2 class="text-base font-semibold text-foreground">Can Folio CV offer a two or three day trial?</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">
+                  Yes. A short trial should be configured through the subscription billing
+                  system. The app can send the selected plan to secure checkout with a trial
+                  period, then unlock Pro when the subscription is confirmed. This keeps trial
+                  logic tied to the real subscription instead of building a separate manual
+                  workaround.
+                </p>
+              </article>
+
+              <article class="soft-panel p-5">
+                <h2 class="text-base font-semibold text-foreground">Who handles payment details?</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">
+                  Secure checkout should handle payment details, billing details, invoices,
+                  and subscription creation. Folio CV should not collect card information in
+                  its own UI. The app only needs the checkout result and subscription events
+                  to know whether Pro access is active.
+                </p>
+              </article>
+
+              <article class="soft-panel p-5">
+                <h2 class="text-base font-semibold text-foreground">What happens when Pro is canceled?</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">
+                  Pro should remain available until the paid billing period ends. After that,
+                  login-only features lock again while the free Basic builder remains open.
+                  Billing changes, invoices, payment methods, and cancellations should go
+                  through a hosted billing portal.
                 </p>
               </article>
 
@@ -269,9 +377,11 @@
 
         <footer class="relative z-10 border-t border-border/70 text-foreground">
           <div class="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p class="text-sm font-semibold text-foreground">Folio CV is free and open-source.</p>
+            <p class="text-sm font-semibold text-foreground">Folio CV Basic is free. Pro requires an active subscription.</p>
             <nav class="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <a href="/" class="transition-colors hover:text-foreground">Home</a>
+              <a href="/how-it-works/" class="transition-colors hover:text-foreground">How it works</a>
+              <a href="/pricing/" class="transition-colors hover:text-foreground">Pricing</a>
               <a href="/features/" class="transition-colors hover:text-foreground">Features</a>
               <a href="/faq/" class="transition-colors hover:text-foreground">FAQ</a>
             </nav>

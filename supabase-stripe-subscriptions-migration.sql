@@ -13,10 +13,18 @@ create table if not exists public.user_subscriptions (
   price_id text,
   current_period_start timestamptz,
   current_period_end timestamptz,
+  trial_start timestamptz,
+  trial_end timestamptz,
   cancel_at_period_end boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_subscriptions
+  add column if not exists trial_start timestamptz;
+
+alter table public.user_subscriptions
+  add column if not exists trial_end timestamptz;
 
 create index if not exists user_subscriptions_status_idx
   on public.user_subscriptions (status);

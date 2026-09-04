@@ -36,25 +36,29 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
     <div className="space-y-5">
       <div className="soft-panel flex flex-col gap-5 p-4 sm:flex-row sm:items-center">
         <div className="relative group">
-          <div
+          <button
+            type="button"
             onClick={() => fileRef.current?.click()}
             className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-background/50 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:bg-accent/10"
+            aria-label={data.photo ? 'Change profile photo' : 'Upload profile photo'}
           >
             {data.photo ? (
               <img src={data.photo} alt="Profile photo" className="w-full h-full object-cover" />
             ) : (
-              <Camera size={22} className="text-muted-foreground" />
+              <Camera size={22} className="text-muted-foreground" aria-hidden="true" />
             )}
-          </div>
+          </button>
           {data.photo && (
             <button
+              type="button"
               onClick={removePhoto}
-              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
+              aria-label="Remove profile photo"
             >
-              <X size={10} />
+              <X size={10} aria-hidden="true" />
             </button>
           )}
-          <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+          <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" aria-label="Profile photo file" />
         </div>
         <div>
           <p className="section-kicker">Profile</p>
@@ -65,45 +69,45 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="field-card space-y-1.5">
-          <Label className="meta-label">First name</Label>
-          <Input value={data.firstName} onChange={(e) => update('firstName', e.target.value)} placeholder="Max" />
+          <Label htmlFor="personal-first-name" className="meta-label">First name</Label>
+          <Input id="personal-first-name" name="given-name" autoComplete="given-name" value={data.firstName} onChange={(e) => update('firstName', e.target.value)} placeholder="Max" />
         </div>
         <div className="field-card space-y-1.5">
-          <Label className="meta-label">Last name</Label>
-          <Input value={data.lastName} onChange={(e) => update('lastName', e.target.value)} placeholder="Mustermann" />
+          <Label htmlFor="personal-last-name" className="meta-label">Last name</Label>
+          <Input id="personal-last-name" name="family-name" autoComplete="family-name" value={data.lastName} onChange={(e) => update('lastName', e.target.value)} placeholder="Mustermann" />
         </div>
       </div>
       <div className="field-card space-y-1.5">
-        <Label className="meta-label">Job title</Label>
-        <Input value={data.title} onChange={(e) => update('title', e.target.value)} placeholder="Senior Software Engineer" />
+        <Label htmlFor="personal-job-title" className="meta-label">Job title</Label>
+        <Input id="personal-job-title" name="job-title" autoComplete="organization-title" value={data.title} onChange={(e) => update('title', e.target.value)} placeholder="Senior Software Engineer" />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="field-card space-y-1.5">
-        <Label className="meta-label">Email</Label>
-          <Input type="email" value={data.email} onChange={(e) => update('email', e.target.value)} placeholder="max@example.com" />
+        <Label htmlFor="personal-email" className="meta-label">Email</Label>
+          <Input id="personal-email" name="email" autoComplete="email" type="email" spellCheck={false} value={data.email} onChange={(e) => update('email', e.target.value)} placeholder="max@example.com" />
         </div>
         <div className="field-card space-y-1.5">
-          <Label className="meta-label">Phone</Label>
-          <Input value={data.phone} onChange={(e) => update('phone', e.target.value)} placeholder="+49 123 456 789" />
+          <Label htmlFor="personal-phone" className="meta-label">Phone</Label>
+          <Input id="personal-phone" name="tel" autoComplete="tel" type="tel" value={data.phone} onChange={(e) => update('phone', e.target.value)} placeholder="+49 123 456 789" />
         </div>
       </div>
       <div className="field-card space-y-1.5">
-        <Label className="meta-label">Address</Label>
-        <Input value={data.address} onChange={(e) => update('address', e.target.value)} placeholder="Sample Street 1, 10115 Berlin" />
+        <Label htmlFor="personal-address" className="meta-label">Address</Label>
+        <Input id="personal-address" name="street-address" autoComplete="street-address" value={data.address} onChange={(e) => update('address', e.target.value)} placeholder="Sample Street 1, 10115 Berlin" />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="field-card space-y-1.5">
-          <Label className="meta-label">Website</Label>
-          <Input value={data.website || ''} onChange={(e) => update('website', e.target.value)} placeholder="https://mywebsite.com" />
+          <Label htmlFor="personal-website" className="meta-label">Website</Label>
+          <Input id="personal-website" name="url" autoComplete="url" type="url" value={data.website || ''} onChange={(e) => update('website', e.target.value)} placeholder="https://mywebsite.com" />
         </div>
         <div className="field-card space-y-1.5">
-          <Label className="meta-label">LinkedIn</Label>
-          <Input value={data.linkedin || ''} onChange={(e) => update('linkedin', e.target.value)} placeholder="linkedin.com/in/max" />
+          <Label htmlFor="personal-linkedin" className="meta-label">LinkedIn</Label>
+          <Input id="personal-linkedin" name="linkedin" autoComplete="off" type="url" value={data.linkedin || ''} onChange={(e) => update('linkedin', e.target.value)} placeholder="https://linkedin.com/in/max" />
         </div>
       </div>
       <div className="field-card space-y-1.5">
-        <Label className="meta-label">Summary</Label>
-        <Textarea value={data.summary} onChange={(e) => update('summary', e.target.value)} placeholder="A short summary of your career, strengths, and focus..." rows={4} className="resize-none" />
+        <Label htmlFor="personal-summary" className="meta-label">Summary</Label>
+        <Textarea id="personal-summary" name="summary" value={data.summary} onChange={(e) => update('summary', e.target.value)} placeholder="A short summary of your career, strengths, and focus…" rows={4} className="resize-none" />
       </div>
     </div>
   );

@@ -1,47 +1,18 @@
 import Stripe from 'stripe';
-import { createServiceSupabaseClient, json } from './_supabase-server';
-import { getStripe, stripeTimestampToIso } from './_stripe';
+import { json } from './_supabase-server';
+import { getOrCreateBillingUserIdForEmail, upsertSubscription } from './_billing';
+import { getStripe } from './_stripe';
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : null);
-
-const upsertSubscription = async (subscription: Stripe.Subscription, fallbackUserId?: string | null) => {
-  const supabase = createServiceSupabaseClient();
-  if (!supabase) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.');
-
-  const stripeCustomerId = getString(subscription.customer);
-  const userId = getString(subscription.metadata?.userId) || fallbackUserId;
-  if (!stripeCustomerId || !userId) return;
-
-  await supabase.from('user_billing').upsert({
-    user_id: userId,
-    stripe_customer_id: stripeCustomerId,
-  });
-
-  const item = subscription.items.data[0];
-  const period = subscription as Stripe.Subscription & {
-    current_period_start?: number | null;
-    current_period_end?: number | null;
-  };
-  const { error } = await supabase.from('user_subscriptions').upsert({
-    user_id: userId,
-    stripe_customer_id: stripeCustomerId,
-    stripe_subscription_id: subscription.id,
-    status: subscription.status,
-    price_id: item?.price?.id || null,
-    current_period_start: stripeTimestampToIso(period.current_period_start),
-    current_period_end: stripeTimestampToIso(period.current_period_end),
-    cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
-  });
-
-  if (error) throw error;
-};
 
 const handleCheckoutCompleted = async (stripe: Stripe, session: Stripe.Checkout.Session) => {
   const subscriptionId = getString(session.subscription);
   if (!subscriptionId) return;
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  await upsertSubscription(subscription, getString(session.client_reference_id) || getString(session.metadata?.userId));
+  const checkoutEmail = session.customer_details?.email || null;
+  const checkoutUserId = checkoutEmail ? await getOrCreateBillingUserIdForEmail(checkoutEmail) : null;
+  await upsertSubscription(subscription, getString(session.client_reference_id) || getString(session.metadata?.userId) || checkoutUserId);
 };
 
 const handleInvoiceEvent = async (stripe: Stripe, invoice: Stripe.Invoice) => {

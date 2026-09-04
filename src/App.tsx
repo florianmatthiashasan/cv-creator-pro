@@ -38,6 +38,8 @@ const App = () => (
           <Route path="/dashboard/matcher" element={<Index initialScreen="matcher" />} />
           <Route path="/dashboard/tracker" element={<Index initialScreen="tracker" />} />
           <Route path="/dashboard/writer" element={<Index initialScreen="writer" />} />
+          <Route path="/pricing" element={<StaticPageRedirect to="/pricing/" />} />
+          <Route path="/how-it-works" element={<StaticPageRedirect to="/how-it-works/" />} />
           <Route path="/features" element={<StaticPageRedirect to="/features/" />} />
           <Route path="/faq" element={<StaticPageRedirect to="/faq/" />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
