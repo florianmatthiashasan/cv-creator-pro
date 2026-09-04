@@ -6,6 +6,10 @@ import { componentTagger } from "lovable-tagger";
 const localApiRoutes = new Map([
   ["/api/ai-career-advisor", "/api/ai-career-advisor.ts"],
   ["/api/ai-application-writer", "/api/ai-application-writer.ts"],
+  ["/api/stripe-checkout", "/api/stripe-checkout.ts"],
+  ["/api/stripe-portal", "/api/stripe-portal.ts"],
+  ["/api/stripe-subscription-status", "/api/stripe-subscription-status.ts"],
+  ["/api/stripe-webhook", "/api/stripe-webhook.ts"],
 ]);
 
 const readRequestBody = (request: import("node:http").IncomingMessage) =>

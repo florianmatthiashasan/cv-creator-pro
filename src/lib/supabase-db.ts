@@ -38,6 +38,14 @@ export type SavedCv = {
   data: CVData;
 };
 
+export type SubscriptionState = {
+  isActive: boolean;
+  status: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  stripeCustomerId: string | null;
+};
+
 export type DbApplication = {
   id: string;
   title: string;
@@ -289,6 +297,70 @@ export const signOut = async () => {
   if (error) throw toError('Logout fehlgeschlagen', error);
 };
 
+export const getCurrentAccessToken = async () => {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw toError('Session konnte nicht gelesen werden', error);
+  return data.session?.access_token || '';
+};
+
+export const fetchSubscriptionStatus = async (): Promise<SubscriptionState> => {
+  const token = await getCurrentAccessToken();
+  if (!token) {
+    return {
+      isActive: false,
+      status: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      stripeCustomerId: null,
+    };
+  }
+
+  const response = await fetch('/api/stripe-subscription-status', {
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || 'Subscription konnte nicht geladen werden.');
+  return data as SubscriptionState;
+};
+
+export const createCheckoutSession = async () => {
+  const token = await getCurrentAccessToken();
+  if (!token) throw new Error('Login required.');
+
+  const response = await fetch('/api/stripe-checkout', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || 'Checkout konnte nicht gestartet werden.');
+  if (!data?.url || typeof data.url !== 'string') throw new Error('Stripe Checkout URL fehlt.');
+  return data.url as string;
+};
+
+export const createBillingPortalSession = async () => {
+  const token = await getCurrentAccessToken();
+  if (!token) throw new Error('Login required.');
+
+  const response = await fetch('/api/stripe-portal', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || 'Billing Portal konnte nicht gestartet werden.');
+  if (!data?.url || typeof data.url !== 'string') throw new Error('Stripe Portal URL fehlt.');
+  return data.url as string;
+};
+
 export const ensureProfile = async (user: User) => {
   const supabase = ensureSupabase();
   const displayName =
@@ -389,6 +461,7 @@ export const saveCvSnapshot = async ({
   data: CVData;
 }) => {
   const supabase = ensureSupabase();
+  const isNewCv = !cvId;
   const payload = {
     user_id: userId,
     name,
@@ -421,9 +494,23 @@ export const saveCvSnapshot = async ({
     design: data.design,
   };
 
-  const cvResult = cvId
-    ? await supabase.from('cvs').update(payload).eq('id', cvId).eq('user_id', userId).select('id').single()
-    : await supabase.from('cvs').insert(payload).select('id').single();
+  const writeCv = (cvPayload: Record<string, unknown>) =>
+    cvId
+      ? supabase.from('cvs').update(cvPayload).eq('id', cvId).eq('user_id', userId).select('id').single()
+      : supabase.from('cvs').insert(cvPayload).select('id').single();
+
+  let cvResult = await writeCv(payload);
+  const missingCustomSections =
+    cvResult.error &&
+    [getErrorField(cvResult.error, 'message'), getErrorField(cvResult.error, 'details'), getErrorField(cvResult.error, 'hint')]
+      .join(' ')
+      .includes('custom_sections');
+
+  if (missingCustomSections) {
+    const payloadWithoutCustomSections: Record<string, unknown> = { ...payload };
+    delete payloadWithoutCustomSections.custom_sections;
+    cvResult = await writeCv(payloadWithoutCustomSections);
+  }
 
   if (cvResult.error) throw toError('CV konnte nicht gespeichert werden', cvResult.error);
 
@@ -444,7 +531,7 @@ export const saveCvSnapshot = async ({
     inserts.push(
       supabase.from('cv_experiences').insert(
         data.experiences.map((item, index) => ({
-          id: item.id,
+          id: isNewCv ? crypto.randomUUID() : item.id,
           cv_id: savedCvId,
           company: item.company,
           position: item.position,
@@ -462,7 +549,7 @@ export const saveCvSnapshot = async ({
     inserts.push(
       supabase.from('cv_education').insert(
         data.education.map((item, index) => ({
-          id: item.id,
+          id: isNewCv ? crypto.randomUUID() : item.id,
           cv_id: savedCvId,
           institution: item.institution,
           degree: item.degree,
@@ -481,7 +568,7 @@ export const saveCvSnapshot = async ({
     inserts.push(
       supabase.from('cv_skills').insert(
         data.skills.map((item, index) => ({
-          id: item.id,
+          id: isNewCv ? crypto.randomUUID() : item.id,
           cv_id: savedCvId,
           name: item.name,
           level: item.level,
@@ -495,7 +582,7 @@ export const saveCvSnapshot = async ({
     inserts.push(
       supabase.from('cv_languages').insert(
         data.languages.map((item, index) => ({
-          id: item.id,
+          id: isNewCv ? crypto.randomUUID() : item.id,
           cv_id: savedCvId,
           name: item.name,
           level: item.level,
@@ -544,6 +631,37 @@ export const saveApplication = async ({
 
   if (error) throw toError('Bewerbung konnte nicht gespeichert werden', error);
   return mapApplicationRow(data as ApplicationRow);
+};
+
+export const deleteSavedCv = async ({ userId, cvId }: { userId: string; cvId: string }) => {
+  const supabase = ensureSupabase();
+
+  const unlinkApplications = await supabase
+    .from('applications')
+    .update({ cv_id: null })
+    .eq('user_id', userId)
+    .eq('cv_id', cvId);
+  if (unlinkApplications.error) throw toError('CV-Verknüpfungen konnten nicht gelöst werden', unlinkApplications.error);
+
+  const deleteResults = await Promise.all([
+    supabase.from('cv_experiences').delete().eq('cv_id', cvId),
+    supabase.from('cv_education').delete().eq('cv_id', cvId),
+    supabase.from('cv_skills').delete().eq('cv_id', cvId),
+    supabase.from('cv_languages').delete().eq('cv_id', cvId),
+  ]);
+
+  for (const result of deleteResults) {
+    if (result.error) throw toError('CV-Abschnitte konnten nicht gelöscht werden', result.error);
+  }
+
+  const { error } = await supabase
+    .from('cvs')
+    .delete()
+    .eq('id', cvId)
+    .eq('user_id', userId);
+
+  if (error) throw toError('CV konnte nicht gelöscht werden', error);
+  return cvId;
 };
 
 export const updateApplicationStage = async (applicationId: string, stage: ApplicationStage) => {

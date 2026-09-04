@@ -2,6 +2,8 @@ export const config = {
   runtime: 'edge',
 };
 
+import { requireActiveSubscription } from './_supabase-server';
+
 type WriterPayload = {
   cvProfile?: string;
   jobAd?: string;
@@ -15,6 +17,12 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { 'content-type': 'application/json' },
   });
+
+const dataUrlPattern = /data:[^"'\s]+/g;
+const truncateText = (value: unknown, maxLength: number) =>
+  (typeof value === 'string' ? value.trim() : '')
+    .replace(dataUrlPattern, '[removed uploaded file]')
+    .slice(0, maxLength);
 
 const extractOutputText = (data: unknown) => {
   if (!data || typeof data !== 'object') return '';
@@ -54,12 +62,17 @@ const writerSchema = {
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
+  const subscriptionGate = await requireActiveSubscription(request);
+  if ('response' in subscriptionGate) return subscriptionGate.response;
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return json({ error: 'OPENAI_API_KEY is not configured on the server.' }, 500);
 
   const payload = (await request.json()) as WriterPayload;
-  const jobAd = payload.jobAd?.trim() || '';
+  const jobAd = truncateText(payload.jobAd, 12000);
   if (jobAd.length < 40) return json({ error: 'Paste a longer job ad first.' }, 400);
+  const cvProfile = truncateText(payload.cvProfile, 10000) || 'No CV profile provided.';
+  const motivation = truncateText(payload.motivation, 2000) || 'No extra notes provided.';
 
   const prompt = [
     'You are an expert application writer for European job applications.',
@@ -69,8 +82,8 @@ export default async function handler(request: Request) {
     'Do not translate person names, company names, product names, tool names, certifications, degrees, or quoted job titles unless the requested language clearly requires a localized label.',
     `Language: ${payload.language || 'English'}`,
     `Tone: ${payload.tone || 'Professional'}`,
-    `CV profile:\n${payload.cvProfile || 'No CV profile provided.'}`,
-    `User motivation notes:\n${payload.motivation || 'No extra notes provided.'}`,
+    `CV profile:\n${cvProfile}`,
+    `User motivation notes:\n${motivation}`,
     `Job ad:\n${jobAd}`,
   ].join('\n\n');
 
@@ -83,6 +96,7 @@ export default async function handler(request: Request) {
     body: JSON.stringify({
       model: process.env.OPENAI_WRITER_MODEL || process.env.OPENAI_MODEL || 'gpt-4.1-mini',
       input: prompt,
+      max_output_tokens: 1800,
       temperature: 0.45,
       text: {
         format: {

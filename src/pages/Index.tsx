@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@supabase/supabase-js';
@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Coffee,
   Copy,
+  Trash2,
   FileDown,
   FileSearch,
   Globe2,
@@ -46,8 +47,13 @@ import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
 import { fetchArbeitnowJobFromUrl, getProfileCity } from '@/lib/job-matching';
 import {
   ApplicationStage,
+  createBillingPortalSession,
+  createCheckoutSession,
   DbApplication,
+  deleteSavedCv,
   fetchDashboardData,
+  fetchSubscriptionStatus,
+  getCurrentAccessToken,
   getInitialAuthUser,
   onAuthUserChange,
   saveApplication,
@@ -137,6 +143,12 @@ const uiCopy = {
     saveCv: 'Save CV',
     loginToSave: 'Login to save',
     loginRequired: 'Login required',
+    upgradeToPro: 'Upgrade to Pro',
+    manageBilling: 'Manage billing',
+    proActive: 'Pro active',
+    aiRequiresPro: 'AI features require Folio CV Pro.',
+    aiProDetail: 'Guests can create and export CVs for free. Job matching, AI Judge, AI tailoring, and AI Writer need an active subscription.',
+    startingCheckout: 'Starting checkout...',
     format: 'Format',
     livePreview: 'Live preview',
     template: 'template',
@@ -196,7 +208,7 @@ const uiCopy = {
     applicationPackage: 'Application package',
     generatedWithOpenAi: 'Generated with OpenAI.',
     localFallbackDraft: 'AI unavailable.',
-    autoWriterHint: 'Paste a job ad and the writer starts automatically.',
+    autoWriterHint: 'Paste a job ad, then click Write now. The output appears only after AI finishes.',
     copyAll: 'Copy all',
     copy: 'Copy',
     pdf: 'PDF',
@@ -204,7 +216,7 @@ const uiCopy = {
     motivation: 'Motivation',
     email: 'Email',
     noApplicationText: 'No application text yet',
-    noApplicationTextHelp: 'Use your current CV as the profile source, then paste a job ad and generate a tailored package.',
+    noApplicationTextHelp: 'Use your current CV as the profile source, paste a job ad, then start AI writing manually.',
     cvContentNeeded: 'Add CV content first',
     cvContentNeededHelp: 'AI needs real profile information before it can judge your CV. Add your experience, skills, or summary first.',
     editorTitle: 'CV simulator',
@@ -258,6 +270,12 @@ const uiCopy = {
     saveCv: 'CV speichern',
     loginToSave: 'Login zum Speichern',
     loginRequired: 'Login nötig',
+    upgradeToPro: 'Pro aktivieren',
+    manageBilling: 'Abo verwalten',
+    proActive: 'Pro aktiv',
+    aiRequiresPro: 'AI-Funktionen brauchen Folio CV Pro.',
+    aiProDetail: 'Gäste können CVs kostenlos erstellen und exportieren. Job-Matching, AI Judge, AI-Tailoring und AI Writer brauchen ein aktives Abo.',
+    startingCheckout: 'Checkout wird gestartet...',
     format: 'Format',
     livePreview: 'Live-Vorschau',
     template: 'Template',
@@ -317,7 +335,7 @@ const uiCopy = {
     applicationPackage: 'Bewerbungspaket',
     generatedWithOpenAi: 'Mit OpenAI generiert.',
     localFallbackDraft: 'AI nicht verfügbar.',
-    autoWriterHint: 'Füge eine Stellenanzeige ein, der Writer startet automatisch.',
+    autoWriterHint: 'Füge eine Stellenanzeige ein und klicke auf Jetzt schreiben. Die Ausgabe erscheint erst nach der AI-Antwort.',
     copyAll: 'Alles kopieren',
     copy: 'Kopieren',
     pdf: 'PDF',
@@ -325,7 +343,7 @@ const uiCopy = {
     motivation: 'Motivation',
     email: 'E-Mail',
     noApplicationText: 'Noch kein Bewerbungstext',
-    noApplicationTextHelp: 'Nutze deinen aktuellen CV als Profilquelle, füge eine Stellenanzeige ein und generiere ein passendes Paket.',
+    noApplicationTextHelp: 'Nutze deinen aktuellen CV als Profilquelle, füge eine Stellenanzeige ein und starte AI manuell.',
     cvContentNeeded: 'Erst CV-Inhalt hinzufügen',
     cvContentNeededHelp: 'AI braucht echte Profilinformationen, bevor sie deinen CV bewerten kann. Füge Erfahrung, Skills oder Summary hinzu.',
     editorTitle: 'CV-Simulator',
@@ -510,6 +528,32 @@ const hasTailoringEvidence = (data: CVData) =>
     ),
   );
 
+const cloneCvDataForNewVersion = (data: CVData): CVData => ({
+  ...data,
+  personalInfo: { ...data.personalInfo },
+  experiences: data.experiences.map((experience) => ({
+    ...experience,
+    id: crypto.randomUUID(),
+  })),
+  education: data.education.map((education) => ({
+    ...education,
+    id: crypto.randomUUID(),
+  })),
+  skills: data.skills.map((skill) => ({
+    ...skill,
+    id: crypto.randomUUID(),
+  })),
+  languages: data.languages.map((language) => ({
+    ...language,
+    id: crypto.randomUUID(),
+  })),
+  additionalSections: (data.additionalSections || []).map((section) => ({
+    ...section,
+    id: crypto.randomUUID(),
+  })),
+  design: { ...data.design },
+});
+
 const getStageClassName = (stage: ApplicationStage) => {
   if (stage === 'Interview') return 'organic-tag organic-tag-accent-2';
   if (stage === 'Applied') return 'organic-tag organic-tag-accent';
@@ -528,6 +572,32 @@ const DemoNotice = ({ language }: { language: UiLanguage }) => (
     </p>
   </div>
 );
+
+const AiPaywallNotice = ({
+  language,
+  onUpgrade,
+  disabled,
+}: {
+  language: UiLanguage;
+  onUpgrade: () => void;
+  disabled?: boolean;
+}) => {
+  const copy = uiCopy[language];
+  return (
+    <div className="organic-card border border-accent/25 bg-[var(--organic-accent-100)] px-5 py-4 text-[var(--organic-accent-800)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold">{copy.aiRequiresPro}</p>
+          <p className="mt-1 text-sm leading-6">{copy.aiProDetail}</p>
+        </div>
+        <Button className="shrink-0" onClick={onUpgrade} disabled={disabled}>
+          <Sparkles size={16} />
+          {copy.upgradeToPro}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -700,6 +770,32 @@ type AiTailoredCvResult = {
 const getFullName = (data: CVData) =>
   `${data.personalInfo.firstName} ${data.personalInfo.lastName}`.trim() || 'Your Name';
 
+const normalizeSkillName = (value: string) =>
+  value
+    .replace(/^[-•*\d.\s]+/, '')
+    .replace(/[.;:]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const isValidAiSkillName = (value: string) => {
+  const normalized = normalizeSkillName(value);
+  if (!normalized || normalized.length > 42) return false;
+  if (normalized.split(/\s+/).length > 5) return false;
+  if (/[.!?]/.test(normalized)) return false;
+  return /[\p{L}\p{N}]/u.test(normalized);
+};
+
+const hasCompletedEducation = (data: CVData) =>
+  data.education.some((item) => item.endDate.trim());
+
+const guardCompletedEducationWording = (value: string, data: CVData) => {
+  if (!hasCompletedEducation(data)) return value;
+  return value
+    .replace(/\bongoing\s+(school|education|degree|study|studies|training)\b/gi, 'completed $1')
+    .replace(/\bcurrent\s+(school|education|degree|study|studies|training)\b/gi, 'completed $1')
+    .replace(/\bstill\s+(studying|in school|in education)\b/gi, 'completed education');
+};
+
 const buildCvProfileForAi = (data: CVData) => {
   const personal = data.personalInfo;
   const skills = data.skills.map((skill) => skill.name).filter(Boolean).join(', ');
@@ -840,7 +936,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hydratedUserIdRef = useRef<string | null>(null);
-  const writerAutoKeyRef = useRef('');
+  const writerResultSignatureRef = useRef('');
   const [screen, setScreenState] = useState<AppScreen>(initialScreen);
   const [uiLanguage, setUiLanguage] = useState<UiLanguage>('English');
   const [step, setStep] = useState(0);
@@ -882,6 +978,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const lastStep = TOTAL_STEPS - 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
@@ -904,6 +1001,16 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const jobMatchReport = aiJobAnalysis?.jobMatchReport || null;
   const atsCheck = aiJobAnalysis?.atsCheck || null;
   const interviewPrep = aiJobAnalysis?.interviewPrep || null;
+  const writerInputSignature = useMemo(
+    () => JSON.stringify({
+      cvProfile: buildCvProfileForAi(cvData),
+      jobAd: writerJobAd.trim(),
+      language: writerLanguage,
+      motivation: writerMotivation.trim(),
+      tone: writerTone,
+    }),
+    [cvData, writerJobAd, writerLanguage, writerMotivation, writerTone],
+  );
   const t = uiCopy[uiLanguage];
   const localizedStepTitles = uiStepText[uiLanguage].titles;
   const localizedStepDescriptions = uiStepText[uiLanguage].descriptions;
@@ -917,6 +1024,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     setScreenState(nextScreen);
     navigate(screenPaths[nextScreen]);
   };
+  const billingQuery = useQuery({
+    queryKey: ['billing-status', authUser?.id],
+    queryFn: fetchSubscriptionStatus,
+    enabled: Boolean(authUser && supabaseConfigured),
+    refetchOnWindowFocus: true,
+  });
+  const isLoggedIn = Boolean(authUser);
+  const hasProSubscription = Boolean(authUser && billingQuery.data?.isActive);
+  const canUseAi = hasProSubscription;
+  const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
+  const authStatusLabel = isLoggedIn ? t.signedIn : t.guestMode;
+  const authDetailLabel = isLoggedIn ? authUser?.email || (uiLanguage === 'German' ? 'angemeldet' : 'logged in') : t.notLoggedIn;
 
   useEffect(() => {
     setScreenState(initialScreen);
@@ -928,7 +1047,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   }, [cvData, uiLanguage]);
 
   useEffect(() => {
-    if (!reviewOpen || !hasMeaningfulCvContent(cvData)) {
+    if (!reviewOpen || !hasMeaningfulCvContent(cvData) || !canUseAi) {
       setAiCvReviewLoading(false);
       return;
     }
@@ -941,7 +1060,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       try {
         const response = await fetch('/api/ai-career-advisor', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: await getAiRequestHeaders(),
           body: JSON.stringify({
             mode: 'cv-review',
             cvData,
@@ -966,7 +1085,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [cvData, localCvReview, reviewOpen, uiLanguage]);
+  }, [canUseAi, cvData, localCvReview, reviewOpen, uiLanguage]);
 
   useEffect(() => {
     setAiJobAnalysis(null);
@@ -974,7 +1093,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   }, [activeJobAd, cvData, template, uiLanguage]);
 
   useEffect(() => {
-    if (!['matcher', 'writer'].includes(screen) || !localJobMatchReport || !localInterviewPrep) {
+    if (!['matcher', 'writer'].includes(screen) || !localJobMatchReport || !localInterviewPrep || !canUseAi) {
       setAiJobAnalysisLoading(false);
       return;
     }
@@ -987,7 +1106,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       try {
         const response = await fetch('/api/ai-career-advisor', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: await getAiRequestHeaders(),
           body: JSON.stringify({
             mode: 'job-match',
             cvData,
@@ -1016,7 +1135,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [activeJobAd, cvData, localAtsCheck, localInterviewPrep, localJobMatchReport, screen, template, uiLanguage]);
+  }, [activeJobAd, canUseAi, cvData, localAtsCheck, localInterviewPrep, localJobMatchReport, screen, template, uiLanguage]);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -1062,12 +1181,13 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     if (!data || hydratedUserIdRef.current === authUser.id) return;
 
     const firstCv = data.cvs[0];
-    if (firstCv) {
+    const hasUnsavedLocalCv = !selectedCvId && hasMeaningfulCvContent(cvData);
+    if (firstCv && !hasUnsavedLocalCv) {
       setSelectedCvId(firstCv.id);
       setSelectedCvName(firstCv.name);
       setCvData(firstCv.data);
       setTemplate(firstCv.templateId);
-    } else if (hasMeaningfulCvContent(cvData)) {
+    } else if (hasUnsavedLocalCv) {
       setSelectedCvId(null);
       setSelectedCvName(getCvName(cvData));
     } else {
@@ -1079,7 +1199,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
     setApplications(data.applications);
     hydratedUserIdRef.current = authUser.id;
-  }, [authUser, dashboardQuery.data, cvData]);
+  }, [authUser, dashboardQuery.data, cvData, selectedCvId]);
 
   useEffect(() => {
     if (!dashboardQuery.error) return;
@@ -1087,22 +1207,29 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   }, [dashboardQuery.error]);
 
   const saveCvMutation = useMutation({
-    mutationFn: () =>
-      saveCvSnapshot({
-        userId: authUser?.id || '',
-        cvId: selectedCvId,
-        name: selectedCvName && selectedCvName !== 'Untitled CV' ? selectedCvName : getCvName(cvData),
-        templateId: template,
-        data: cvData,
-      }),
-    onSuccess: (cvId) => {
+    mutationFn: saveCvSnapshot,
+    onSuccess: (cvId, savedSnapshot) => {
       setSelectedCvId(cvId);
-      setSelectedCvName((current) => current || getCvName(cvData));
+      setSelectedCvName(savedSnapshot.name || getCvName(savedSnapshot.data));
       queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
-      toast.success('CV wurde in Supabase gespeichert.');
+      toast.success('CV wurde gespeichert.');
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'CV konnte nicht gespeichert werden.');
+    },
+  });
+
+  const deleteCvMutation = useMutation({
+    mutationFn: deleteSavedCv,
+    onSuccess: (deletedCvId) => {
+      if (selectedCvId === deletedCvId) {
+        setSelectedCvId(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ['dashboard-data', authUser?.id] });
+      toast.success('CV wurde gelöscht.');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'CV konnte nicht gelöscht werden.');
     },
   });
 
@@ -1185,11 +1312,6 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
   const profileCity = getProfileCity(cvData);
   const profileRole = cvData.personalInfo.title.trim() || 'Your target role';
-
-  const isLoggedIn = Boolean(authUser);
-  const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
-  const authStatusLabel = isLoggedIn ? t.signedIn : t.guestMode;
-  const authDetailLabel = isLoggedIn ? authUser?.email || (uiLanguage === 'German' ? 'angemeldet' : 'logged in') : t.notLoggedIn;
 
   const filteredApplications = useMemo(() => {
     const roleQuery = filters.role.toLowerCase();
@@ -1292,6 +1414,56 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     setAuthOpen(true);
   };
 
+  const startCheckout = async () => {
+    if (!authUser) {
+      requestLogin();
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const url = await createCheckoutSession();
+      window.location.href = url;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Checkout konnte nicht gestartet werden.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const openBillingPortal = async () => {
+    if (!authUser) {
+      requestLogin();
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const url = await createBillingPortalSession();
+      window.location.href = url;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Billing Portal konnte nicht geöffnet werden.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const requireAiAccess = () => {
+    if (canUseAi) return true;
+    if (!authUser) requestLogin();
+    else void startCheckout();
+    return false;
+  };
+
+  const getAiRequestHeaders = async () => {
+    const token = await getCurrentAccessToken();
+    if (!token) throw new Error('Login required.');
+    return {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+    };
+  };
+
   const handleAuthSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!authEmail.trim()) return;
@@ -1319,13 +1491,35 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   };
 
   const saveCurrentCv = () => {
-    if (!isLoggedIn) {
+    if (!authUser) {
       requestLogin();
       return;
     }
 
-    setSelectedCvName((current) => current || getCvName(cvData));
-    saveCvMutation.mutate();
+    const name = selectedCvName && selectedCvName !== 'Untitled CV' ? selectedCvName : getCvName(cvData);
+    setSelectedCvName(name);
+    saveCvMutation.mutate({
+      userId: authUser.id,
+      cvId: null,
+      name,
+      templateId: template,
+      data: cvData,
+    });
+  };
+
+  const deleteCvVersion = (cvId: string, cvName: string) => {
+    if (!authUser) {
+      requestLogin();
+      return;
+    }
+
+    const confirmed = window.confirm(`CV "${cvName}" wirklich löschen?`);
+    if (!confirmed) return;
+
+    deleteCvMutation.mutate({
+      userId: authUser.id,
+      cvId,
+    });
   };
 
   const applyCvSuggestion = (suggestion: CvSuggestion) => {
@@ -1371,7 +1565,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       if (suggestion.target === 'skills') {
         const skills = suggestion.suggestion
           .split(',')
-          .map((item) => item.trim())
+          .map(normalizeSkillName)
+          .filter(isValidAiSkillName)
           .filter((item) => item && !current.skills.some((skill) => skill.name.toLowerCase() === item.toLowerCase()))
           .map((name) => ({
             id: crypto.randomUUID(),
@@ -1402,7 +1597,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
     const existingSkillNames = new Set(current.skills.map((skill) => skill.name.trim().toLowerCase()).filter(Boolean));
     const skillsToAdd = result.skillsToAdd
-      .map((skill) => skill.trim())
+      .map(normalizeSkillName)
+      .filter(isValidAiSkillName)
       .filter((skill) => skill && !existingSkillNames.has(skill.toLowerCase()))
       .map((name) => ({
         id: crypto.randomUUID(),
@@ -1414,7 +1610,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         .filter((item) => item.experienceId && item.description.trim())
         .map((item) => [item.experienceId, item.description.trim()]),
     );
-    const summary = result.summary.trim();
+    const summary = guardCompletedEducationWording(result.summary.trim(), current);
 
     return {
       ...current,
@@ -1426,16 +1622,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       skills: [...current.skills, ...skillsToAdd],
       experiences: current.experiences.map((experience) =>
         rewritesById.has(experience.id)
-          ? { ...experience, description: rewritesById.get(experience.id) || experience.description }
+          ? { ...experience, description: guardCompletedEducationWording(rewritesById.get(experience.id) || experience.description, current) }
           : experience,
       ),
     };
   };
 
   const createTailoredCvVersion = async () => {
-    const baselineReport = jobMatchReport || localJobMatchReport;
+    if (!requireAiAccess()) return;
+
+    const baselineReport = jobMatchReport;
     if (!baselineReport) {
-      toast.error(t.pasteJobFirstError);
+      toast.error(aiJobAnalysisError || t.aiMatcherWorking);
       return;
     }
 
@@ -1451,7 +1649,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     try {
       const response = await fetch('/api/ai-career-advisor', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: await getAiRequestHeaders(),
         body: JSON.stringify({
           mode: 'tailored-cv',
           cvData,
@@ -1468,7 +1666,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
       setSelectedCvId(null);
       setSelectedCvName(data.cvName || `${data.role || baselineReport.role} - ${data.company || baselineReport.company}`);
-      setCvData((current) => applyAiTailoredCvResult(current, data));
+      setCvData((current) => cloneCvDataForNewVersion(applyAiTailoredCvResult(current, data)));
       setAiJobAnalysis((current) => current ? {
         ...current,
         jobMatchReport: {
@@ -1484,16 +1682,19 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       setScreen('editor');
       toast.success('AI tailored CV version created.');
       if (data.gapNote) toast.message(data.gapNote);
-    } catch {
-      setTailoringNote(t.localTailoredFallback);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t.localTailoredFallback;
+      setTailoringNote(message);
       setScreen('matcher');
-      toast.message(t.localTailoredFallback);
+      toast.message(message);
     } finally {
       setTailoringLoading(false);
     }
   };
 
   const createTailoredCvForApplication = async (application: Application) => {
+    if (!requireAiAccess()) return;
+
     const jobAd = [
       application.title,
       `Company: ${application.company}`,
@@ -1517,7 +1718,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     try {
       const response = await fetch('/api/ai-career-advisor', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: await getAiRequestHeaders(),
         body: JSON.stringify({
           mode: 'tailored-cv',
           cvData,
@@ -1534,22 +1735,25 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
       setSelectedCvId(null);
       setSelectedCvName(data.cvName || `${application.title} - ${application.company}`);
-      setCvData((current) => applyAiTailoredCvResult(current, data));
+      setCvData((current) => cloneCvDataForNewVersion(applyAiTailoredCvResult(current, data)));
       setTailoringNote(`${data.dataUseNote} ${data.gapNote}`.trim());
       setStep(0);
       setScreen('editor');
       toast.success('AI tailored CV version created from tracker item.');
       if (data.gapNote) toast.message(data.gapNote);
-    } catch {
-      setTailoringNote(t.localTailoredTrackerFallback);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t.localTailoredTrackerFallback;
+      setTailoringNote(message);
       setScreen('matcher');
-      toast.message(t.localTailoredTrackerFallback);
+      toast.message(message);
     } finally {
       setTailoringLoading(false);
     }
   };
 
-  const generateApplicationText = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+  const generateApplicationText = async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!requireAiAccess()) return;
+
     if (writerJobAd.trim().length < 40) {
       if (!silent) toast.error(t.pasteLongerJobError);
       return;
@@ -1557,6 +1761,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
     setWriterLoading(true);
     setWriterError('');
+    setWriterResult(null);
     try {
       const payload = {
         cvProfile: buildCvProfileForAi(cvData),
@@ -1568,12 +1773,13 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
       const response = await fetch('/api/ai-application-writer', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: await getAiRequestHeaders(),
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error((await response.json())?.error || 'AI writer is not configured.');
       const data = await response.json();
+      writerResultSignatureRef.current = writerInputSignature;
       setWriterResult({
         coverLetter: data.coverLetter || '',
         motivation: data.motivation || '',
@@ -1590,27 +1796,14 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     } finally {
       setWriterLoading(false);
     }
-  }, [cvData, t, writerJobAd, writerLanguage, writerMotivation, writerTone]);
+  };
 
   useEffect(() => {
-    if (screen !== 'writer' || writerLoading || writerJobAd.trim().length < 40) return;
-
-    const autoKey = JSON.stringify({
-      cvData,
-      jobAd: writerJobAd.trim(),
-      language: writerLanguage,
-      motivation: writerMotivation.trim(),
-      tone: writerTone,
-    });
-    if (writerAutoKeyRef.current === autoKey) return;
-
-    const timeout = window.setTimeout(() => {
-      writerAutoKeyRef.current = autoKey;
-      generateApplicationText({ silent: true });
-    }, 1400);
-
-    return () => window.clearTimeout(timeout);
-  }, [cvData, generateApplicationText, screen, writerJobAd, writerLanguage, writerLoading, writerMotivation, writerTone]);
+    if (writerLoading) return;
+    if (writerResult && writerResultSignatureRef.current === writerInputSignature) return;
+    setWriterResult(null);
+    setWriterError('');
+  }, [writerInputSignature, writerLoading, writerResult]);
 
   const copyApplicationText = async (value: string) => {
     await navigator.clipboard.writeText(value);
@@ -1864,7 +2057,17 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
                   {isLoggedIn ? authDetailLabel : t.profileSignedOut}
                 </p>
-                {!isLoggedIn && (
+                {isLoggedIn ? (
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    variant={hasProSubscription ? 'outline' : 'default'}
+                    onClick={hasProSubscription ? openBillingPortal : startCheckout}
+                    disabled={checkoutLoading}
+                  >
+                    {checkoutLoading ? t.startingCheckout : hasProSubscription ? t.manageBilling : t.upgradeToPro}
+                  </Button>
+                ) : (
                   <Button
                     className="mt-3"
                     size="sm"
@@ -1938,10 +2141,24 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               {t.settings}
             </Button>
             <div className="rounded-[20px] bg-background p-4">
-              <p className="font-display text-base">{authStatusLabel}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-display text-base">{authStatusLabel}</p>
+                {hasProSubscription && <span className="organic-tag organic-tag-accent-2">{t.proActive}</span>}
+              </div>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 {isLoggedIn ? t.signedInDetail : t.guestDetail}
               </p>
+              {isLoggedIn && (
+                <Button
+                  size="sm"
+                  className="mt-3 w-full"
+                  variant={hasProSubscription ? 'outline' : 'default'}
+                  onClick={hasProSubscription ? openBillingPortal : startCheckout}
+                  disabled={checkoutLoading}
+                >
+                  {checkoutLoading ? t.startingCheckout : hasProSubscription ? t.manageBilling : t.upgradeToPro}
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-3 px-1">
               <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--organic-accent-2-300)] text-xs font-bold text-[var(--organic-accent-2-800)]">
@@ -2020,11 +2237,22 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           </span>
                           <span className="text-[var(--organic-accent-2-800)]">{cv.strength} complete</span>
                         </div>
-                        <div className="mt-4 flex gap-2">
+                        <div className="mt-4 flex flex-wrap gap-2">
                           <Button size="sm" variant="outline" onClick={() => openSavedCv(cv.id)}>Edit</Button>
                           <Button size="sm" variant="ghost" onClick={isLoggedIn ? saveCurrentCv : requestLogin}>
-                            {isLoggedIn ? 'Save' : 'Login required'}
+                            {isLoggedIn ? 'Save new version' : 'Login required'}
                           </Button>
+                          {isLoggedIn && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteCvVersion(cv.id, cv.name)}
+                              disabled={deleteCvMutation.isPending}
+                            >
+                              <Trash2 size={14} />
+                              Delete
+                            </Button>
+                          )}
                         </div>
                       </article>
                     ))}
@@ -2060,8 +2288,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </div>
                       ))}
                     </div>
-                    <Button className="mt-5 w-full" onClick={() => setScreen('writer')}>
-                      Open AI writer
+                    <Button className="mt-5 w-full" onClick={hasProSubscription ? () => setScreen('writer') : startCheckout} disabled={checkoutLoading}>
+                      {hasProSubscription ? 'Open AI writer' : t.upgradeToPro}
                     </Button>
                   </div>
                 </section>
@@ -2167,7 +2395,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                 onClick={() => createTailoredCvForApplication(job)}
                                 disabled={tailoringLoading}
                               >
-                                {tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
+                                {!hasProSubscription ? t.upgradeToPro : tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
                               </Button>
                             </div>
                           </article>
@@ -2232,7 +2460,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                               {isLoggedIn ? nextStageLabel[job.stage] : 'Login required'}
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => createTailoredCvForApplication(job)} disabled={tailoringLoading}>
-                              {tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
+                              {!hasProSubscription ? t.upgradeToPro : tailoringLoading ? 'AI tailoring...' : 'Tailor CV'}
                             </Button>
                           </td>
                         </tr>
@@ -2318,19 +2546,27 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         {jobAnalysisSourceLabel}
                       </span>
                       {aiJobAnalysisError && (
-                        <span className="text-xs text-muted-foreground">{t.openAiUnavailableLocal}</span>
+                        <span className="text-xs text-muted-foreground">{aiJobAnalysisError}</span>
                       )}
                     </div>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={openEditor}>{t.backToCv}</Button>
-                  <Button onClick={createTailoredCvVersion} disabled={activeJobAd.length < 40 || tailoringLoading}>
+                  <Button
+                    onClick={hasProSubscription ? createTailoredCvVersion : startCheckout}
+                    disabled={hasProSubscription ? activeJobAd.length < 40 || tailoringLoading || !jobMatchReport || Boolean(aiJobAnalysisError) : checkoutLoading}
+                  >
                     <Target size={16} />
-                    {tailoringLoading ? t.creatingWithAi : t.createAiTailoredVersion}
+                    {!hasProSubscription ? t.upgradeToPro : tailoringLoading ? t.creatingWithAi : t.createAiTailoredVersion}
                   </Button>
                 </div>
               </div>
+              {!hasProSubscription && (
+                <div className="mt-6">
+                  <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                </div>
+              )}
               {tailoringNote && (
                 <div className="mt-4 rounded-[18px] bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[var(--organic-shadow-sm)]">
                   {tailoringNote}
@@ -2376,7 +2612,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </aside>
 
                 <div className="space-y-5">
-                  {jobMatchReport && atsCheck ? (
+                  {!hasProSubscription && activeJobAd.length >= 40 ? (
+                    <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                  ) : jobMatchReport && atsCheck ? (
                     <>
                       <div className="grid gap-4 sm:grid-cols-3">
                         <article className="organic-card p-5">
@@ -2438,7 +2676,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                     <span className="organic-tag organic-tag-accent">{suggestion.label}</span>
                                     <h3 className="mt-2 text-sm font-semibold">{suggestion.issue}</h3>
                                   </div>
-                                  <Button size="sm" onClick={() => applyJobMatchSuggestion(suggestion.id)}>
+                                  <Button type="button" size="sm" onClick={() => applyJobMatchSuggestion(suggestion.id)}>
                                     {t.apply}
                                   </Button>
                                 </div>
@@ -2494,7 +2732,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         {aiJobAnalysisError ? t.aiUnavailable : t.aiWorking}
                       </p>
                       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                        {aiJobAnalysisError ? t.openAiUnavailableLocal : t.aiMatcherWorking}
+                        {aiJobAnalysisError ? aiJobAnalysisError : t.aiMatcherWorking}
                       </p>
                     </div>
                   ) : (
@@ -2521,15 +2759,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={openEditor}>{t.editCv}</Button>
-                  <Button onClick={() => generateApplicationText()} disabled={writerLoading || writerJobAd.trim().length < 40}>
+                  <Button
+                    onClick={hasProSubscription ? () => generateApplicationText() : startCheckout}
+                    disabled={hasProSubscription ? writerLoading || writerJobAd.trim().length < 40 : checkoutLoading}
+                  >
                     <Wand2 size={16} />
-                    {writerLoading ? t.writing : writerResult ? t.regenerate : t.writeNow}
+                    {!hasProSubscription ? t.upgradeToPro : writerLoading ? t.writing : writerResult ? t.regenerate : t.writeNow}
                   </Button>
                 </div>
               </div>
 
-              {!isLoggedIn && <div className="mt-6">
-                <DemoNotice language={uiLanguage} />
+              {!hasProSubscription && <div className="mt-6">
+                <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
               </div>}
 
               <div className="mt-7 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -2611,7 +2852,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </span>
                       )}
                     </div>
-                    {interviewPrep ? (
+                    {!hasProSubscription && activeJobAd.length >= 40 ? (
+                      <div className="mt-5">
+                        <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                      </div>
+                    ) : interviewPrep ? (
                       <div className="mt-5 space-y-3">
                         {interviewPrep.questions.map((item) => (
                           <div key={item.question} className="writer-output-section">
@@ -2626,7 +2871,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           {aiJobAnalysisError ? t.aiUnavailable : t.aiWorking}
                         </p>
                         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                          {aiJobAnalysisError ? t.openAiUnavailablePrep : t.aiMatcherWorking}
+                          {aiJobAnalysisError ? aiJobAnalysisError : t.aiMatcherWorking}
                         </p>
                       </div>
                     ) : (
@@ -2646,7 +2891,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       <p className="section-kicker">{t.output}</p>
                       <h2 className="font-display text-2xl font-normal">{t.applicationPackage}</h2>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {writerResult ? t.generatedWithOpenAi : writerLoading ? t.aiWriterWorking : writerError ? t.aiUnavailable : t.autoWriterHint}
+                        {!hasProSubscription ? t.aiRequiresPro : writerResult ? t.generatedWithOpenAi : writerLoading ? t.aiWriterWorking : writerError ? t.aiUnavailable : t.autoWriterHint}
                       </p>
                       {writerError && (
                         <p className="mt-2 text-xs leading-5 text-muted-foreground">{writerError}</p>
@@ -2668,7 +2913,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     </div>
                   </div>
 
-                  {writerResult ? (
+                  {!hasProSubscription ? (
+                    <div className="mt-5">
+                      <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                    </div>
+                  ) : writerResult ? (
                     <div className="mt-5 space-y-4">
                       {[
                         [t.coverLetter, writerResult.coverLetter],
@@ -2736,8 +2985,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                     <SearchCheck size={16} />
                     {t.jobMatcher}
                   </Button>
-                  <Button variant="outline" onClick={() => setReviewOpen((current) => !current)}>
-                    {reviewOpen ? t.hideAiJudge : t.aiJudge}
+                  <Button
+                    variant="outline"
+                    onClick={hasProSubscription ? () => setReviewOpen((current) => !current) : startCheckout}
+                    disabled={checkoutLoading}
+                  >
+                    {!hasProSubscription ? t.upgradeToPro : reviewOpen ? t.hideAiJudge : t.aiJudge}
                   </Button>
                   <Button variant="outline" onClick={saveCurrentCv} disabled={saveCvMutation.isPending}>
                     {saveCvMutation.isPending ? (uiLanguage === 'German' ? 'Speichert...' : 'Saving...') : isLoggedIn ? t.saveCv : t.loginToSave}
@@ -2748,7 +3001,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
               <div className="mt-7 grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
                 <div className="min-w-0 space-y-5">
-                  {reviewOpen && cvReview ? (
+                  {reviewOpen && !hasProSubscription ? (
+                    <AiPaywallNotice language={uiLanguage} onUpgrade={startCheckout} disabled={checkoutLoading} />
+                  ) : reviewOpen && cvReview ? (
                     <article className="organic-card p-5">
                       <div className="flex items-center gap-4">
                         <span
@@ -2787,7 +3042,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                   <span className="organic-tag organic-tag-accent">{suggestion.label}</span>
                                   <h4 className="mt-2 text-sm font-semibold">{suggestion.issue}</h4>
                                 </div>
-                                <Button size="sm" onClick={() => applyCvSuggestion(suggestion)}>
+                                <Button type="button" size="sm" onClick={() => applyCvSuggestion(suggestion)}>
                                   {t.replace}
                                 </Button>
                               </div>

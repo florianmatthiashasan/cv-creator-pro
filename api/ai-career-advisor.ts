@@ -2,6 +2,8 @@ export const config = {
   runtime: 'edge',
 };
 
+import { requireActiveSubscription } from './_supabase-server';
+
 type CareerAdvisorMode = 'cv-review' | 'job-match' | 'tailored-cv';
 
 type CareerAdvisorPayload = {
@@ -49,6 +51,15 @@ const sharedString = { type: 'string' };
 const score = { type: 'number', minimum: 0, maximum: 100 };
 const textValue = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 const toArray = (value: unknown) => (Array.isArray(value) ? value : []);
+const dataUrlPattern = /data:[^"'\s]+/g;
+const truncateText = (value: unknown, maxLength: number) =>
+  textValue(value)
+    .replace(dataUrlPattern, '[removed uploaded file]')
+    .slice(0, maxLength);
+const compactJson = (value: unknown, maxLength: number) => {
+  const text = JSON.stringify(value ?? {}, null, 2).replace(dataUrlPattern, '[removed uploaded file]');
+  return text.length > maxLength ? `${text.slice(0, maxLength)}\n[truncated]` : text;
+};
 const normaliseText = (value: string) =>
   value
     .toLowerCase()
@@ -142,6 +153,84 @@ const clampScore = (value: unknown, cap: number) => {
 
 const getOutputLanguage = (payload: CareerAdvisorPayload) =>
   payload.outputLanguage === 'German' ? 'German' : 'English';
+const getMaxOutputTokens = (mode?: CareerAdvisorMode) =>
+  mode === 'tailored-cv' ? 2200 : mode === 'job-match' ? 1800 : 1200;
+
+const compactCvDataForAi = (cvData: unknown) => {
+  if (!cvData || typeof cvData !== 'object') return {};
+  const data = cvData as Record<string, unknown>;
+  const personalInfo = (data.personalInfo && typeof data.personalInfo === 'object' ? data.personalInfo : {}) as Record<string, unknown>;
+
+  return {
+    personalInfo: {
+      firstName: truncateText(personalInfo.firstName, 120),
+      lastName: truncateText(personalInfo.lastName, 120),
+      email: truncateText(personalInfo.email, 160),
+      phone: truncateText(personalInfo.phone, 80),
+      address: truncateText(personalInfo.address, 240),
+      title: truncateText(personalInfo.title, 180),
+      summary: truncateText(personalInfo.summary, 1800),
+      website: truncateText(personalInfo.website, 240),
+      linkedin: truncateText(personalInfo.linkedin, 240),
+    },
+    experiences: toArray(data.experiences).slice(0, 10).map((item) => {
+      const row = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      return {
+        id: truncateText(row.id, 80),
+        company: truncateText(row.company, 180),
+        position: truncateText(row.position, 180),
+        startDate: truncateText(row.startDate, 40),
+        endDate: truncateText(row.endDate, 40),
+        current: Boolean(row.current),
+        description: truncateText(row.description, 1800),
+      };
+    }),
+    education: toArray(data.education).slice(0, 8).map((item) => {
+      const row = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      return {
+        id: truncateText(row.id, 80),
+        institution: truncateText(row.institution, 180),
+        degree: truncateText(row.degree, 180),
+        field: truncateText(row.field, 180),
+        startDate: truncateText(row.startDate, 40),
+        endDate: truncateText(row.endDate, 40),
+      grade: truncateText(row.grade, 80),
+      description: truncateText(row.description, 900),
+      status: truncateText(row.endDate, 40) ? 'completed' : 'endDate missing',
+      };
+    }),
+    skills: toArray(data.skills).slice(0, 60).map((item) => {
+      const row = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      return {
+        id: truncateText(row.id, 80),
+        name: truncateText(row.name, 120),
+        level: typeof row.level === 'number' ? row.level : undefined,
+      };
+    }),
+    languages: toArray(data.languages).slice(0, 20).map((item) => {
+      const row = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      return {
+        id: truncateText(row.id, 80),
+        name: truncateText(row.name, 120),
+        level: truncateText(row.level, 80),
+      };
+    }),
+    additionalSections: toArray(data.additionalSections).slice(0, 10).map((item) => {
+      const row = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      return {
+        id: truncateText(row.id, 80),
+        kind: truncateText(row.kind, 80),
+        title: truncateText(row.title, 180),
+        organization: truncateText(row.organization, 180),
+        startDate: truncateText(row.startDate, 40),
+        endDate: truncateText(row.endDate, 40),
+        current: Boolean(row.current),
+        description: truncateText(row.description, 1200),
+        url: truncateText(row.url, 240),
+      };
+    }),
+  };
+};
 
 const cvReviewSchema = {
   type: 'object',
@@ -336,7 +425,8 @@ const tailoredCvSchema = {
 };
 
 const buildPrompt = (payload: CareerAdvisorPayload) => {
-  const cv = JSON.stringify(payload.cvData ?? {}, null, 2);
+  const cv = compactJson(compactCvDataForAi(payload.cvData), 18000);
+  const jobAd = truncateText(payload.jobAd || '', 12000);
   const outputLanguage = getOutputLanguage(payload);
   const evidenceStats = getCvEvidenceStats(payload.cvData, payload.jobAd || '');
   const sharedLanguageRules = [
@@ -358,11 +448,12 @@ const buildPrompt = (payload: CareerAdvisorPayload) => {
       sharedLanguageRules,
       'Review the CV for real hiring usefulness, ATS readability, clarity, evidence, and role fit.',
       'Be direct and practical. Do not invent employers, degrees, tools, metrics, or experience.',
+      'Read dates literally. Education has no current flag: if education.endDate is present, the education is completed; never call it ongoing/current. If education.endDate is empty, say the end date is missing instead of assuming ongoing study.',
       'Suggestions must be paste-ready and must preserve the candidate truth.',
       'For summary suggestions use target "summary" and experienceId as an empty string.',
       'For experience suggestions use target "experience" and a real experience id from the CV.',
       'Keep labels short. Keep each item body specific.',
-      `Existing local review baseline:\n${JSON.stringify(payload.localReview ?? {}, null, 2)}`,
+      `Existing local review baseline:\n${compactJson(payload.localReview, 4000)}`,
       `CV data:\n${cv}`,
     ].join('\n\n');
   }
@@ -374,18 +465,19 @@ const buildPrompt = (payload: CareerAdvisorPayload) => {
       'Create a tailored CV version for the job ad using only facts explicitly present in the CV data.',
       'You may close gaps by reframing existing evidence, moving emphasis, and adding skills only when the CV clearly supports them.',
       'Do not invent employers, degrees, certifications, tools, metrics, seniority, languages, or responsibilities.',
+      'Read dates literally. Education has no current flag: if education.endDate is present, treat that school/degree as completed. Never write ongoing/current school unless the CV explicitly says it is current.',
       'If the CV has no personal summary, no experience evidence, and no skills, return an empty summary, no skillsToAdd, no experienceRewrites, a low matchScore, and explain the missing proof in gapNote.',
       'If the job asks for something not evidenced in the CV, say that in gapNote instead of adding it to the CV.',
       scoreRules,
       'summary must be paste-ready and targeted to the role, but truthful.',
-      'skillsToAdd must contain only skills that are directly evidenced by the CV, not merely mentioned in the job ad.',
+      'skillsToAdd must contain concise skill names only, never sentences. Add a skill only if it is directly evidenced by CV summary, experience, education, projects, certificates, or existing skills. Do not add a skill merely because it appears in the job ad.',
       'experienceRewrites must use real experience ids from the CV and preserve the candidate truth.',
       'dataUseNote should briefly say what was used from the CV.',
       'gapNote should briefly say what could not be filled because the CV lacks proof. If nothing important is missing, say so.',
-      `Existing AI/local job match baseline:\n${JSON.stringify(payload.localJobMatch ?? {}, null, 2)}`,
-      `Existing local ATS baseline:\n${JSON.stringify(payload.localAtsCheck ?? {}, null, 2)}`,
+      `Existing AI/local job match baseline:\n${compactJson(payload.localJobMatch, 5000)}`,
+      `Existing local ATS baseline:\n${compactJson(payload.localAtsCheck, 3000)}`,
       `CV data:\n${cv}`,
-      `Job ad:\n${payload.jobAd || ''}`,
+      `Job ad:\n${jobAd}`,
     ].join('\n\n');
   }
 
@@ -394,23 +486,27 @@ const buildPrompt = (payload: CareerAdvisorPayload) => {
     sharedLanguageRules,
     'Compare the CV with the job ad. Produce a practical match report, ATS checklist, CV rewrite suggestions, and interview preparation.',
     'Do not invent candidate facts. Missing keywords should be things present in the job ad and absent or weak in the CV.',
+    'Read dates literally. Education has no current flag: if education.endDate is present, the education is completed; never call it ongoing/current. If education.endDate is empty, say the end date is missing instead of assuming ongoing study.',
     scoreRules,
-    'Suggestions must be truthful, paste-ready, and specific. For skill suggestions, put comma-separated skill names in suggestion.',
+    'Suggestions must be truthful, paste-ready, and specific. For skill suggestions, put comma-separated concise skill names only. Suggest a skill only when the CV contains evidence for it outside the job ad.',
     'For summary suggestions use target "summary" and experienceId as an empty string.',
     'For skill suggestions use target "skills" and experienceId as an empty string.',
     'For experience suggestions use target "experience" and a real experience id from the CV.',
     'If a company or role is unclear, infer cautiously from the job ad and say so in notes.',
     `Selected template: ${payload.template || 'unknown'}`,
-    `Existing local job match baseline:\n${JSON.stringify(payload.localJobMatch ?? {}, null, 2)}`,
-    `Existing local ATS baseline:\n${JSON.stringify(payload.localAtsCheck ?? {}, null, 2)}`,
-    `Existing local interview baseline:\n${JSON.stringify(payload.localInterviewPrep ?? {}, null, 2)}`,
+    `Existing local job match baseline:\n${compactJson(payload.localJobMatch, 5000)}`,
+    `Existing local ATS baseline:\n${compactJson(payload.localAtsCheck, 3000)}`,
+    `Existing local interview baseline:\n${compactJson(payload.localInterviewPrep, 3000)}`,
     `CV data:\n${cv}`,
-    `Job ad:\n${payload.jobAd || ''}`,
+    `Job ad:\n${jobAd}`,
   ].join('\n\n');
 };
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  const subscriptionGate = await requireActiveSubscription(request);
+  if ('response' in subscriptionGate) return subscriptionGate.response;
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return json({ error: 'OPENAI_API_KEY is not configured on the server.' }, 500);
@@ -438,6 +534,7 @@ export default async function handler(request: Request) {
     body: JSON.stringify({
       model: process.env.OPENAI_CAREER_MODEL || process.env.OPENAI_MODEL || 'gpt-4.1-mini',
       input: buildPrompt(payload),
+      max_output_tokens: getMaxOutputTokens(payload.mode),
       temperature: 0.35,
       text: {
         format: {
