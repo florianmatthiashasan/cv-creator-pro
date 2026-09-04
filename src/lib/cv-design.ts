@@ -1,6 +1,8 @@
 import { CVDesign, CVFontChoice } from '@/types/cv';
 
 export const cvFontOptions: Array<{ value: CVFontChoice; label: string; family: string }> = [
+  { value: 'caprasimo', label: 'Caprasimo', family: 'Caprasimo, system-ui, sans-serif' },
+  { value: 'figtree', label: 'Figtree', family: 'Figtree, system-ui, sans-serif' },
   { value: 'playfair', label: 'Playfair Display', family: '"Playfair Display", serif' },
   { value: 'dm-sans', label: 'DM Sans', family: '"DM Sans", sans-serif' },
   { value: 'inter', label: 'Inter', family: 'Inter, sans-serif' },
@@ -15,7 +17,7 @@ export const cvFontOptions: Array<{ value: CVFontChoice; label: string; family: 
 const fontMap = Object.fromEntries(cvFontOptions.map((option) => [option.value, option.family])) as Record<CVFontChoice, string>;
 
 export const cvPrintFontHref =
-  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;800&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Playfair+Display:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
+  'https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;800&family=Figtree:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Playfair+Display:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
 
 export const getFontFamily = (value: CVFontChoice) => fontMap[value] ?? fontMap['dm-sans'];
 

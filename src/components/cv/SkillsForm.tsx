@@ -43,23 +43,25 @@ const SkillsForm = ({ data, onChange }: Props) => {
       )}
 
       <AnimatePresence mode="popLayout">
-        {data.map((skill) => (
+        {data.map((skill, index) => (
           <motion.div key={skill.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-4">
             <div className="flex items-start gap-4">
               <div className="flex-1 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Skill</Label>
-                  <Input value={skill.name} onChange={(e) => update(skill.id, 'name', e.target.value)} placeholder="React, Python, Projektmanagement..." />
+                  <Label htmlFor={`skill-${skill.id}-name`} className="meta-label">Skill</Label>
+                  <Input id={`skill-${skill.id}-name`} name="skill-name" autoComplete="off" value={skill.name} onChange={(e) => update(skill.id, 'name', e.target.value)} placeholder="React, Python, Projektmanagement…" />
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <Label className="meta-label">Level</Label>
+                    <Label className="meta-label" id={`skill-${skill.id}-level-label`}>Level</Label>
                     <span className="text-xs font-medium text-foreground/70">{levelLabels[skill.level]}</span>
                   </div>
-                  <Slider value={[skill.level]} onValueChange={([val]) => update(skill.id, 'level', val)} min={1} max={5} step={1} className="w-full" />
+                  <Slider value={[skill.level]} onValueChange={([val]) => update(skill.id, 'level', val)} min={1} max={5} step={1} className="w-full" aria-labelledby={`skill-${skill.id}-level-label`} />
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => remove(skill.id)} className="text-muted-foreground hover:text-destructive mt-6"><Trash2 size={16} /></Button>
+              <Button variant="ghost" size="icon" onClick={() => remove(skill.id)} className="text-muted-foreground hover:text-destructive mt-6" aria-label={`Remove skill ${index + 1}`}>
+                <Trash2 size={16} aria-hidden="true" />
+              </Button>
             </div>
           </motion.div>
         ))}

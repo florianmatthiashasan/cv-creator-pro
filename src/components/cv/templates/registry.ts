@@ -10,6 +10,7 @@ import AtlasTemplate from './AtlasTemplate';
 import StudioTemplate from './StudioTemplate';
 import CompactTemplate from './CompactTemplate';
 import GridTemplate from './GridTemplate';
+import DevTemplate from './DevTemplate';
 
 export const templateOptions: Array<{ id: CVTemplate; label: string; desc: string }> = [
   { id: 'modern', label: 'Modern', desc: 'Clean and distinctive' },
@@ -22,6 +23,7 @@ export const templateOptions: Array<{ id: CVTemplate; label: string; desc: strin
   { id: 'studio', label: 'Studio', desc: 'Bold sidebar profile' },
   { id: 'compact', label: 'Compact', desc: 'Dense one-page layout' },
   { id: 'grid', label: 'Grid', desc: 'Modular portfolio blocks' },
+  { id: 'dev', label: 'Dev', desc: 'Developer-focused profile' },
 ];
 
 export const templateComponents: Record<CVTemplate, ComponentType<{ data: CVData }>> = {
@@ -35,4 +37,5 @@ export const templateComponents: Record<CVTemplate, ComponentType<{ data: CVData
   studio: StudioTemplate,
   compact: CompactTemplate,
   grid: GridTemplate,
+  dev: DevTemplate,
 };

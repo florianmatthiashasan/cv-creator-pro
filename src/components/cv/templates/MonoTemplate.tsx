@@ -1,5 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
+import { renderAdditionalSections } from './template-utils';
 
 const formatDate = (d: string) => {
   if (!d) return '';
@@ -78,6 +79,10 @@ const MonoTemplate = ({ data }: { data: CVData }) => {
           </div>
         </section>
       )}
+
+      <section className="mt-6 border-t border-dashed pt-4" style={{ borderColor: design.dividerColor }}>
+        {renderAdditionalSections(data)}
+      </section>
 
       <section className="mt-6 grid grid-cols-2 gap-6 border-t border-dashed pt-4" style={{ borderColor: design.dividerColor }}>
         {skills.length > 0 && (

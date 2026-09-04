@@ -1,5 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
+import { renderAdditionalSections } from './template-utils';
 
 const formatDate = (d: string) => {
   if (!d) return '';
@@ -84,6 +85,7 @@ const ExecutiveTemplate = ({ data }: { data: CVData }) => {
               </div>
             </section>
           )}
+          {renderAdditionalSections(data)}
         </div>
 
         <aside className="space-y-8 border-l pl-6" style={{ borderColor: design.dividerColor }}>

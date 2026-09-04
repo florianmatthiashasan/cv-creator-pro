@@ -17,15 +17,22 @@ Folio CV is for students, early-career professionals, freelancers, creatives, an
 - Design customization for fonts, colors, accents, sidebars, dividers, and page colors
 - A4-oriented preview
 - PDF export
-- No registration required
-- Free to use
+- No registration required for Basic CV creation and PDF export
+- Folio CV Pro for login access, saved CVs, AI tools, and application tracking
 
 ## Pricing
 
-Folio CV is free to use. No credit card is required for the core resume-building workflow.
+Folio CV Basic is free to use. No credit card is required for the core resume-building workflow.
+Folio CV Pro is available as weekly, monthly, and yearly subscriptions:
+
+- Folio Pro Weekly: EUR 2.99 per week
+- Folio Pro Monthly: EUR 9.90 per month
+- Folio Pro Yearly: EUR 79.90 per year
 
 ## Links
 
 - Home: https://www.folio-cv.com/
-- Features: https://www.folio-cv.com/features
-- FAQ: https://www.folio-cv.com/faq
+- How it works: https://www.folio-cv.com/how-it-works/
+- Pricing: https://www.folio-cv.com/pricing/
+- Features: https://www.folio-cv.com/features/
+- FAQ: https://www.folio-cv.com/faq/

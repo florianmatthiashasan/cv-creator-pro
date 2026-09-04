@@ -43,17 +43,17 @@ const LanguagesForm = ({ data, onChange }: Props) => {
       )}
 
       <AnimatePresence mode="popLayout">
-        {data.map((lang) => (
+        {data.map((lang, index) => (
           <motion.div key={lang.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="soft-panel relative p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-1.5">
-                <Label className="meta-label">Language</Label>
-                <Input value={lang.name} onChange={(e) => update(lang.id, 'name', e.target.value)} placeholder="German, English, French..." />
+                <Label htmlFor={`language-${lang.id}-name`} className="meta-label">Language</Label>
+                <Input id={`language-${lang.id}-name`} name="language-name" autoComplete="off" value={lang.name} onChange={(e) => update(lang.id, 'name', e.target.value)} placeholder="German, English, French…" />
               </div>
               <div className="space-y-1.5 sm:w-40">
-                <Label className="meta-label">Level</Label>
+                <Label htmlFor={`language-${lang.id}-level`} className="meta-label">Level</Label>
                 <Select value={lang.level} onValueChange={(val) => update(lang.id, 'level', val)}>
-                  <SelectTrigger>
+                  <SelectTrigger id={`language-${lang.id}-level`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -63,8 +63,8 @@ const LanguagesForm = ({ data, onChange }: Props) => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => remove(lang.id)} className="text-muted-foreground hover:text-destructive mb-0.5">
-                <Trash2 size={16} />
+              <Button variant="ghost" size="icon" onClick={() => remove(lang.id)} className="text-muted-foreground hover:text-destructive mb-0.5" aria-label={`Remove language ${index + 1}`}>
+                <Trash2 size={16} aria-hidden="true" />
               </Button>
             </div>
           </motion.div>

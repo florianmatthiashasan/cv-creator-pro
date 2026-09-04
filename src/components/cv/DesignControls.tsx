@@ -27,14 +27,14 @@ const DesignControls = ({ data, onChange }: Props) => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="soft-panel p-4">
         <p className="section-kicker">Design settings</p>
         <p className="mt-1.5 text-sm font-medium text-foreground">Choose fonts and colors. The preview updates instantly.</p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className="field-card space-y-2">
+      <div className="grid gap-3 xl:grid-cols-2">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">Headline Font</Label>
           <Select value={data.headingFont} onValueChange={(value) => update('headingFont', value as CVDesign['headingFont'])}>
             <SelectTrigger>
@@ -50,7 +50,7 @@ const DesignControls = ({ data, onChange }: Props) => {
           </Select>
         </div>
 
-        <div className="field-card space-y-2">
+        <div className="field-card space-y-1.5">
           <Label className="meta-label">Body Font</Label>
           <Select value={data.bodyFont} onValueChange={(value) => update('bodyFont', value as CVDesign['bodyFont'])}>
             <SelectTrigger>
@@ -67,20 +67,20 @@ const DesignControls = ({ data, onChange }: Props) => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {colorFields.map((field) => (
-          <div key={field.key} className="field-card">
+          <div key={field.key} className="field-card min-w-0">
             <Label className="meta-label">{field.label}</Label>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-2 flex min-w-0 items-center gap-2">
               <input
                 type="color"
                 value={String(data[field.key])}
                 onChange={(event) => update(field.key, event.target.value)}
-                className="h-11 w-14 cursor-pointer rounded-md border border-white/10 bg-black/20 p-1"
+                className="h-9 w-10 shrink-0 cursor-pointer rounded-full border border-border bg-card p-1 shadow-[var(--organic-shadow-sm)]"
               />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{String(data[field.key]).toUpperCase()}</p>
-                <p className="text-xs text-muted-foreground">Visible live in the CV</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-mono text-xs font-medium text-foreground">{String(data[field.key]).toUpperCase()}</p>
+                <p className="truncate text-[11px] text-muted-foreground">Live preview</p>
               </div>
             </div>
           </div>

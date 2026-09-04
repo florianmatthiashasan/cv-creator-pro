@@ -1,6 +1,6 @@
 import { CVData } from '@/types/cv';
 import { getDesignTokens } from '@/lib/cv-design';
-import { contactItems, dateRange, fullName } from './template-utils';
+import { contactItems, dateRange, fullName, renderAdditionalSections } from './template-utils';
 
 const CompactTemplate = ({ data }: { data: CVData }) => {
   const { personalInfo: p, experiences, education, skills, languages } = data;
@@ -43,6 +43,7 @@ const CompactTemplate = ({ data }: { data: CVData }) => {
               </div>
             </section>
           )}
+          {renderAdditionalSections(data)}
         </main>
 
         <aside className="space-y-5 border-l pl-5" style={{ borderColor: design.dividerColor }}>

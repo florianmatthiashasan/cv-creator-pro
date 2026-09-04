@@ -61,45 +61,52 @@ const ExperienceForm = ({ data, onChange }: Props) => {
             exit={{ opacity: 0, y: -12 }}
             className="soft-panel relative p-5"
           >
+            {(() => {
+              const fieldId = (field: string) => `experience-${exp.id}-${field}`;
+              return (
+                <>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="section-kicker">Experience</p>
                 <span className="mt-1 inline-block text-sm font-medium text-foreground">Role {index + 1}</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} className="text-muted-foreground hover:text-destructive">
-                <Trash2 size={16} />
+              <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} className="text-muted-foreground hover:text-destructive" aria-label={`Remove experience ${index + 1}`}>
+                <Trash2 size={16} aria-hidden="true" />
               </Button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Company</Label>
-                  <Input value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} placeholder="Google" />
+                  <Label htmlFor={fieldId('company')} className="meta-label">Company</Label>
+                  <Input id={fieldId('company')} name="experience-company" autoComplete="organization" value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} placeholder="Google" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Position</Label>
-                  <Input value={exp.position} onChange={(e) => updateExperience(exp.id, 'position', e.target.value)} placeholder="Senior Developer" />
+                  <Label htmlFor={fieldId('position')} className="meta-label">Position</Label>
+                  <Input id={fieldId('position')} name="experience-position" autoComplete="organization-title" value={exp.position} onChange={(e) => updateExperience(exp.id, 'position', e.target.value)} placeholder="Senior Developer" />
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="meta-label">Start</Label>
-                  <Input type="month" value={exp.startDate} onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)} />
+                  <Label htmlFor={fieldId('start')} className="meta-label">Start</Label>
+                  <Input id={fieldId('start')} name="experience-start" type="month" value={exp.startDate} onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="meta-label">End</Label>
-                  <Input type="month" value={exp.endDate} onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)} disabled={exp.current} className="disabled:opacity-40" />
+                  <Label htmlFor={fieldId('end')} className="meta-label">End</Label>
+                  <Input id={fieldId('end')} name="experience-end" type="month" value={exp.endDate} onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)} disabled={exp.current} className="disabled:opacity-40" />
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2.5">
-                <Checkbox checked={exp.current} onCheckedChange={(checked) => updateExperience(exp.id, 'current', !!checked)} />
-                <Label className="text-sm text-foreground/70">Currently working here</Label>
+              <div className="flex items-center gap-3 rounded-full border border-border bg-background/50 px-3 py-2.5">
+                <Checkbox id={fieldId('current')} checked={exp.current} onCheckedChange={(checked) => updateExperience(exp.id, 'current', !!checked)} />
+                <Label htmlFor={fieldId('current')} className="text-sm text-foreground/70">Currently working here</Label>
               </div>
               <div className="space-y-1.5">
-                <Label className="meta-label">Description</Label>
-                <Textarea value={exp.description} onChange={(e) => updateExperience(exp.id, 'description', e.target.value)} placeholder="Key responsibilities and achievements..." rows={3} className="resize-none" />
+                <Label htmlFor={fieldId('description')} className="meta-label">Description</Label>
+                <Textarea id={fieldId('description')} name="experience-description" value={exp.description} onChange={(e) => updateExperience(exp.id, 'description', e.target.value)} placeholder="Key responsibilities and achievements…" rows={3} className="resize-none" />
               </div>
             </div>
+                </>
+              );
+            })()}
           </motion.div>
         ))}
       </AnimatePresence>
