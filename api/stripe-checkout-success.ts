@@ -11,43 +11,65 @@ async function handler(request: Request) {
   const sessionId = url.searchParams.get('session_id');
   if (!sessionId) return json({ error: 'Missing checkout session.' }, 400);
 
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
-  const email = session.customer_details?.email?.trim().toLowerCase();
-  const subscriptionId = getString(session.subscription);
+  // Stripe has already charged the customer by the time it redirects here, so no failure
+  // below may surface as an error page. Send the buyer into the app with a sign-in prompt
+  // instead and let the stripe-webhook retries (up to 3 days) finish provisioning.
+  const sendToSignIn = () =>
+    new Response(null, {
+      status: 303,
+      headers: { location: `${getOrigin(request)}/?checkout=success&signin=1` },
+    });
 
-  if (!email || !subscriptionId) {
-    return json({ error: 'Checkout session is missing customer or subscription details.' }, 400);
+  try {
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const email = session.customer_details?.email?.trim().toLowerCase();
+    const subscriptionId = getString(session.subscription);
+
+    if (!email || !subscriptionId) {
+      console.error('stripe-checkout-success: session is missing customer or subscription', sessionId);
+      return sendToSignIn();
+    }
+
+    const userId = await getOrCreateBillingUserIdForEmail(email);
+    if (!userId) {
+      console.error('stripe-checkout-success: could not resolve a user id for', email);
+      return sendToSignIn();
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    await upsertSubscription(subscription, getString(session.client_reference_id) || getString(session.metadata?.userId) || userId);
+
+    const supabase = createServiceSupabaseClient();
+    if (!supabase) {
+      console.error('stripe-checkout-success: SUPABASE_SERVICE_ROLE_KEY is not configured');
+      return sendToSignIn();
+    }
+
+    const redirectTo = `${getOrigin(request)}/dashboard?checkout=success`;
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (error || !data.properties?.action_link) {
+      console.error('stripe-checkout-success: generateLink failed', error?.message);
+      return sendToSignIn();
+    }
+
+    return new Response(null, {
+      status: 303,
+      headers: {
+        location: data.properties.action_link,
+      },
+    });
+  } catch (error) {
+    console.error('stripe-checkout-success: unhandled failure', error);
+    return sendToSignIn();
   }
-
-  const userId = await getOrCreateBillingUserIdForEmail(email);
-  if (!userId) return json({ error: 'User konnte nach Checkout nicht erstellt werden.' }, 500);
-
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  await upsertSubscription(subscription, getString(session.client_reference_id) || getString(session.metadata?.userId) || userId);
-
-  const supabase = createServiceSupabaseClient();
-  if (!supabase) return json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not configured.' }, 500);
-
-  const redirectTo = `${getOrigin(request)}/dashboard?checkout=success`;
-  const { data, error } = await supabase.auth.admin.generateLink({
-    type: 'magiclink',
-    email,
-    options: {
-      redirectTo,
-    },
-  });
-
-  if (error || !data.properties?.action_link) {
-    return json({ error: error?.message || 'Login link konnte nicht erstellt werden.' }, 500);
-  }
-
-  return new Response(null, {
-    status: 303,
-    headers: {
-      location: data.properties.action_link,
-    },
-  });
 }
 
 export const fetch = handler;

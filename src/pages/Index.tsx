@@ -133,6 +133,8 @@ const uiCopy = {
     loginSentBody: 'We sent a login link to {email}. Open it on this device to finish signing in.',
     loginInvalidEmail: 'Please enter a valid email address.',
     loginAlreadyPaid: 'Already subscribed? Sign in instead.',
+    postCheckoutTitle: 'Payment received',
+    postCheckoutBody: 'Your subscription is active. Enter the email you used at checkout to get your login link.',
     backToSite: 'Back to site',
     language: 'Language',
     settings: 'Settings',
@@ -275,6 +277,8 @@ const uiCopy = {
     loginSentBody: 'Wir haben einen Login-Link an {email} geschickt. Öffne ihn auf diesem Gerät, um die Anmeldung abzuschließen.',
     loginInvalidEmail: 'Bitte gib eine gültige E-Mail-Adresse ein.',
     loginAlreadyPaid: 'Schon Abonnent? Hier stattdessen anmelden.',
+    postCheckoutTitle: 'Zahlung eingegangen',
+    postCheckoutBody: 'Dein Abo ist aktiv. Gib die E-Mail ein, mit der du bezahlt hast, um deinen Login-Link zu erhalten.',
     backToSite: 'Zurück zur Seite',
     language: 'Sprache',
     settings: 'Einstellungen',
@@ -1074,6 +1078,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginSending, setLoginSending] = useState(false);
   const [loginSentTo, setLoginSentTo] = useState('');
+  const [postCheckout, setPostCheckout] = useState(false);
 
   const lastStep = TOTAL_STEPS - 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
@@ -1273,6 +1278,28 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       unsubscribe();
     };
   }, []);
+
+  // Handles the return trip from Stripe. `signin=1` means stripe-checkout-success could not
+  // hand out a magic link, so the buyer has paid but has no session and must request one.
+  useEffect(() => {
+    if (authLoading) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') !== 'success') return;
+
+    const needsSignIn = params.get('signin') === '1';
+    params.delete('checkout');
+    params.delete('signin');
+    const query = params.toString();
+    window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+
+    queryClient.invalidateQueries({ queryKey: ['billing-status'] });
+
+    if (needsSignIn && !authUser) {
+      setPostCheckout(true);
+      setLoginOpen(true);
+    }
+  }, [authLoading, authUser, queryClient]);
 
   const dashboardQuery = useQuery({
     queryKey: ['dashboard-data', authUser?.id],
@@ -2200,6 +2227,20 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               {t.close}
             </Button>
           </div>
+
+          {postCheckout && !loginSentTo && (
+            <section className="field-card">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                  <BadgeCheck size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold">{t.postCheckoutTitle}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{t.postCheckoutBody}</p>
+                </div>
+              </div>
+            </section>
+          )}
 
           {loginSentTo ? (
             <section className="field-card">
