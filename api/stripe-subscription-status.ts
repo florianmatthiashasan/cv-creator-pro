@@ -1,6 +1,6 @@
-import { fetchServerSubscriptionState, getAuthenticatedUser, json } from './_supabase-server';
+import { fetchServerSubscriptionState, getAuthenticatedUser, json } from './_supabase-server.js';
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
 
   const { user, error } = await getAuthenticatedUser(request);
@@ -8,3 +8,5 @@ export default async function handler(request: Request) {
 
   return json(await fetchServerSubscriptionState(user.id));
 }
+
+export const fetch = handler;

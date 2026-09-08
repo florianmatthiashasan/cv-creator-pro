@@ -1,7 +1,7 @@
-import { fetchServerSubscriptionState, getAuthenticatedUser, json } from './_supabase-server';
-import { getOrigin, getStripe } from './_stripe';
+import { fetchServerSubscriptionState, getAuthenticatedUser, json } from './_supabase-server.js';
+import { getOrigin, getStripe } from './_stripe.js';
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   const { user, error } = await getAuthenticatedUser(request);
@@ -19,3 +19,5 @@ export default async function handler(request: Request) {
 
   return json({ url: session.url });
 }
+
+export const fetch = handler;

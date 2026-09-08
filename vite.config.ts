@@ -58,7 +58,9 @@ const localApiPlugin = (): Plugin => ({
           body,
         });
         const apiModule = await server.ssrLoadModule(modulePath);
-        const apiResponse = await apiModule.default(apiRequest);
+        const apiHandler = apiModule.fetch || apiModule.default;
+        if (typeof apiHandler !== "function") throw new Error(`No handler exported from ${modulePath}`);
+        const apiResponse = await apiHandler(apiRequest);
         await sendApiResponse(apiResponse, reply);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Local API request failed.";

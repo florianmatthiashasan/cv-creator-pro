@@ -1,10 +1,10 @@
-import { getOrCreateBillingUserIdForEmail, upsertSubscription } from './_billing';
-import { createServiceSupabaseClient, json } from './_supabase-server';
-import { getOrigin, getStripe } from './_stripe';
+import { getOrCreateBillingUserIdForEmail, upsertSubscription } from './_billing.js';
+import { createServiceSupabaseClient, json } from './_supabase-server.js';
+import { getOrigin, getStripe } from './_stripe.js';
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : null);
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
 
   const url = new URL(request.url);
@@ -49,3 +49,5 @@ export default async function handler(request: Request) {
     },
   });
 }
+
+export const fetch = handler;

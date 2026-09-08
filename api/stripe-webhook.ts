@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
-import { json } from './_supabase-server';
-import { getOrCreateBillingUserIdForEmail, upsertSubscription } from './_billing';
-import { getStripe } from './_stripe';
+import { json } from './_supabase-server.js';
+import { getOrCreateBillingUserIdForEmail, upsertSubscription } from './_billing.js';
+import { getStripe } from './_stripe.js';
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : null);
 
@@ -23,7 +23,7 @@ const handleInvoiceEvent = async (stripe: Stripe, invoice: Stripe.Invoice) => {
   await upsertSubscription(subscription);
 };
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -65,3 +65,5 @@ export default async function handler(request: Request) {
 
   return json({ received: true });
 }
+
+export const fetch = handler;

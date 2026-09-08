@@ -2,7 +2,7 @@ export const config = {
   runtime: 'edge',
 };
 
-import { requireActiveSubscription } from './_supabase-server';
+import { requireActiveSubscription } from './_supabase-server.js';
 
 type CareerAdvisorMode = 'cv-review' | 'job-match' | 'tailored-cv';
 

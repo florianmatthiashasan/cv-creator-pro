@@ -2,7 +2,7 @@ export const config = {
   runtime: 'edge',
 };
 
-import { requireActiveSubscription } from './_supabase-server';
+import { requireActiveSubscription } from './_supabase-server.js';
 
 type WriterPayload = {
   cvProfile?: string;

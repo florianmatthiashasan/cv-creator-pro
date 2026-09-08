@@ -1,10 +1,10 @@
-import { createServiceSupabaseClient, getAuthenticatedUser, getBearerToken, json } from './_supabase-server';
-import { getCheckoutUrls, getOrigin, getStripe, getStripePriceId, parseBillingPlanId } from './_stripe';
+import { createServiceSupabaseClient, getAuthenticatedUser, getBearerToken, json } from './_supabase-server.js';
+import { getCheckoutUrls, getOrigin, getStripe, getStripePriceId, parseBillingPlanId } from './_stripe.js';
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Checkout konnte nicht gestartet werden.';
 
-export default async function handler(request: Request) {
+async function handler(request: Request) {
   try {
     if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
@@ -70,3 +70,5 @@ export default async function handler(request: Request) {
     return json({ error: getErrorMessage(error) }, 500);
   }
 }
+
+export const fetch = handler;

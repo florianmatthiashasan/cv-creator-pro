@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
-import { createServiceSupabaseClient } from './_supabase-server';
-import { stripeTimestampToIso } from './_stripe';
+import { createServiceSupabaseClient } from './_supabase-server.js';
+import { stripeTimestampToIso } from './_stripe.js';
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : null);
 
