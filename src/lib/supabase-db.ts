@@ -45,12 +45,6 @@ export type SubscriptionState = {
   cancelAtPeriodEnd: boolean;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
-  trialStart: string | null;
-  trialEnd: string | null;
-};
-
-export type BillingConfig = {
-  trialDays: number;
 };
 
 export type BillingPlanId = 'weekly' | 'monthly' | 'yearly';
@@ -169,6 +163,32 @@ const toError = (message: string, error: unknown) => {
   if (detail) return new Error(`${message}: ${detail}`);
   if (error && typeof error === 'object') return new Error(`${message}: ${JSON.stringify(error)}`);
   return new Error(`${message}: ${String(error)}`);
+};
+
+const getApiErrorMessage = (data: unknown, fallback: string) => {
+  if (data && typeof data === 'object' && 'error' in data) {
+    const error = (data as { error?: unknown }).error;
+    if (typeof error === 'string' && error.trim()) return error;
+  }
+
+  return fallback;
+};
+
+const readApiJson = async <T>(response: Response, fallbackError: string): Promise<T> => {
+  const text = await response.text();
+  let data: unknown = null;
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      const message = text.trim();
+      throw new Error(response.ok ? 'Server returned invalid JSON.' : message || fallbackError);
+    }
+  }
+
+  if (!response.ok) throw new Error(getApiErrorMessage(data, fallbackError));
+  return data as T;
 };
 
 const normalizeTemplateId = (value?: string | null): CVTemplate =>
@@ -331,20 +351,8 @@ export const fetchSubscriptionStatus = async (): Promise<SubscriptionState> => {
     },
   });
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error || 'Subscription konnte nicht geladen werden.');
+  const data = await readApiJson<SubscriptionState>(response, 'Subscription konnte nicht geladen werden.');
   return data as SubscriptionState;
-};
-
-export const fetchBillingConfig = async (): Promise<BillingConfig> => {
-  const response = await fetch('/api/billing-config');
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error || 'Billing config konnte nicht geladen werden.');
-
-  const trialDays = Number(data?.trialDays || 0);
-  return {
-    trialDays: Number.isInteger(trialDays) && trialDays > 0 ? trialDays : 0,
-  };
 };
 
 export const createCheckoutSession = async (planId: BillingPlanId = 'monthly') => {
@@ -360,8 +368,7 @@ export const createCheckoutSession = async (planId: BillingPlanId = 'monthly') =
     body: JSON.stringify({ planId }),
   });
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error || 'Checkout konnte nicht gestartet werden.');
+  const data = await readApiJson<{ url?: unknown }>(response, 'Checkout konnte nicht gestartet werden.');
   if (!data?.url || typeof data.url !== 'string') throw new Error('Checkout URL fehlt.');
   return data.url as string;
 };
@@ -377,28 +384,9 @@ export const createBillingPortalSession = async () => {
     },
   });
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error || 'Billing Portal konnte nicht gestartet werden.');
+  const data = await readApiJson<{ url?: unknown }>(response, 'Billing Portal konnte nicht gestartet werden.');
   if (!data?.url || typeof data.url !== 'string') throw new Error('Billing Portal URL fehlt.');
   return data.url as string;
-};
-
-export const updateTrialAction = async (action: 'cancel_trial' | 'extend_trial', days = 2) => {
-  const token = await getCurrentAccessToken();
-  if (!token) throw new Error('Login required.');
-
-  const response = await fetch('/api/stripe-trial-action', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ action, days }),
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error || 'Trial konnte nicht aktualisiert werden.');
-  return data;
 };
 
 export const ensureProfile = async (user: User) => {

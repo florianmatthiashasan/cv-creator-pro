@@ -52,7 +52,6 @@ import {
   createCheckoutSession,
   DbApplication,
   deleteSavedCv,
-  fetchBillingConfig,
   fetchDashboardData,
   fetchSubscriptionStatus,
   getCurrentAccessToken,
@@ -62,7 +61,6 @@ import {
   saveCvSnapshot,
   signOut,
   supabaseConfigured,
-  updateTrialAction,
   updateApplicationFollowUp,
   updateApplicationStage,
 } from '@/lib/supabase-db';
@@ -1104,15 +1102,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     enabled: Boolean(authUser && supabaseConfigured),
     refetchOnWindowFocus: true,
   });
-  const billingConfigQuery = useQuery({
-    queryKey: ['billing-config'],
-    queryFn: fetchBillingConfig,
-    staleTime: 5 * 60 * 1000,
-  });
   const isLoggedIn = Boolean(authUser);
   const hasProSubscription = Boolean(authUser && billingQuery.data?.isActive);
   const isCheckingSubscription = Boolean(authUser && billingQuery.isLoading);
-  const trialDays = billingConfigQuery.data?.trialDays || 0;
   const canUseAi = hasProSubscription;
   const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
   const authStatusLabel = hasProSubscription ? t.signedIn : isLoggedIn ? t.subscriptionRequired : t.guestMode;
@@ -2075,17 +2067,6 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     const badge = isGerman ? plan.badgeDe : plan.badge;
     const cta = isGerman ? plan.ctaDe : plan.cta;
     const selected = preferredBillingPlan === plan.id;
-    const trialBadge = trialDays
-      ? isGerman
-        ? `${trialDays} Tage kostenlos testen`
-        : `${trialDays}-day free trial`
-      : '';
-    const trialNote = trialDays
-      ? isGerman
-        ? 'Im Trial keine Karte nötig.'
-        : 'No card required during trial.'
-      : '';
-
     return (
       <article
         key={plan.id}
@@ -2098,18 +2079,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
           <div className="flex flex-col items-end gap-2">
             {selected && <span className="organic-tag organic-tag-accent">{isGerman ? 'Ausgewählt' : 'Selected'}</span>}
-            {trialBadge && <span className="organic-tag organic-tag-accent-2">{trialBadge}</span>}
             {badge && <span className="organic-tag organic-tag-accent">{badge}</span>}
           </div>
         </div>
         <p className="mt-5 font-display text-4xl leading-none">{plan.price}</p>
         <p className={`mt-2 text-sm ${dark ? 'text-[var(--organic-neutral-300)]' : 'text-muted-foreground'}`}>{cadence}</p>
         <p className={`mt-4 min-h-[3.25rem] text-sm leading-6 ${dark ? 'text-[var(--organic-neutral-300)]' : 'text-muted-foreground'}`}>{note}</p>
-        {trialNote && (
-          <p className={`mt-3 text-xs font-semibold ${dark ? 'text-[var(--organic-accent-100)]' : 'text-accent'}`}>
-            {trialNote}
-          </p>
-        )}
         <Button className="mt-5 w-full" onClick={() => startCheckout(plan.id)} disabled={checkoutLoading || isCheckingSubscription}>
           {checkoutLoading ? t.startingCheckout : cta}
         </Button>
@@ -2140,13 +2115,6 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   ? 'Die App fragt hier nicht nach deiner E-Mail. Der nächste Schritt ist der sichere Checkout für dein Abo.'
                   : 'The app does not ask for your email here. The next step is secure checkout for your subscription.'}
               </p>
-              {trialDays > 0 && (
-                <p className="mt-3 inline-flex rounded-full bg-[var(--organic-accent-100)] px-3 py-1 text-xs font-semibold text-[var(--organic-accent-800)]">
-                  {uiLanguage === 'German'
-                    ? `${trialDays} Tage kostenlos testen, im Trial keine Karte nötig.`
-                    : `${trialDays}-day free trial, no card required during trial.`}
-                </p>
-              )}
             </div>
             <Button variant="outline" size="sm" onClick={() => setPricingOpen(false)}>
               {t.close}
@@ -3680,8 +3648,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">
                 Folio CV does not collect card details inside the app. The app opens a secure
                 checkout page, the payment provider handles billing, and the subscription status
-                updates automatically. That keeps weekly, monthly, yearly, and optional short
-                trials simple for the user.
+                updates automatically for weekly, monthly, and yearly subscriptions.
               </p>
             </div>
             <div className="grid gap-3">
@@ -3689,7 +3656,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 ['1', 'User clicks Pro', 'The app opens the pricing modal instead of asking for an email address.'],
                 ['2', 'User starts a plan', 'Weekly, monthly, or yearly opens the matching secure checkout flow.'],
                 ['3', 'Subscription is confirmed', 'The app stores the active subscription so the Pro workspace unlocks.'],
-                ['4', 'Trial is optional', 'A two or three day trial can be enabled before billing starts.'],
+                ['4', 'Billing stays synced', 'Subscription events keep Pro access updated after checkout.'],
               ].map(([step, title, body]) => (
                 <article key={step} className="flex gap-4 rounded-[24px] bg-card p-5 shadow-[var(--organic-shadow-sm)]">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-100)] font-display text-sm text-[var(--organic-accent-800)]">{step}</span>

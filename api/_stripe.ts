@@ -48,12 +48,6 @@ export const getStripePriceId = (planId: BillingPlanId) => {
   return priceId;
 };
 
-export const getTrialPeriodDays = () => {
-  const value = Number(process.env.STRIPE_TRIAL_DAYS || 0);
-  if (!Number.isInteger(value) || value < 1) return undefined;
-  return Math.min(value, 30);
-};
-
 export const getCheckoutUrls = (request: Request) => {
   const origin = getOrigin(request);
   return {
