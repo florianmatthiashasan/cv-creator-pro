@@ -59,6 +59,7 @@ import {
   onAuthUserChange,
   saveApplication,
   saveCvSnapshot,
+  signInWithEmail,
   signOut,
   supabaseConfigured,
   updateApplicationFollowUp,
@@ -123,6 +124,15 @@ const uiCopy = {
     notLoggedIn: 'not logged in',
     logIn: 'Pro login',
     logOut: 'Log out',
+    loginTitle: 'Sign in to Folio CV Pro',
+    loginDescription: 'Enter the email you used at checkout. We send a one-time login link — no password needed.',
+    loginEmailLabel: 'Email',
+    loginSend: 'Send login link',
+    loginSending: 'Sending link…',
+    loginSentTitle: 'Check your inbox',
+    loginSentBody: 'We sent a login link to {email}. Open it on this device to finish signing in.',
+    loginInvalidEmail: 'Please enter a valid email address.',
+    loginAlreadyPaid: 'Already subscribed? Sign in instead.',
     backToSite: 'Back to site',
     language: 'Language',
     settings: 'Settings',
@@ -256,6 +266,15 @@ const uiCopy = {
     notLoggedIn: 'nicht angemeldet',
     logIn: 'Pro-Login',
     logOut: 'Ausloggen',
+    loginTitle: 'Bei Folio CV Pro anmelden',
+    loginDescription: 'Gib die E-Mail ein, mit der du bezahlt hast. Wir schicken dir einen Einmal-Login-Link — kein Passwort nötig.',
+    loginEmailLabel: 'E-Mail',
+    loginSend: 'Login-Link senden',
+    loginSending: 'Link wird gesendet…',
+    loginSentTitle: 'Schau in dein Postfach',
+    loginSentBody: 'Wir haben einen Login-Link an {email} geschickt. Öffne ihn auf diesem Gerät, um die Anmeldung abzuschließen.',
+    loginInvalidEmail: 'Bitte gib eine gültige E-Mail-Adresse ein.',
+    loginAlreadyPaid: 'Schon Abonnent? Hier stattdessen anmelden.',
     backToSite: 'Zurück zur Seite',
     language: 'Sprache',
     settings: 'Einstellungen',
@@ -1051,6 +1070,10 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [preferredBillingPlan, setPreferredBillingPlan] = useState<BillingPlanId | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginSending, setLoginSending] = useState(false);
+  const [loginSentTo, setLoginSentTo] = useState('');
 
   const lastStep = TOTAL_STEPS - 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
@@ -1238,6 +1261,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       hydratedUserIdRef.current = null;
       setAuthUser(user);
       setAuthLoading(false);
+      if (user) {
+        setLoginOpen(false);
+        setLoginEmail('');
+        setLoginSentTo('');
+      }
     });
 
     return () => {
@@ -1492,6 +1520,31 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const requestLogin = (planId?: BillingPlanId) => {
     setPreferredBillingPlan(planId || null);
     setPricingOpen(true);
+  };
+
+  const openLogin = () => {
+    setPricingOpen(false);
+    setSettingsOpen(false);
+    setLoginSentTo('');
+    setLoginOpen(true);
+  };
+
+  const submitMagicLink = async () => {
+    const email = loginEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error(t.loginInvalidEmail);
+      return;
+    }
+
+    setLoginSending(true);
+    try {
+      await signInWithEmail(email);
+      setLoginSentTo(email);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.loginInvalidEmail);
+    } finally {
+      setLoginSending(false);
+    }
   };
 
   const startCheckout = async (planId: BillingPlanId = 'monthly') => {
@@ -2123,6 +2176,81 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           <div className="grid gap-4 md:grid-cols-3">
             {orderedPlans.map((plan) => renderPlanCard(plan, { compact: true }))}
           </div>
+          <Button variant="ghost" className="mt-1 justify-start px-2 text-accent" onClick={openLogin}>
+            <Mail size={16} aria-hidden="true" />
+            {t.loginAlreadyPaid}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderLoginDialog = () => {
+    if (!loginOpen) return null;
+
+    return (
+      <div className="folio-dialog-backdrop">
+        <div className="folio-dialog max-w-xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="organic-tag organic-tag-accent-2">Folio CV Pro</span>
+              <h2 className="mt-3 font-display text-2xl font-normal">{t.loginTitle}</h2>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setLoginOpen(false)}>
+              {t.close}
+            </Button>
+          </div>
+
+          {loginSentTo ? (
+            <section className="field-card">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                  <CheckCircle2 size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold">{t.loginSentTitle}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {t.loginSentBody.replace('{email}', loginSentTo)}
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <form
+              className="field-card"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!loginSending) void submitMagicLink();
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]">
+                  <Mail size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <label className="meta-label" htmlFor="folio-login-email">
+                    {t.loginEmailLabel}
+                  </label>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.loginDescription}</p>
+                  <Input
+                    id="folio-login-email"
+                    className="mt-3"
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    autoFocus
+                    placeholder="you@example.com"
+                    value={loginEmail}
+                    onChange={(event) => setLoginEmail(event.target.value)}
+                    disabled={loginSending}
+                  />
+                  <Button type="submit" className="mt-4 w-full" disabled={loginSending}>
+                    {loginSending ? t.loginSending : t.loginSend}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -2200,10 +2328,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   <Button
                     className="mt-3"
                     size="sm"
-                    onClick={() => {
-                      setSettingsOpen(false);
-                      requestLogin();
-                    }}
+                    onClick={openLogin}
                   >
                     {t.logIn}
                   </Button>
@@ -2335,7 +2460,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <Button
               variant="outline"
               className="w-full justify-start"
-              onClick={isLoggedIn ? handleLogout : () => requestLogin()}
+              onClick={isLoggedIn ? handleLogout : openLogin}
               disabled={authLoading}
             >
               {isLoggedIn ? t.logOut : t.logIn}
@@ -3384,6 +3509,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       </div>
       {renderPricingDialog()}
       {renderSettingsDialog()}
+      {renderLoginDialog()}
       </>
     );
   };
@@ -3410,6 +3536,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <a href="/features/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Features</a>
               <a href="/faq/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">FAQ</a>
             </nav>
+            {!isLoggedIn && (
+              <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={openLogin} disabled={authLoading}>
+                Sign in
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -3866,6 +3997,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     </div>
     {renderPricingDialog()}
     {renderSettingsDialog()}
+    {renderLoginDialog()}
     </>
   );
 };
