@@ -9,6 +9,7 @@ const localApiRoutes = new Map([
   ["/api/stripe-checkout", "/api/stripe-checkout.ts"],
   ["/api/stripe-checkout-success", "/api/stripe-checkout-success.ts"],
   ["/api/stripe-portal", "/api/stripe-portal.ts"],
+  ["/api/stripe-cancel-subscription", "/api/stripe-cancel-subscription.ts"],
   ["/api/stripe-subscription-status", "/api/stripe-subscription-status.ts"],
   ["/api/stripe-webhook", "/api/stripe-webhook.ts"],
 ]);

@@ -62,18 +62,30 @@ export const upsertSubscription = async (subscription: Stripe.Subscription, fall
   });
 
   const item = subscription.items.data[0];
-  const period = subscription as Stripe.Subscription & {
+
+  // As of API version 2026-07-29.dahlia the current_period_* fields live on the subscription
+  // item, not on the subscription. Reading only the subscription stored null for every row,
+  // which in turn made it impossible to tell whether a cancelled subscription still had paid
+  // time left. Prefer the item and fall back to the legacy location.
+  const itemPeriod = item as typeof item & {
     current_period_start?: number | null;
     current_period_end?: number | null;
   };
+  const legacyPeriod = subscription as Stripe.Subscription & {
+    current_period_start?: number | null;
+    current_period_end?: number | null;
+  };
+  const currentPeriodStart = itemPeriod?.current_period_start ?? legacyPeriod.current_period_start;
+  const currentPeriodEnd = itemPeriod?.current_period_end ?? legacyPeriod.current_period_end;
+
   const { error } = await supabase.from('user_subscriptions').upsert({
     user_id: userId,
     stripe_customer_id: stripeCustomerId,
     stripe_subscription_id: subscription.id,
     status: subscription.status,
     price_id: item?.price?.id || null,
-    current_period_start: stripeTimestampToIso(period.current_period_start),
-    current_period_end: stripeTimestampToIso(period.current_period_end),
+    current_period_start: stripeTimestampToIso(currentPeriodStart),
+    current_period_end: stripeTimestampToIso(currentPeriodEnd),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
   });
 

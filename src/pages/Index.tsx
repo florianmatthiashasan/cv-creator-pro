@@ -65,6 +65,7 @@ import {
   supabaseConfigured,
   updateApplicationFollowUp,
   updateApplicationStage,
+  updateSubscriptionCancellation,
 } from '@/lib/supabase-db';
 import { toast } from '@/components/ui/sonner';
 import { CVData, CVTemplate, emptyCVData } from '@/types/cv';
@@ -136,6 +137,23 @@ const uiCopy = {
     loginAlreadyPaid: 'Already subscribed? Sign in instead.',
     postCheckoutTitle: 'Payment received',
     postCheckoutBody: 'Your subscription is active. Enter the email you used at checkout to get your login link.',
+    subscription: 'Subscription',
+    cancelSubscription: 'Cancel subscription',
+    cancelledBadge: 'Cancelled',
+    resubscribe: 'Subscribe again',
+    cancelConfirmTitle: 'Cancel at the end of the paid period?',
+    cancelConfirmBody: 'You keep full Pro access until {date}. Nothing is charged after that.',
+    cancelConfirmBodyNoDate: 'You keep full Pro access until the end of the period you already paid for.',
+    cancelConfirm: 'Yes, cancel',
+    cancelKeep: 'Keep subscription',
+    cancelPending: 'Cancelling…',
+    cancelDone: 'Cancelled. Pro stays active until {date}.',
+    cancelDoneNoDate: 'Cancelled. Pro stays active until the end of the paid period.',
+    resumeSubscription: 'Undo cancellation',
+    resumePending: 'Restoring…',
+    resumeDone: 'Your subscription runs on as usual.',
+    endsOn: 'Ends on {date}',
+    renewsOn: 'Renews on {date}',
     backToSite: 'Back to site',
     language: 'Language',
     settings: 'Settings',
@@ -280,6 +298,23 @@ const uiCopy = {
     loginAlreadyPaid: 'Schon Abonnent? Hier stattdessen anmelden.',
     postCheckoutTitle: 'Zahlung eingegangen',
     postCheckoutBody: 'Dein Abo ist aktiv. Gib die E-Mail ein, mit der du bezahlt hast, um deinen Login-Link zu erhalten.',
+    subscription: 'Abo',
+    cancelSubscription: 'Abo kündigen',
+    cancelledBadge: 'Gekündigt',
+    resubscribe: 'Erneut abonnieren',
+    cancelConfirmTitle: 'Zum Ende der bezahlten Periode kündigen?',
+    cancelConfirmBody: 'Du behältst den vollen Pro-Zugang bis {date}. Danach wird nichts mehr abgebucht.',
+    cancelConfirmBodyNoDate: 'Du behältst den vollen Pro-Zugang bis zum Ende der bereits bezahlten Periode.',
+    cancelConfirm: 'Ja, kündigen',
+    cancelKeep: 'Abo behalten',
+    cancelPending: 'Wird gekündigt…',
+    cancelDone: 'Gekündigt. Pro bleibt bis {date} aktiv.',
+    cancelDoneNoDate: 'Gekündigt. Pro bleibt bis zum Ende der bezahlten Periode aktiv.',
+    resumeSubscription: 'Kündigung zurücknehmen',
+    resumePending: 'Wird zurückgenommen…',
+    resumeDone: 'Dein Abo läuft wie gewohnt weiter.',
+    endsOn: 'Endet am {date}',
+    renewsOn: 'Erneuert sich am {date}',
     backToSite: 'Zurück zur Seite',
     language: 'Sprache',
     settings: 'Einstellungen',
@@ -1080,6 +1115,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const [loginSending, setLoginSending] = useState(false);
   const [loginSentTo, setLoginSentTo] = useState('');
   const [postCheckout, setPostCheckout] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const lastStep = TOTAL_STEPS - 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
@@ -1623,6 +1660,45 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       toast.error(error instanceof Error ? error.message : 'Billing Portal konnte nicht geöffnet werden.');
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  // Same tolerance as the API side: PostgREST may return "2026-09-15 13:15:28+00".
+  const formatPeriodEnd = (value?: string | null) => {
+    if (!value) return '';
+    const date = new Date(value.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString(uiLanguage === 'German' ? 'de-DE' : 'en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  // Stripe already ended this one (immediate cancellation) — access only continues because the
+  // paid period runs on, and Stripe refuses any further update, so no cancel/resume is offered.
+  const subscriptionEnded = billingQuery.data?.status === 'canceled';
+  const subscriptionCancelsAtPeriodEnd = subscriptionEnded || Boolean(billingQuery.data?.cancelAtPeriodEnd);
+  const canResumeSubscription = !subscriptionEnded && Boolean(billingQuery.data?.cancelAtPeriodEnd);
+  const subscriptionPeriodEnd = formatPeriodEnd(billingQuery.data?.currentPeriodEnd);
+
+  const applySubscriptionChange = async (resume: boolean) => {
+    setCancelLoading(true);
+    try {
+      const state = await updateSubscriptionCancellation(resume);
+      queryClient.setQueryData(['billing-status', authUser?.id], state);
+      setCancelConfirmOpen(false);
+
+      if (resume) {
+        toast.success(t.resumeDone);
+      } else {
+        const endsAt = formatPeriodEnd(state.currentPeriodEnd);
+        toast.success(endsAt ? t.cancelDone.replace('{date}', endsAt) : t.cancelDoneNoDate);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Abo konnte nicht aktualisiert werden.');
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -2399,6 +2475,73 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </div>
             </div>
           </section>
+
+          {hasProSubscription && (
+            <section className="field-card">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                  <BadgeCheck size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="meta-label">{t.subscription}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold">Folio CV Pro</h3>
+                    {subscriptionCancelsAtPeriodEnd && (
+                      <span className="organic-tag organic-tag-accent">{t.cancelledBadge}</span>
+                    )}
+                  </div>
+                  {subscriptionPeriodEnd && (
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {(subscriptionCancelsAtPeriodEnd ? t.endsOn : t.renewsOn).replace('{date}', subscriptionPeriodEnd)}
+                    </p>
+                  )}
+
+                  {cancelConfirmOpen ? (
+                    <div className="mt-3 rounded-[18px] bg-background p-4">
+                      <p className="text-sm font-semibold">{t.cancelConfirmTitle}</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {subscriptionPeriodEnd
+                          ? t.cancelConfirmBody.replace('{date}', subscriptionPeriodEnd)
+                          : t.cancelConfirmBodyNoDate}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setCancelConfirmOpen(false)} disabled={cancelLoading}>
+                          {t.cancelKeep}
+                        </Button>
+                        <Button size="sm" onClick={() => applySubscriptionChange(false)} disabled={cancelLoading}>
+                          {cancelLoading ? t.cancelPending : t.cancelConfirm}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : subscriptionEnded ? (
+                    <Button className="mt-3" size="sm" onClick={() => requestLogin()} disabled={checkoutLoading}>
+                      {t.resubscribe}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="mt-3"
+                      size="sm"
+                      variant="outline"
+                      onClick={
+                        canResumeSubscription
+                          ? () => applySubscriptionChange(true)
+                          : () => setCancelConfirmOpen(true)
+                      }
+                      disabled={cancelLoading}
+                    >
+                      {cancelLoading
+                        ? canResumeSubscription
+                          ? t.resumePending
+                          : t.cancelPending
+                        : canResumeSubscription
+                          ? t.resumeSubscription
+                          : t.cancelSubscription}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="field-card">
             <div className="flex items-start gap-3">

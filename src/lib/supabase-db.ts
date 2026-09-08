@@ -386,6 +386,27 @@ export const createCheckoutSession = async (planId: BillingPlanId = 'monthly') =
   return data.url as string;
 };
 
+// Cancels at the end of the paid period, or takes a pending cancellation back with resume.
+export const updateSubscriptionCancellation = async (resume = false): Promise<SubscriptionState> => {
+  const token = await getCurrentAccessToken();
+  if (!token) throw new Error('Login required.');
+
+  const response = await fetch('/api/stripe-cancel-subscription', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ resume }),
+  });
+
+  const data = await readApiJson<SubscriptionState>(
+    response,
+    resume ? 'Kündigung konnte nicht zurückgenommen werden.' : 'Abo konnte nicht gekündigt werden.',
+  );
+  return data as SubscriptionState;
+};
+
 export const createBillingPortalSession = async () => {
   const token = await getCurrentAccessToken();
   if (!token) throw new Error('Login required.');
