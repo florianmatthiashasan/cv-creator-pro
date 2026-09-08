@@ -65,8 +65,6 @@ export const upsertSubscription = async (subscription: Stripe.Subscription, fall
   const period = subscription as Stripe.Subscription & {
     current_period_start?: number | null;
     current_period_end?: number | null;
-    trial_start?: number | null;
-    trial_end?: number | null;
   };
   const { error } = await supabase.from('user_subscriptions').upsert({
     user_id: userId,
@@ -76,8 +74,6 @@ export const upsertSubscription = async (subscription: Stripe.Subscription, fall
     price_id: item?.price?.id || null,
     current_period_start: stripeTimestampToIso(period.current_period_start),
     current_period_end: stripeTimestampToIso(period.current_period_end),
-    trial_start: stripeTimestampToIso(period.trial_start),
-    trial_end: stripeTimestampToIso(period.trial_end),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
   });
 
