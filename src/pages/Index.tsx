@@ -48,6 +48,7 @@ import { fetchArbeitnowJobFromUrl, getProfileCity } from '@/lib/job-matching';
 import {
   ApplicationStage,
   BillingPlanId,
+  completeMagicLinkFromTokenHash,
   createBillingPortalSession,
   createCheckoutSession,
   DbApplication,
@@ -1279,8 +1280,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     };
   }, []);
 
-  // Handles the return trip from Stripe. `signin=1` means stripe-checkout-success could not
-  // hand out a magic link, so the buyer has paid but has no session and must request one.
+  // Handles the return trip from Stripe. `token_hash` is the magic link stripe-checkout-success
+  // generated for a buyer who had no session; `signin=1` means it could not generate one, so
+  // the buyer has paid but must request a link themselves.
   useEffect(() => {
     if (authLoading) return;
 
@@ -1288,10 +1290,30 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     if (params.get('checkout') !== 'success') return;
 
     const needsSignIn = params.get('signin') === '1';
+    const tokenHash = params.get('token_hash') || '';
+    const otpType = params.get('type') || 'magiclink';
+
+    // Strip the credentials from the URL before anything else can capture them.
     params.delete('checkout');
     params.delete('signin');
+    params.delete('token_hash');
+    params.delete('type');
     const query = params.toString();
     window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+
+    if (tokenHash && !authUser) {
+      completeMagicLinkFromTokenHash(tokenHash, otpType)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['billing-status'] });
+        })
+        .catch(() => {
+          // Token expired or already used — the payment still went through, so fall back
+          // to letting them request a fresh link.
+          setPostCheckout(true);
+          setLoginOpen(true);
+        });
+      return;
+    }
 
     queryClient.invalidateQueries({ queryKey: ['billing-status'] });
 

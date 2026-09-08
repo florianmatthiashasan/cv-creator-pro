@@ -55,15 +55,26 @@ async function handler(request: Request) {
       },
     });
 
-    if (error || !data.properties?.action_link) {
+    if (error || !data.properties?.hashed_token) {
       console.error('stripe-checkout-success: generateLink failed', error?.message);
       return sendToSignIn();
     }
 
+    // Deliberately NOT redirecting to properties.action_link: that link comes back as an
+    // implicit-grant callback (#access_token=…), and the browser client is created by
+    // @supabase/ssr with flowType 'pkce', which throws AuthPKCEGrantCodeExchangeError
+    // ('Not a valid PKCE flow url.') instead of storing the session. Handing the app the
+    // hashed token lets it redeem the link via verifyOtp(), which is flow-type agnostic.
+    const params = new URLSearchParams({
+      checkout: 'success',
+      token_hash: data.properties.hashed_token,
+      type: 'magiclink',
+    });
+
     return new Response(null, {
       status: 303,
       headers: {
-        location: data.properties.action_link,
+        location: `${getOrigin(request)}/dashboard?${params.toString()}`,
       },
     });
   } catch (error) {

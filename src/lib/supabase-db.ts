@@ -320,6 +320,19 @@ export const signInWithEmail = async (email: string) => {
   if (error) throw toError('Login konnte nicht gestartet werden', error);
 };
 
+// Redeems the token that stripe-checkout-success puts in the URL. verifyOtp is a plain API
+// call, so it works with the PKCE browser client that refuses implicit-grant callbacks.
+export const completeMagicLinkFromTokenHash = async (tokenHash: string, type = 'magiclink') => {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: type as 'magiclink',
+  });
+
+  if (error) throw toError('Login-Link konnte nicht eingelöst werden', error);
+  return data.user ?? null;
+};
+
 export const signOut = async () => {
   const supabase = ensureSupabase();
   const { error } = await supabase.auth.signOut();
