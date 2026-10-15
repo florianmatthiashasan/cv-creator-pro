@@ -43,6 +43,7 @@ import SkillsForm from '@/components/cv/SkillsForm';
 import StepIndicator from '@/components/cv/StepIndicator';
 import { templateOptions } from '@/components/cv/templates/registry';
 import { useSeo } from '@/hooks/use-seo';
+import { useSubscriptionAccess } from '@/hooks/use-subscription-access';
 import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
 import { fetchArbeitnowJobFromUrl, getProfileCity } from '@/lib/job-matching';
 import {
@@ -1010,7 +1011,7 @@ const splitTitleAndLocation = (rawTitle: string, fallbackLocation: string) => {
   };
 };
 
-const parseJobUrl = (url: string, fallbackLocation = 'Remote') => {
+const parseJobUrl = (url: string, fallbackLocation = 'Remote'): Application => {
   let parsedUrl: URL | null = null;
   try {
     parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
@@ -1167,9 +1168,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     queryFn: fetchSubscriptionStatus,
     enabled: Boolean(authUser && supabaseConfigured),
     refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
   });
   const isLoggedIn = Boolean(authUser);
-  const hasProSubscription = Boolean(authUser && billingQuery.data?.isActive);
+  const subscriptionAccess = useSubscriptionAccess(billingQuery.data);
+  const hasProSubscription = Boolean(authUser && subscriptionAccess);
   const isCheckingSubscription = Boolean(authUser && billingQuery.isLoading);
   const canUseAi = hasProSubscription;
   const displayName = authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gast';
@@ -1675,8 +1678,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     });
   };
 
-  // Stripe already ended this one (immediate cancellation) — access only continues because the
-  // paid period runs on, and Stripe refuses any further update, so no cancel/resume is offered.
+  // A terminal cancellation cannot be resumed. Scheduled cancellations stay active until expiry.
   const subscriptionEnded = billingQuery.data?.status === 'canceled';
   const subscriptionCancelsAtPeriodEnd = subscriptionEnded || Boolean(billingQuery.data?.cancelAtPeriodEnd);
   const canResumeSubscription = !subscriptionEnded && Boolean(billingQuery.data?.cancelAtPeriodEnd);
@@ -2552,7 +2554,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <p className="meta-label">{t.support}</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.supportText}</p>
                 <Button className="mt-3" size="sm" variant="outline" asChild>
-                  <a href="mailto:support@foliocv.local?subject=Folio%20CV%20Support">support@foliocv.local</a>
+                  <a href="mailto:yucedagh1@gmail.com?subject=Folio%20CV%20Support">yucedagh1@gmail.com</a>
                 </Button>
               </div>
             </div>

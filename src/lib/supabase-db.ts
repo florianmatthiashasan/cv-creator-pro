@@ -355,6 +355,7 @@ export const fetchSubscriptionStatus = async (): Promise<SubscriptionState> => {
       currentPeriodEnd: null,
       cancelAtPeriodEnd: false,
       stripeCustomerId: null,
+      stripeSubscriptionId: null,
     };
   }
 

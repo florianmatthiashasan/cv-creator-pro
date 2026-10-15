@@ -11,18 +11,24 @@ async function handler(request: Request) {
   const sessionId = url.searchParams.get('session_id');
   if (!sessionId) return json({ error: 'Missing checkout session.' }, 400);
 
-  // Stripe has already charged the customer by the time it redirects here, so no failure
-  // below may surface as an error page. Send the buyer into the app with a sign-in prompt
-  // instead and let the stripe-webhook retries (up to 3 days) finish provisioning.
+  // A return URL can arrive before asynchronous payment completes. Verify payment before
+  // provisioning; if provisioning fails after payment, webhook retries can finish the work.
   const sendToSignIn = () =>
     new Response(null, {
       status: 303,
-      headers: { location: `${getOrigin(request)}/?checkout=success&signin=1` },
+      headers: { location: `${getOrigin(request)}/?checkout=success&signin=1`, 'cache-control': 'no-store' },
     });
 
   try {
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.status !== 'complete' ||
+      (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required')) {
+      return new Response(null, {
+        status: 303,
+        headers: { location: `${getOrigin(request)}/?checkout=pending`, 'cache-control': 'no-store' },
+      });
+    }
     const email = session.customer_details?.email?.trim().toLowerCase();
     const subscriptionId = getString(session.subscription);
 
@@ -75,6 +81,7 @@ async function handler(request: Request) {
       status: 303,
       headers: {
         location: `${getOrigin(request)}/dashboard?${params.toString()}`,
+        'cache-control': 'no-store',
       },
     });
   } catch (error) {

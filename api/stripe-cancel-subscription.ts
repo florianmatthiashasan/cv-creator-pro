@@ -13,8 +13,7 @@ async function handler(request: Request) {
     return json({ error: 'No subscription found for this account.' }, 404);
   }
 
-  // Stripe rejects updates to a subscription that has already ended, so there is nothing
-  // left to schedule — the paid period is either still running or already over.
+  // Stripe rejects updates to a subscription that has already ended.
   if (state.status === 'canceled') {
     return json({ error: 'This subscription has already ended.', code: 'already_canceled', subscription: state }, 409);
   }
@@ -28,6 +27,7 @@ async function handler(request: Request) {
     // access until it runs out. Passing resume:true takes a pending cancellation back.
     const subscription = await stripe.subscriptions.update(state.stripeSubscriptionId, {
       cancel_at_period_end: !resume,
+      ...(resume ? { cancel_at: '' as const } : {}),
     });
 
     await upsertSubscription(subscription, user.id);

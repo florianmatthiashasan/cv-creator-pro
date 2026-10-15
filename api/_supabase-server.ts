@@ -1,21 +1,5 @@
 import { createClient, type User } from '@supabase/supabase-js';
-
-const activeSubscriptionStatuses = new Set(['active', 'trialing']);
-
-// Stripe can end a subscription immediately (status 'canceled', ended_at set) even though the
-// period the customer already paid for runs on. A weekly subscriber who cancels on day one has
-// paid for that week and keeps access until current_period_end. Deliberately excludes
-// 'past_due' and 'unpaid': there the current period's invoice is unpaid, so nothing is owed.
-// PostgREST may hand back "2026-09-15 13:15:28+00" rather than ISO-8601: a space instead of
-// "T", and a two-digit offset that Date.parse rejects outright (yielding NaN).
-const parseTimestamp = (value: string) =>
-  Date.parse(value.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
-
-const hasPaidPeriodRemaining = (status: string | null, currentPeriodEnd: string | null) => {
-  if (status !== 'canceled' || !currentPeriodEnd) return false;
-  const endsAt = parseTimestamp(currentPeriodEnd);
-  return Number.isFinite(endsAt) && endsAt > Date.now();
-};
+import { hasSubscriptionAccess } from '../src/lib/subscription-access.js';
 
 export type SubscriptionState = {
   isActive: boolean;
@@ -29,7 +13,7 @@ export type SubscriptionState = {
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 
 const getSupabaseUrl = () => process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -113,9 +97,7 @@ export const fetchServerSubscriptionState = async (userId: string): Promise<Subs
   const status = typeof data.status === 'string' ? data.status : null;
   const currentPeriodEnd = typeof data.current_period_end === 'string' ? data.current_period_end : null;
   return {
-    isActive: Boolean(
-      status && (activeSubscriptionStatuses.has(status) || hasPaidPeriodRemaining(status, currentPeriodEnd)),
-    ),
+    isActive: hasSubscriptionAccess(status, currentPeriodEnd),
     status,
     currentPeriodEnd,
     cancelAtPeriodEnd: Boolean(data.cancel_at_period_end),

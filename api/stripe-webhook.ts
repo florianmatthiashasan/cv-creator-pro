@@ -4,9 +4,15 @@ import { getOrCreateBillingUserIdForEmail, upsertSubscription } from './_billing
 import { getStripe } from './_stripe.js';
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : null);
+const getObjectId = (value: unknown) => {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'id' in value && typeof value.id === 'string') return value.id;
+  return null;
+};
 
 const handleCheckoutCompleted = async (stripe: Stripe, session: Stripe.Checkout.Session) => {
-  const subscriptionId = getString(session.subscription);
+  if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') return;
+  const subscriptionId = getObjectId(session.subscription);
   if (!subscriptionId) return;
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -16,7 +22,8 @@ const handleCheckoutCompleted = async (stripe: Stripe, session: Stripe.Checkout.
 };
 
 const handleInvoiceEvent = async (stripe: Stripe, invoice: Stripe.Invoice) => {
-  const subscriptionId = getString((invoice as Stripe.Invoice & { subscription?: unknown }).subscription);
+  const subscriptionId = getObjectId(invoice.parent?.subscription_details?.subscription)
+    || getObjectId((invoice as Stripe.Invoice & { subscription?: unknown }).subscription);
   if (!subscriptionId) return;
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -45,15 +52,24 @@ async function handler(request: Request) {
   try {
     switch (event.type) {
       case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
         await handleCheckoutCompleted(stripe, event.data.object as Stripe.Checkout.Session);
         break;
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
-        await upsertSubscription(event.data.object as Stripe.Subscription);
+      case 'customer.subscription.paused':
+      case 'customer.subscription.resumed': {
+        // Stripe does not guarantee delivery order. Fetch current state instead of applying
+        // an older snapshot that could undo a cancellation or a successful renewal.
+        const subscription = await stripe.subscriptions.retrieve((event.data.object as Stripe.Subscription).id);
+        await upsertSubscription(subscription);
         break;
+      }
+      case 'invoice.paid':
       case 'invoice.payment_succeeded':
       case 'invoice.payment_failed':
+      case 'invoice.payment_action_required':
         await handleInvoiceEvent(stripe, event.data.object as Stripe.Invoice);
         break;
       default:
