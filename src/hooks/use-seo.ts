@@ -52,7 +52,7 @@ export const useSeo = ({
     upsertMeta('name', 'description', description);
     upsertMeta('name', 'robots', robots);
     upsertMeta('name', 'author', 'yourdeveloperhsn');
-    upsertMeta('name', 'theme-color', '#f5ead8');
+    upsertMeta('name', 'theme-color', '#ffffff');
     upsertMeta('name', 'application-name', 'Folio CV');
 
     upsertMeta('property', 'og:title', title);

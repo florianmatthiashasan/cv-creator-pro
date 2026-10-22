@@ -39,7 +39,7 @@ const PersonalInfoForm = ({ data, onChange }: Props) => {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-background/50 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:bg-accent/10"
+            className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-foreground/20 bg-card transition-colors duration-150 hover:border-foreground/40"
             aria-label={data.photo ? 'Change profile photo' : 'Upload profile photo'}
           >
             {data.photo ? (

@@ -25,17 +25,17 @@ const CVPreviewCanvas = forwardRef<HTMLDivElement, Props>(
       <div className="preview-shell animate-fade-up">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Preview</p>
+            <p className="text-[13px] text-[var(--organic-neutral-500)]">Preview</p>
             <p className="mt-0.5 text-[13px] font-medium text-foreground">Live preview</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--organic-neutral-200)]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--organic-neutral-200)]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--organic-neutral-200)]" />
           </div>
         </div>
 
-        <div className={`overflow-auto bg-muted/40 p-4 ${maxHeightClassName}`}>
+        <div className={`overflow-auto bg-surface p-4 ${maxHeightClassName}`}>
           <div className={`origin-top-left w-[210mm] ${scaleClassName}`}>
             <div ref={ref}>
               <TemplateComponent data={data} />

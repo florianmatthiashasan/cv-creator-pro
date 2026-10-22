@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   CalendarClock,
   CheckCircle2,
+  ChevronDown,
   Coffee,
   Copy,
   Trash2,
@@ -41,10 +42,13 @@ import LanguagesForm from '@/components/cv/LanguagesForm';
 import PersonalInfoForm from '@/components/cv/PersonalInfoForm';
 import SkillsForm from '@/components/cv/SkillsForm';
 import StepIndicator from '@/components/cv/StepIndicator';
+import HeroShowcase from '@/components/landing/HeroShowcase';
+import LayoutMarquee from '@/components/landing/LayoutMarquee';
 import { templateOptions } from '@/components/cv/templates/registry';
 import { useSeo } from '@/hooks/use-seo';
 import { useSubscriptionAccess } from '@/hooks/use-subscription-access';
 import { trackCvStartedOncePerSession, trackEvent } from '@/lib/analytics';
+import { initReveal } from '@/lib/reveal';
 import { fetchArbeitnowJobFromUrl, getProfileCity } from '@/lib/job-matching';
 import {
   ApplicationStage,
@@ -1071,6 +1075,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   const hydratedUserIdRef = useRef<string | null>(null);
   const writerResultSignatureRef = useRef('');
   const [screen, setScreenState] = useState<AppScreen>(initialScreen);
+  const [headerSolid, setHeaderSolid] = useState(false);
   const [uiLanguage, setUiLanguage] = useState<UiLanguage>('English');
   const [step, setStep] = useState(0);
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
@@ -1183,6 +1188,18 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
   useEffect(() => {
     setScreenState(initialScreen);
   }, [initialScreen]);
+
+  useEffect(() => {
+    if (screen !== 'landing') return;
+    const updateHeader = () => setHeaderSolid(window.scrollY > 12);
+    updateHeader();
+    window.addEventListener('scroll', updateHeader, { passive: true });
+    const stopReveal = initReveal();
+    return () => {
+      window.removeEventListener('scroll', updateHeader);
+      stopReveal();
+    };
+  }, [screen]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2250,22 +2267,22 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     return (
       <article
         key={plan.id}
-        className={`${dark ? 'rounded-[28px] bg-[var(--organic-neutral-900)] text-[var(--organic-neutral-100)] shadow-[var(--organic-shadow-lg)]' : 'organic-card'} ${options.compact ? 'p-5' : 'p-8'}`}
+        className={`${dark ? 'organic-artifact' : 'organic-card'} ${options.compact ? 'p-5' : 'p-8'}`}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className={`section-kicker ${dark ? 'text-[var(--organic-accent-200)]' : ''}`}>{plan.productName}</p>
-            <h2 className="mt-2 font-display text-2xl font-normal">{label}</h2>
+            <p className="section-kicker">{plan.productName}</p>
+            <h2 className="mt-2 text-base font-medium">{label}</h2>
           </div>
           <div className="flex flex-col items-end gap-2">
             {selected && <span className="organic-tag organic-tag-accent">{isGerman ? 'Ausgewählt' : 'Selected'}</span>}
             {badge && <span className="organic-tag organic-tag-accent">{badge}</span>}
           </div>
         </div>
-        <p className="mt-5 font-display text-4xl leading-none">{plan.price}</p>
-        <p className={`mt-2 text-sm ${dark ? 'text-[var(--organic-neutral-300)]' : 'text-muted-foreground'}`}>{cadence}</p>
-        <p className={`mt-4 min-h-[3.25rem] text-sm leading-6 ${dark ? 'text-[var(--organic-neutral-300)]' : 'text-muted-foreground'}`}>{note}</p>
-        <Button className="mt-5 w-full" onClick={() => startCheckout(plan.id)} disabled={checkoutLoading || isCheckingSubscription}>
+        <p className="mt-5 font-display text-[2.75rem] leading-none">{plan.price}</p>
+        <p className={`mt-2 text-sm text-muted-foreground`}>{cadence}</p>
+        <p className={`mt-4 min-h-[3.25rem] text-sm leading-6 text-muted-foreground`}>{note}</p>
+        <Button className="mt-5 w-full" variant={dark ? 'default' : 'outline'} onClick={() => startCheckout(plan.id)} disabled={checkoutLoading || isCheckingSubscription}>
           {checkoutLoading ? t.startingCheckout : cta}
         </Button>
       </article>
@@ -2287,7 +2304,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <span className="organic-tag organic-tag-accent-2">Folio CV Pro</span>
-              <h2 className="mt-3 font-display text-3xl font-normal">
+              <h2 className="mt-3 text-lg font-medium tracking-[-0.01em]">
                 {uiLanguage === 'German' ? 'Wähle einen Plan, bevor du dich anmeldest.' : 'Pick a plan before signing in.'}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -2303,7 +2320,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           <div className="grid gap-4 md:grid-cols-3">
             {orderedPlans.map((plan) => renderPlanCard(plan, { compact: true }))}
           </div>
-          <Button variant="ghost" className="mt-1 justify-start px-2 text-accent" onClick={openLogin}>
+          <Button variant="ghost" className="mt-1 justify-start px-2 text-accent hover:text-accent" onClick={openLogin}>
             <Mail size={16} aria-hidden="true" />
             {t.loginAlreadyPaid}
           </Button>
@@ -2321,7 +2338,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="organic-tag organic-tag-accent-2">Folio CV Pro</span>
-              <h2 className="mt-3 font-display text-2xl font-normal">{t.loginTitle}</h2>
+              <h2 className="mt-3 text-lg font-medium tracking-[-0.01em]">{t.loginTitle}</h2>
             </div>
             <Button variant="outline" size="sm" onClick={() => setLoginOpen(false)}>
               {t.close}
@@ -2331,7 +2348,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           {postCheckout && !loginSentTo && (
             <section className="field-card">
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                   <BadgeCheck size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -2345,7 +2362,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           {loginSentTo ? (
             <section className="field-card">
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                   <CheckCircle2 size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -2365,7 +2382,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               }}
             >
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                   <Mail size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -2405,7 +2422,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         <div className="folio-dialog">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-display text-2xl font-normal">{t.settingsTitle}</h2>
+              <h2 className="text-lg font-medium tracking-[-0.01em]">{t.settingsTitle}</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {uiLanguage === 'German'
                   ? 'Steuere Sprache, Profil und Support an einem Ort.'
@@ -2419,7 +2436,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
           <section className="field-card">
             <div className="flex items-start gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                 <Globe2 size={18} />
               </span>
               <div className="min-w-0 flex-1">
@@ -2446,7 +2463,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
           <section className="field-card">
             <div className="flex items-start gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                 <UserRound size={18} />
               </span>
               <div className="min-w-0 flex-1">
@@ -2481,7 +2498,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           {hasProSubscription && (
             <section className="field-card">
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                   <BadgeCheck size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -2499,7 +2516,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   )}
 
                   {cancelConfirmOpen ? (
-                    <div className="mt-3 rounded-[18px] bg-background p-4">
+                    <div className="mt-3 rounded-2xl bg-background p-4">
                       <p className="text-sm font-semibold">{t.cancelConfirmTitle}</p>
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
                         {subscriptionPeriodEnd
@@ -2547,7 +2564,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
           <section className="field-card">
             <div className="flex items-start gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-card text-accent shadow-[inset_0_0_0_1px_var(--organic-divider)]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                 <Headphones size={18} />
               </span>
               <div className="min-w-0 flex-1">
@@ -2568,7 +2585,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col justify-center py-10">
       <div className="max-w-3xl">
         <span className="organic-tag organic-tag-accent-2">Folio CV Pro</span>
-        <h1 className="mt-4 font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+        <h1 className="mt-4 font-display text-[2.25rem] leading-[1.08] md:text-[3rem]">
           {isCheckingSubscription ? t.checkingSubscription : t.proGateTitle}
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
@@ -2599,8 +2616,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
       <div className="folio-app-shell">
         <aside className="folio-sidebar">
           <div className="folio-sidebar-header">
-            <button className="flex items-center gap-3 px-2 font-display text-lg text-foreground" onClick={() => setScreen('landing')}>
-              <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
+            <button className="flex items-center gap-2.5 px-2 font-display text-[21px] text-foreground" onClick={() => setScreen('landing')}>
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-foreground" aria-hidden="true"><span className="h-2 w-2 rounded-full bg-[var(--organic-accent-200)]" /></span>
               Folio CV
             </button>
             <Button
@@ -2636,9 +2653,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <Settings size={16} aria-hidden="true" />
               {t.settings}
             </Button>
-            <div className="rounded-[20px] bg-background p-4">
+            <div className="rounded-2xl bg-background p-4 shadow-folio-sm">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-display text-base">{authStatusLabel}</p>
+                <p className="text-sm font-semibold">{authStatusLabel}</p>
                 {hasProSubscription && <span className="organic-tag organic-tag-accent-2">{t.proActive}</span>}
               </div>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -2657,7 +2674,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               )}
             </div>
             <div className="flex items-center gap-3 px-1">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--organic-accent-2-300)] text-xs font-bold text-[var(--organic-accent-2-800)]">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--organic-accent-200)] text-xs font-medium text-[var(--organic-accent-800)]">
                 {displayName.charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0">
@@ -2673,21 +2690,21 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             >
               {isLoggedIn ? t.logOut : t.logIn}
             </Button>
-            <Button variant="ghost" className="justify-start px-2 text-accent" onClick={() => setScreen('landing')}>
+            <Button variant="ghost" className="justify-start px-3 text-muted-foreground hover:text-foreground" onClick={() => setScreen('landing')}>
               <ArrowLeft size={16} aria-hidden="true" />
               {t.backToSite}
             </Button>
           </div>
         </aside>
 
-        <main className="min-w-0 px-5 py-7 md:px-10 md:py-8">
+        <main className="min-w-0 px-5 py-7 md:px-10 md:py-9">
           {screen !== 'editor' && !hasProSubscription ? renderSubscriptionGate() : (
           <>
           {screen === 'dashboard' && (
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">Good afternoon, {displayName}.</h1>
+                  <h1 className="font-display text-[2.25rem] leading-[1.1]">Good afternoon, {displayName}.</h1>
                   <p className="mt-1 text-sm text-muted-foreground">{openCount} applications still open · AI writer ready for tailored applications</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -2709,7 +2726,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 ].map(([label, value, note]) => (
                   <article key={label} className="organic-card p-5">
                     <p className="section-kicker">{label}</p>
-                    <p className="mt-3 font-display text-4xl leading-none">{value}</p>
+                    <p className="mt-3 font-display text-3xl leading-none tracking-[-0.02em]">{value}</p>
                     <p className="mt-2 text-xs text-muted-foreground">{note}</p>
                   </article>
                 ))}
@@ -2718,14 +2735,14 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               <div className="mt-8 grid gap-7 xl:grid-cols-[1.15fr_0.85fr]">
                 <section>
                   <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 className="font-display text-2xl font-normal">Your CVs</h2>
+                    <h2 className="text-lg font-medium tracking-[-0.01em]">Your CVs</h2>
                     <Button variant="ghost" onClick={startNewCv}>+ New version</Button>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     {visibleDashboardCvs.map((cv) => (
                       <article key={cv.id} className="organic-card p-5">
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="font-display text-xl font-normal">{cv.name}</h3>
+                          <h3 className="text-base font-medium">{cv.name}</h3>
                           <span className="organic-tag">{cv.format}</span>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">Edited {cv.updated} · {cv.pages}</p>
@@ -2759,12 +2776,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                 <section>
                   <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 className="font-display text-2xl font-normal">AI writer</h2>
+                    <h2 className="text-lg font-medium tracking-[-0.01em]">AI writer</h2>
                     <span className="organic-tag organic-tag-accent-2">Job ad based</span>
                   </div>
                   <div className="organic-card p-5">
                     <div className="flex items-center gap-3">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                         <Wand2 size={18} />
                       </span>
                       <div>
@@ -2799,7 +2816,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">Applications</h1>
+                  <h1 className="font-display text-[2.25rem] leading-[1.1]">Applications</h1>
                   <p className="mt-1 text-sm text-muted-foreground">{applications.length} tracked · last update {applications[0]?.when ?? 'today'}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -2830,21 +2847,21 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   {stageColumns.map((column) => (
                     <section
                       key={column.stage}
-                      className={`tracker-column rounded-[24px] bg-card p-3 shadow-[var(--organic-shadow-sm)] ${dragOverStage === column.stage ? 'is-drop-target' : ''}`}
+                      className={`tracker-column rounded-3xl bg-card p-3 ${dragOverStage === column.stage ? 'is-drop-target' : ''}`}
                       aria-label={`${column.stage} drop zone`}
                       onDragOver={(event) => handleStageDragOver(event, column.stage)}
                       onDragLeave={() => setDragOverStage((current) => (current === column.stage ? null : current))}
                       onDrop={(event) => handleStageDrop(event, column.stage)}
                     >
                       <div className="mb-3 flex items-center justify-between px-1">
-                        <h2 className="font-display text-base font-normal">{column.stage}</h2>
+                        <h2 className="text-base font-medium">{column.stage}</h2>
                         <span className="organic-tag">{column.items.length}</span>
                       </div>
                       <div className="space-y-3">
                         {column.items.map((job) => (
                           <article
                             key={job.id}
-                            className={`tracker-card rounded-[18px] bg-background p-4 shadow-[var(--organic-shadow-sm)] ${draggedApplicationId === job.id ? 'is-dragging' : ''}`}
+                            className={`tracker-card rounded-2xl bg-background p-4 shadow-folio-sm ${draggedApplicationId === job.id ? 'is-dragging' : ''}`}
                             draggable
                             onDragStart={(event) => handleApplicationDragStart(event, job.id)}
                             onDragEnd={handleApplicationDragEnd}
@@ -2855,7 +2872,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                               <span className="organic-tag organic-tag-accent-2">{job.score}</span>
                               <span className="text-xs text-muted-foreground">{job.when}</span>
                             </div>
-                            <label className="mt-3 block rounded-[14px] bg-card/70 px-3 py-2">
+                            <label className="mt-3 block rounded-xl bg-card px-3 py-2">
                               <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                                 <CalendarClock size={12} />
                                 {formatFollowUpLabel(job.followUpAt)}
@@ -2867,7 +2884,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                                 value={job.followUpAt || ''}
                                 onInput={(event) => setApplicationFollowUp(job.id, event.currentTarget.value)}
                                 onChange={(event) => setApplicationFollowUp(job.id, event.target.value)}
-                                className="mt-1 h-8 bg-background/70 text-xs"
+                                className="mt-1 h-8 text-xs"
                                 disabled={followUpMutation.isPending}
                               />
                             </label>
@@ -2976,7 +2993,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <div className="folio-dialog-backdrop">
                   <div className="folio-dialog">
                     <div>
-                      <h2 className="font-display text-2xl font-normal">Add an application</h2>
+                      <h2 className="text-lg font-medium tracking-[-0.01em]">Add an application</h2>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         Paste a job link, then check the draft before saving it to the tracker.
                       </p>
@@ -3017,8 +3034,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                             onChange={(event) => setDraftApplication((current) => current ? { ...current, followUpAt: event.target.value || undefined } : current)}
                           />
                         </label>
-                        <div className="flex items-center gap-3 rounded-[18px] bg-background p-4 text-sm">
-                          <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--organic-accent-2-200)] text-xs font-bold text-[var(--organic-accent-2-800)]">
+                        <div className="flex items-center gap-3 rounded-2xl bg-card p-4 text-sm">
+                          <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--organic-accent-2-100)] text-xs font-medium text-[var(--organic-accent-2-700)]">
                             {draftApplication.score}
                           </span>
                           Match against <strong>{visibleDashboardCvs[0]?.name || selectedCvName}</strong> - {draftApplication.reason}
@@ -3041,7 +3058,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">{t.matcherTitle}</h1>
+                  <h1 className="font-display text-[2.25rem] leading-[1.1]">{t.matcherTitle}</h1>
                   <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                     {t.matcherDescription}
                   </p>
@@ -3073,7 +3090,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 </div>
               )}
               {tailoringNote && (
-                <div className="mt-4 rounded-[18px] bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[var(--organic-shadow-sm)]">
+                <div className="mt-4 rounded-2xl bg-card px-4 py-3 text-sm leading-6 text-muted-foreground">
                   {tailoringNote}
                 </div>
               )}
@@ -3082,12 +3099,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <aside className="space-y-4 xl:sticky xl:top-8 xl:self-start">
                   <article className="organic-card p-5">
                     <div className="flex items-start gap-3">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                         <SearchCheck size={18} />
                       </span>
                       <div>
                         <p className="section-kicker">{t.input}</p>
-                        <h2 className="font-display text-2xl font-normal">{t.pastePosting}</h2>
+                        <h2 className="text-lg font-medium tracking-[-0.01em]">{t.pastePosting}</h2>
                         <p className="mt-1 text-sm leading-6 text-muted-foreground">
                           {t.pastePostingHelp}
                         </p>
@@ -3108,7 +3125,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                   <article className="organic-card p-5">
                     <p className="section-kicker">{t.currentCv}</p>
-                    <h2 className="mt-2 font-display text-2xl font-normal">{selectedCvName}</h2>
+                    <h2 className="mt-2 text-lg font-medium tracking-[-0.01em]">{selectedCvName}</h2>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
                       {t.currentCvHelp}
                     </p>
@@ -3126,7 +3143,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       <div className="grid gap-4 sm:grid-cols-3">
                         <article className="organic-card p-5">
                           <p className="section-kicker">{t.matchScore}</p>
-                          <p className="mt-3 font-display text-5xl leading-none">{jobMatchReport.score}%</p>
+                          <p className="mt-3 font-display text-4xl leading-none tracking-[-0.02em]">{jobMatchReport.score}%</p>
                           <p className="mt-2 text-sm text-muted-foreground">{jobMatchReport.label}</p>
                           <p className="mt-2 text-xs leading-5 text-muted-foreground">
                             {t.aiEstimate}
@@ -3134,7 +3151,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </article>
                         <article className="organic-card p-5">
                           <p className="section-kicker">{t.atsCheck}</p>
-                          <p className="mt-3 font-display text-5xl leading-none">{atsCheck.score}%</p>
+                          <p className="mt-3 font-display text-4xl leading-none tracking-[-0.02em]">{atsCheck.score}%</p>
                           <p className="mt-2 text-sm text-muted-foreground">{atsCheck.label}</p>
                         </article>
                         <article className="organic-card p-5">
@@ -3146,7 +3163,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                       <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
                         <article className="organic-card p-5">
-                          <h2 className="font-display text-2xl font-normal">{t.keywordCoverage}</h2>
+                          <h2 className="text-lg font-medium tracking-[-0.01em]">{t.keywordCoverage}</h2>
                           <div className="mt-5 space-y-5">
                             <div>
                               <h3 className="text-sm font-semibold">{t.matched}</h3>
@@ -3171,7 +3188,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                               <p className="section-kicker">{t.suggestions}</p>
-                              <h2 className="font-display text-2xl font-normal">{t.applySelectively}</h2>
+                              <h2 className="text-lg font-medium tracking-[-0.01em]">{t.applySelectively}</h2>
                             </div>
                             <span className="organic-tag organic-tag-accent-2">{jobMatchReport.suggestions.length} {t.changes}</span>
                           </div>
@@ -3198,7 +3215,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         <article className="organic-card p-5">
                           <div className="flex items-center gap-2">
                             <FileSearch size={16} className="text-accent" />
-                            <h2 className="font-display text-2xl font-normal">{t.atsChecklist}</h2>
+                            <h2 className="text-lg font-medium tracking-[-0.01em]">{t.atsChecklist}</h2>
                           </div>
                           <div className="mt-4 divide-y divide-border/70">
                             {atsCheck.checks.map((check) => (
@@ -3218,7 +3235,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         <article className="organic-card p-5">
                           <div className="flex items-center gap-2">
                             <MessageSquareText size={16} className="text-accent" />
-                            <h2 className="font-display text-2xl font-normal">{t.interviewPrep}</h2>
+                            <h2 className="text-lg font-medium tracking-[-0.01em]">{t.interviewPrep}</h2>
                           </div>
                           {interviewPrep ? (
                             <div className="mt-4 space-y-3">
@@ -3259,7 +3276,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="font-display text-4xl font-normal">{t.writerTitle}</h1>
+                  <h1 className="font-display text-[2.25rem] leading-[1.1]">{t.writerTitle}</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {t.writerDescription}
                   </p>
@@ -3284,12 +3301,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 <div className="space-y-4">
                   <article className="organic-card p-5">
                     <div className="flex items-center gap-3">
-                      <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                         <Mail size={18} />
                       </span>
                       <div>
                         <p className="section-kicker">{t.input}</p>
-                        <h2 className="font-display text-2xl font-normal">{t.jobAdAndNotes}</h2>
+                        <h2 className="text-lg font-medium tracking-[-0.01em]">{t.jobAdAndNotes}</h2>
                       </div>
                     </div>
                     <div className="mt-5 space-y-4">
@@ -3350,12 +3367,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
                   <article className="organic-card p-5">
                     <div className="flex items-center gap-3">
-                      <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]">
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                         <MessageSquareText size={18} />
                       </span>
                       <div>
                         <p className="section-kicker">{t.interviewPrep}</p>
-                        <h2 className="font-display text-2xl font-normal">{t.questionAngles}</h2>
+                        <h2 className="text-lg font-medium tracking-[-0.01em]">{t.questionAngles}</h2>
                       </div>
                       {activeJobAd.length >= 40 && (
                         <span className={`organic-tag ml-auto ${aiJobAnalysis ? 'organic-tag-accent-2' : ''}`}>
@@ -3400,7 +3417,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="section-kicker">{t.output}</p>
-                      <h2 className="font-display text-2xl font-normal">{t.applicationPackage}</h2>
+                      <h2 className="text-lg font-medium tracking-[-0.01em]">{t.applicationPackage}</h2>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {!hasProSubscription ? t.aiRequiresPro : writerResult ? t.generatedWithOpenAi : writerLoading ? t.aiWriterWorking : writerError ? t.aiUnavailable : t.autoWriterHint}
                       </p>
@@ -3447,7 +3464,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </section>
                       ))}
                       {writerResult.notes && (
-                        <p className="rounded-[18px] bg-background/55 px-4 py-3 text-xs leading-5 text-muted-foreground">
+                        <p className="rounded-2xl bg-background px-4 py-3 text-xs leading-5 text-muted-foreground">
                           {writerResult.notes}
                         </p>
                       )}
@@ -3482,16 +3499,16 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           {screen === 'editor' && (
             <section>
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <h1 className="font-display text-4xl font-normal">{t.editorTitle}</h1>
+                <div className="md:max-w-md">
+                  <h1 className="font-display text-[2.25rem] leading-[1.1]">{t.editorTitle}</h1>
                   <p className="mt-1 text-sm text-muted-foreground">{t.editorDescription}</p>
                   {tailoringNote && (
-                    <p className="mt-3 max-w-3xl rounded-[18px] bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[var(--organic-shadow-sm)]">
+                    <p className="mt-3 max-w-3xl rounded-2xl bg-card px-4 py-3 text-sm leading-6 text-muted-foreground">
                       {tailoringNote}
                     </p>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 md:justify-end">
                   <Button variant="outline" onClick={() => setScreen('matcher')}>
                     <SearchCheck size={16} />
                     {t.jobMatcher}
@@ -3526,11 +3543,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                           className="grid h-[74px] w-[74px] shrink-0 place-items-center rounded-full"
                           style={{ background: `conic-gradient(var(--organic-accent-2) ${cvReview.score}%, var(--organic-neutral-300) 0)` }}
                         >
-                          <span className="grid h-[58px] w-[58px] place-items-center rounded-full bg-card font-display text-lg">{cvReview.score}</span>
+                          <span className="grid h-[58px] w-[58px] place-items-center rounded-full bg-card text-lg font-medium tracking-[-0.01em]">{cvReview.score}</span>
                         </span>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="font-display text-xl font-normal">{cvReview.label}</h2>
+                            <h2 className="text-base font-medium">{cvReview.label}</h2>
                             <span className={`organic-tag ${aiCvReview ? 'organic-tag-accent-2' : ''}`}>
                               {cvReviewSourceLabel}
                             </span>
@@ -3542,11 +3559,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                         </div>
                       </div>
 
-                      <div className="mt-5 rounded-[22px] bg-background/55 p-4 shadow-[inset_0_0_0_1px_var(--organic-divider)]">
+                      <div className="mt-5 rounded-2xl bg-background p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="section-kicker">{t.aiJudge}</p>
-                            <h3 className="font-display text-xl font-normal">{t.textSuggestions}</h3>
+                            <h3 className="text-base font-medium">{t.textSuggestions}</h3>
                           </div>
                           <span className="organic-tag organic-tag-accent-2">{cvReview.suggestions.length} {t.rewrites}</span>
                         </div>
@@ -3599,12 +3616,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   ) : reviewOpen ? (
                     <article className="organic-card p-5">
                       <div className="flex items-start gap-3">
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-foreground shadow-folio-sm">
                           <Sparkles size={18} />
                         </span>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="font-display text-xl font-normal">
+                            <h2 className="text-base font-medium">
                               {!hasMeaningfulCvContent(cvData) ? t.cvContentNeeded : aiCvReviewError ? t.aiUnavailable : t.aiWorking}
                             </h2>
                             {hasMeaningfulCvContent(cvData) && (
@@ -3643,12 +3660,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="section-kicker">{t.step} {step + 1} / {TOTAL_STEPS}</p>
-                          <h2 className="mt-2 font-display text-3xl font-normal text-foreground">{localizedStepTitles[step]}</h2>
+                          <h2 className="mt-2 font-display text-[1.75rem] text-foreground">{localizedStepTitles[step]}</h2>
                           <p className="mt-1.5 text-sm text-muted-foreground">{localizedStepDescriptions[step]}</p>
                         </div>
-                        <div className="rounded-full bg-[var(--organic-accent-100)] px-4 py-2 text-right text-[var(--organic-accent-800)]">
-                          <p className="font-mono text-[10px] uppercase tracking-[0.08em] opacity-70">{t.step}</p>
-                          <p className="font-mono text-lg tabular-nums">{String(step + 1).padStart(2, '0')}<span className="opacity-40">/{TOTAL_STEPS}</span></p>
+                        <div className="rounded-2xl bg-background px-3.5 py-1.5 text-right shadow-folio-sm">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t.step}</p>
+                          <p className="font-mono text-base tabular-nums">{String(step + 1).padStart(2, '0')}<span className="opacity-40">/{TOTAL_STEPS}</span></p>
                         </div>
                       </div>
                       <StepIndicator currentStep={step} onStepClick={setStep} />
@@ -3699,7 +3716,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                       <p className="section-kicker">{t.livePreview}</p>
                       <p className="mt-0.5 text-sm font-semibold text-foreground">{template} {t.template}</p>
                     </div>
-                    <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+                    <span className="h-2 w-2 rounded-full bg-[var(--organic-accent-2)] ring-4 ring-[var(--organic-accent-2-200)]" />
                   </div>
                   <CVPreviewCanvas
                     data={cvData}
@@ -3728,21 +3745,20 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
     <>
     <div className="organic-page-shell">
       <a href="#content" className="skip-link">Skip to content</a>
-      <div className="app-noise" aria-hidden="true" />
 
-      <header className="sticky inset-x-0 top-0 z-50 bg-background/90 backdrop-blur-xl">
+      <header className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300 ${headerSolid ? 'bg-background/80 shadow-[0_1px_0_rgb(0_0_0/0.06)] backdrop-blur-xl' : 'bg-transparent'}`}>
           <div className="organic-container flex items-center justify-between gap-3 py-3">
-            <a href="/" className="flex items-center gap-3 font-display text-lg text-foreground" aria-label="Folio CV home">
-              <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
+            <a href="/" className="flex items-center gap-2.5 font-display text-[21px] text-foreground" aria-label="Folio CV home">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-foreground" aria-hidden="true"><span className="h-2 w-2 rounded-full bg-[var(--organic-accent-200)]" /></span>
               Folio CV
             </a>
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <nav className="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 text-sm text-muted-foreground shadow-[var(--organic-shadow-sm)] backdrop-blur-xl md:flex">
-              <a href="/how-it-works/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">How it works</a>
-              <a href="/pricing/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Pricing</a>
-              <a href="/features/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Features</a>
-              <a href="/faq/" className="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">FAQ</a>
+            <nav className="hidden items-center gap-2 md:flex">
+              <a href="/how-it-works/" className="px-3 py-2 text-[15px] text-foreground transition-colors hover:text-muted-foreground">How it works</a>
+              <a href="/pricing/" className="px-3 py-2 text-[15px] text-foreground transition-colors hover:text-muted-foreground">Pricing</a>
+              <a href="/features/" className="px-3 py-2 text-[15px] text-foreground transition-colors hover:text-muted-foreground">Features</a>
+              <a href="/faq/" className="px-3 py-2 text-[15px] text-foreground transition-colors hover:text-muted-foreground">FAQ</a>
             </nav>
             {!isLoggedIn && (
               <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={openLogin} disabled={authLoading}>
@@ -3757,94 +3773,36 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             >
               {hasProSubscription ? 'Dashboard' : 'Pro'}
             </Button>
-            <Button size="sm" onClick={openEditor}>Try simulator</Button>
+            <Button size="sm" className="group" onClick={openEditor}>Try simulator<span className="arrow-slide"><ArrowUpRight size={14} /></span></Button>
           </div>
         </div>
       </header>
 
       <main id="content" className="relative z-10">
-        <section className="relative overflow-hidden">
-          <div className="organic-container grid gap-8 py-7 sm:py-9 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-12">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span className="organic-tag mb-4">Simulator is free — no account needed</span>
-              <h1 className="max-w-[12em] font-display text-[clamp(3.2rem,6.4vw,6rem)] font-normal leading-[1.02] tracking-[-0.025em] text-foreground">
-                Build a CV that reads well and gets sent out.
-              </h1>
-              <p className="mt-4 max-w-[34em] text-base leading-7 text-foreground/80 sm:text-lg sm:leading-8">
-                Write your CV in the free simulator, pick a format, export it. When you are ready
-                to keep several versions, use AI, and track applications, Folio CV Pro takes over.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Button size="lg" onClick={openEditor}>
-                  Open the free simulator
-                  <ArrowUpRight size={16} className="ml-1.5" />
-                </Button>
-                <Button variant="outline" size="lg" onClick={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}>
-                  {hasProSubscription ? 'Open dashboard' : 'View pricing'}
-                </Button>
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Free PDF export, live A4 preview, and no credit card.
-              </p>
-            </motion.div>
+        <HeroShowcase
+          name={`${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.trim() || 'Mara Ellison'}
+          role={cvData.personalInfo.title.trim() || 'Operations Lead'}
+          city={profileCity || 'Rotterdam'}
+          roles={sampleRoles}
+          onPrimary={openEditor}
+          secondaryLabel={hasProSubscription ? 'Open dashboard' : 'View pricing'}
+          onSecondary={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}
+        />
 
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-              className="relative"
-            >
-              <div className="absolute -right-5 -top-7 h-64 w-64 rounded-full bg-[var(--organic-accent-200)]" aria-hidden="true" />
-              <div className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-[var(--organic-accent-2-200)]" aria-hidden="true" />
-              <div className="organic-paper relative z-10 rotate-[-1.4deg] rounded-[20px] p-8">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-display text-3xl leading-none">
-                      {`${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.trim() || 'Mara Ellison'}
-                    </p>
-                    <p className="mt-2 text-sm text-[var(--organic-accent-700)]">
-                      {cvData.personalInfo.title.trim() || 'Operations Lead'} · {profileCity || 'Your city'}
-                    </p>
-                  </div>
-                  <span className="h-12 w-12 rounded-full bg-accent" />
-                </div>
-                <div className="my-5 h-px bg-[var(--organic-divider)]" />
-                <p className="section-kicker">Experience</p>
-                <div className="mt-3 space-y-5">
-                  {sampleRoles.map((role) => (
-                    <article key={role.title}>
-                      <div className="flex justify-between gap-4">
-                        <h2 className="text-sm font-semibold">{role.title} — {role.company}</h2>
-                        <span className="text-xs text-muted-foreground">{role.years}</span>
-                      </div>
-                      <p className="mt-2 text-[13px] leading-6 text-foreground/75">{role.detail}</p>
-                    </article>
-                  ))}
-                </div>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {['Capacity planning', 'S&OP', 'SQL', 'Warehouse ops'].map((skill) => (
-                    <span key={skill} className="organic-tag bg-[var(--organic-neutral-100)] text-[var(--organic-neutral-800)]">{skill}</span>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
+        <LayoutMarquee />
 
-          <div className="border-y border-border/70">
-            <div className="organic-container grid gap-6 py-6 sm:grid-cols-4">
+        <section>
+          <div>
+            <div className="organic-container grid grid-cols-2 gap-x-6 gap-y-8 border-t border-border pb-16 pt-12 sm:grid-cols-4 lg:pt-16">
               {[
                 ['10', 'CV layouts in the simulator'],
                 ['A4', 'live document preview'],
                 ['Pro', 'saved CVs, AI, and tracking'],
                 ['EUR 0', 'to write and export a CV'],
-              ].map(([value, label]) => (
-                <div key={label}>
-                  <p className="font-display text-3xl leading-none text-foreground">{value}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+              ].map(([value, label], index) => (
+                <div key={label} data-reveal style={{ '--reveal-delay': `${index * 80}ms` } as React.CSSProperties}>
+                  <p className="font-display text-[2.25rem] leading-none text-foreground sm:text-[2.75rem]">{value}</p>
+                  <p className="mt-2 text-[15px] text-muted-foreground">{label}</p>
                 </div>
               ))}
             </div>
@@ -3852,19 +3810,17 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         </section>
 
         <section id="how" className="studio-band">
-          <div className="organic-container py-14 lg:py-20">
-            <h2 className="max-w-[16em] font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+          <div className="organic-container py-16 lg:py-24">
+            <h2 className="max-w-[16em] font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
               Three steps, and the first one costs nothing.
             </h2>
             <div className="mt-10 grid gap-8 md:grid-cols-3">
               {howItWorks.map((item, index) => (
-                <article key={item} className="space-y-4">
-                  <span className={`grid h-14 w-14 place-items-center rounded-full font-display text-2xl ${
-                    index === 1 ? 'bg-[var(--organic-accent-2)] text-background' : index === 2 ? 'bg-[var(--organic-neutral-900)] text-[var(--organic-neutral-100)]' : 'bg-accent text-accent-foreground'
-                  }`}>
+                <article key={item} className="space-y-4" data-reveal style={{ '--reveal-delay': `${index * 90}ms` } as React.CSSProperties}>
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-background text-sm font-medium text-foreground shadow-folio-sm">
                     {index + 1}
                   </span>
-                  <h3 className="font-display text-2xl font-normal">{index === 0 ? 'Write it in the simulator' : index === 1 ? 'Keep a version per role' : 'Apply and track'}</h3>
+                  <h3 className="text-lg font-medium tracking-[-0.01em]">{index === 0 ? 'Write it in the simulator' : index === 1 ? 'Keep a version per role' : 'Apply and track'}</h3>
                   <p className="max-w-sm text-sm leading-7 text-foreground/75">{item}</p>
                 </article>
               ))}
@@ -3872,13 +3828,13 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
         </section>
 
-        <section className="organic-container py-14 lg:py-20">
+        <section className="organic-container py-16 lg:py-24">
           <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
             <div className="lg:sticky lg:top-24">
-              <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+              <h2 className="font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
                 Built for the messy middle of applying.
               </h2>
-              <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground">
+              <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground" data-reveal style={{ '--reveal-delay': '90ms' } as React.CSSProperties}>
                 A good CV tool is not only a template picker. It has to help when your profile is half-written,
                 the job ad is specific, and every application needs a slightly different angle.
               </p>
@@ -3889,9 +3845,9 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                 ['Career switchers', 'Use the same background in different formats, then highlight transferable skills for each role family.'],
                 ['Active job seekers', 'Keep one base CV free, then use Pro when you need saved versions, AI rewrites, and tracking.'],
                 ['Freelancers and operators', 'Create a concise profile document, export it as PDF, and keep reusable versions for different clients or roles.'],
-              ].map(([title, body]) => (
-                <article key={title} className="organic-card p-6">
-                  <h3 className="font-display text-2xl font-normal">{title}</h3>
+              ].map(([title, body], index) => (
+                <article key={title} className="organic-card p-6" data-reveal style={{ '--reveal-delay': `${index * 80}ms` } as React.CSSProperties}>
+                  <h3 className="text-lg font-medium tracking-[-0.01em]">{title}</h3>
                   <p className="mt-3 text-sm leading-7 text-muted-foreground">{body}</p>
                 </article>
               ))}
@@ -3900,13 +3856,13 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         </section>
 
         <section className="studio-band">
-          <div className="organic-container py-14 lg:py-20">
+          <div className="organic-container py-16 lg:py-24">
             <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
               <div>
-                <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+                <h2 className="font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
                   Basic is the builder. Pro is the workspace.
                 </h2>
-                <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">
+                <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground" data-reveal style={{ '--reveal-delay': '90ms' } as React.CSSProperties}>
                   That separation keeps the product honest. You can create and export a CV for free.
                   The moment you want persistent account features, AI, or tracking, the product asks you to pick a paid plan first.
                 </p>
@@ -3915,7 +3871,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
                   <Button variant="outline" onClick={() => requestLogin()}>See Pro plans</Button>
                 </div>
               </div>
-              <div className="overflow-x-auto rounded-[28px] bg-card p-4 shadow-[var(--organic-shadow-sm)]">
+              <div className="overflow-x-auto rounded-3xl bg-card p-5" data-reveal>
                 <table className="w-full min-w-[560px] border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-border">
@@ -3949,17 +3905,17 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         <section id="writer" className="organic-container grid gap-12 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:py-20">
           <div>
             <span className="organic-tag organic-tag-accent">AI application writer</span>
-            <h2 className="mt-4 max-w-[14em] font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+            <h2 className="mt-4 max-w-[14em] font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
               Cover letter, motivation, and email from one job ad.
             </h2>
-            <p className="mt-5 max-w-[34em] text-base leading-8 text-foreground/80">
+            <p className="mt-5 max-w-[34em] text-base leading-8 text-foreground/80" data-reveal style={{ '--reveal-delay': '90ms' } as React.CSSProperties}>
               Paste the job description, add your motivation, and generate application text from the CV you already built.
             </p>
           <Button className="mt-6" onClick={hasProSubscription ? () => setScreen('writer') : () => requestLogin()}>
             {hasProSubscription ? 'Open AI writer' : 'View pricing'}
           </Button>
           </div>
-          <div className="organic-card p-6">
+          <div className="organic-card p-6" data-reveal>
             <div className="mb-2 flex flex-wrap gap-2">
               <span className="organic-tag">{profileRole}</span>
               <span className="organic-tag">Job ad input</span>
@@ -3969,8 +3925,8 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               ['Cover letter', 'Formal letter tailored to the role and CV profile.'],
               ['Motivation', 'Short answer for forms asking why this company or role.'],
               ['Email', 'Compact application email ready to copy.'],
-            ].map(([label, body]) => (
-              <article key={label} className="border-t border-border/70 py-4">
+            ].map(([label, body], index) => (
+              <article key={label} className="border-t border-border/70 py-4" data-reveal style={{ '--reveal-delay': `${index * 80}ms` } as React.CSSProperties}>
                 <h3 className="text-sm font-semibold">{label}</h3>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
               </article>
@@ -3978,41 +3934,10 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
         </section>
 
-        <section className="organic-container py-14 lg:py-20">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div>
-              <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
-                Payment happens through secure checkout.
-              </h2>
-              <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">
-                Folio CV does not collect card details inside the app. The app opens a secure
-                checkout page, the payment provider handles billing, and the subscription status
-                updates automatically for weekly, monthly, and yearly subscriptions.
-              </p>
-            </div>
-            <div className="grid gap-3">
-              {[
-                ['1', 'User clicks Pro', 'The app opens the pricing modal instead of asking for an email address.'],
-                ['2', 'User starts a plan', 'Weekly, monthly, or yearly opens the matching secure checkout flow.'],
-                ['3', 'Subscription is confirmed', 'The app stores the active subscription so the Pro workspace unlocks.'],
-                ['4', 'Billing stays synced', 'Subscription events keep Pro access updated after checkout.'],
-              ].map(([step, title, body]) => (
-                <article key={step} className="flex gap-4 rounded-[24px] bg-card p-5 shadow-[var(--organic-shadow-sm)]">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--organic-accent-100)] font-display text-sm text-[var(--organic-accent-800)]">{step}</span>
-                  <div>
-                    <h3 className="text-sm font-semibold">{title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section className="studio-band">
-          <div className="organic-container py-14 lg:py-20">
+          <div className="organic-container py-16 lg:py-24">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <h2 className="max-w-[18em] font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+              <h2 className="max-w-[18em] font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
                 Everything between "I should update my CV" and "they replied".
               </h2>
               <Button variant="outline" onClick={openEditor}>Start with the free part</Button>
@@ -4021,13 +3946,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               {marketingFeatures.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
-                  <article key={feature.title} className="organic-card p-6">
-                    <span className={`mb-5 flex h-10 w-10 items-center justify-center rounded-full ${
-                      index > 2 ? 'bg-[var(--organic-accent-2-200)] text-[var(--organic-accent-2-800)]' : 'bg-[var(--organic-accent-100)] text-[var(--organic-accent-800)]'
-                    }`}>
-                      <Icon size={18} strokeWidth={2.75} />
+                  <article key={feature.title} className="organic-card p-6" data-reveal style={{ '--reveal-delay': `${(index % 3) * 80}ms` } as React.CSSProperties}>
+                    <span className="mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-background text-foreground shadow-folio-sm">
+                      <Icon size={17} strokeWidth={1.75} />
                     </span>
-                    <h3 className="font-display text-xl font-normal text-foreground">{feature.title}</h3>
+                    <h3 className="text-base font-medium text-foreground">{feature.title}</h3>
                     <p className="mt-3 text-sm leading-7 text-foreground/75">{feature.description}</p>
                     <span className={`organic-tag mt-5 ${feature.plan === 'Free' ? 'organic-tag-accent' : 'organic-tag-accent-2'}`}>{feature.plan}</span>
                   </article>
@@ -4037,26 +3960,26 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
         </section>
 
-        <section id="tracker" className="organic-container py-14 lg:py-20">
+        <section id="tracker" className="organic-container py-16 lg:py-24">
           <span className="organic-tag organic-tag-accent-2">The tracker</span>
-          <h2 className="mt-4 max-w-[20em] font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+          <h2 className="mt-4 max-w-[20em] font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
             Five columns, and you always know who owes you an answer.
           </h2>
-          <p className="mt-5 max-w-[44em] text-base leading-8 text-foreground/80">
+          <p className="mt-5 max-w-[44em] text-base leading-8 text-foreground/80" data-reveal style={{ '--reveal-delay': '90ms' } as React.CSSProperties}>
             Saved, applied, interview, offer, closed. Board when you want the shape of it,
             table when you want the detail.
           </p>
           <div className="mt-8 grid gap-3 lg:grid-cols-6">
-            {stages.map((stage) => {
+            {stages.map((stage, stageIndex) => {
               const items = applications.filter((application) => application.stage === stage).slice(0, 1);
               return (
-                <article key={stage} className="rounded-[24px] bg-card p-3 shadow-[var(--organic-shadow-sm)]">
+                <article key={stage} className="rounded-3xl bg-card p-3" data-reveal style={{ '--reveal-delay': `${stageIndex * 60}ms` } as React.CSSProperties}>
                   <div className="mb-3 flex items-center justify-between px-1">
-                    <h3 className="font-display text-sm font-normal">{stage}</h3>
+                    <h3 className="text-sm font-semibold">{stage}</h3>
                     <span className="organic-tag">{applications.filter((application) => application.stage === stage).length}</span>
                   </div>
                   {items.map((job) => (
-                    <div key={job.id} className="rounded-[18px] bg-background p-3">
+                    <div key={job.id} className="rounded-2xl bg-background p-3 shadow-folio-sm">
                       <p className="text-xs font-semibold leading-tight">{job.title}</p>
                       <p className="mt-1 text-[11px] text-muted-foreground">{job.company}</p>
                       <span className="organic-tag organic-tag-accent-2 mt-2">{job.score}</span>
@@ -4072,12 +3995,12 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
         </section>
 
         <section id="pricing" className="studio-band">
-          <div className="organic-container py-14 lg:py-20">
-            <h2 className="font-display text-4xl font-normal md:text-5xl">Free simulator. Pro login only with subscription.</h2>
-            <div className="mt-9 grid gap-6 lg:grid-cols-4">
+          <div className="organic-container py-16 lg:py-24">
+            <h2 className="font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>Free simulator. Pro login only with subscription.</h2>
+            <div className="mt-9 grid gap-6 lg:grid-cols-4" data-reveal>
               <article className="organic-card p-8">
                 <p className="section-kicker">Free</p>
-                <p className="mt-3 font-display text-4xl">EUR 0</p>
+                <p className="mt-3 font-display text-[2.75rem] leading-none">EUR 0</p>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">The CV simulator, in full: forms, templates, design controls, live preview, and PDF export.</p>
                 <div className="mt-5 flex flex-col gap-2 text-sm">
                   <span>Unlimited editing and export</span>
@@ -4088,7 +4011,7 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
               </article>
               {billingPlans.map((plan) => renderPlanCard(plan, { dark: plan.id === 'monthly' }))}
             </div>
-            <div className="mt-8 overflow-x-auto rounded-[28px] bg-card p-4 shadow-[var(--organic-shadow-sm)]">
+            <div className="mt-8 overflow-x-auto rounded-3xl bg-card p-5" data-reveal>
               <table className="w-full min-w-[680px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border">
@@ -4122,45 +4045,40 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
 
         <section id="faq" className="organic-container grid gap-10 py-14 lg:grid-cols-[0.72fr_1.28fr] lg:py-20">
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+            <h2 className="font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
               Questions,<br />answered plainly.
             </h2>
-            <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">
+            <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground" data-reveal style={{ '--reveal-delay': '90ms' } as React.CSSProperties}>
               Basic covers writing and PDF export. Pro covers login, saved work, AI, billing, and the application tracker.
             </p>
           </div>
           <div className="space-y-3">
             {faqs.map((faq, index) => (
-              <article key={faq.question} className="organic-card px-6 py-1">
+              <article key={faq.question} className="organic-card px-6 py-1 md:px-7" data-reveal style={{ '--reveal-delay': `${index * 60}ms` } as React.CSSProperties}>
                 <button className="flex w-full items-center justify-between gap-4 py-5 text-left" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
-                  <span className="font-display text-lg text-foreground">{faq.question}</span>
-                  <CheckCircle2 size={18} className={`shrink-0 text-accent transition-transform ${openFaq === index ? 'rotate-45' : ''}`} />
+                  <span className="text-[17px] font-[450] text-foreground">{faq.question}</span>
+                  <ChevronDown size={18} className={`shrink-0 text-muted-foreground transition-transform ${openFaq === index ? 'rotate-180' : ''}`} />
                 </button>
-                {openFaq === index && <p className="mb-5 max-w-4xl text-sm leading-7 text-foreground/75">{faq.answer}</p>}
+                {openFaq === index && <p className="mb-6 max-w-3xl text-[15px] leading-7 text-muted-foreground">{faq.answer}</p>}
               </article>
             ))}
           </div>
         </section>
 
         <section className="organic-container py-12">
-          <div className="relative overflow-hidden rounded-[40px] bg-accent px-7 py-12 text-accent-foreground md:px-14">
-            <div className="absolute -right-16 -top-16 h-72 w-72 rounded-full bg-white/15" aria-hidden="true" />
-            <div className="absolute bottom-[-6rem] right-32 h-44 w-44 rounded-full bg-white/10" aria-hidden="true" />
+          <div className="organic-accent-card relative overflow-hidden px-7 py-14 md:px-14 md:py-20" data-reveal>
             <div className="relative max-w-[28em]">
-              <h2 className="font-display text-4xl font-normal leading-[1.08] md:text-5xl">
+              <h2 className="font-display text-[2.375rem] leading-[1.08] md:text-[3.5rem]" data-reveal>
                 Write the thing. It takes about ten minutes.
               </h2>
-              <p className="mt-4 text-base leading-8 text-accent-foreground/90">
+              <p className="mt-5 text-lg leading-[1.55] text-[var(--organic-accent-800)]/80">
                 No account is needed for the simulator. Pro login, AI, saved CVs, and tracking start with an active subscription.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Button
-                  className="bg-[var(--organic-neutral-900)] text-[var(--organic-neutral-100)] hover:bg-[var(--organic-neutral-800)]"
-                  onClick={openEditor}
-                >
+                <Button onClick={openEditor}>
                   Open the free simulator
                 </Button>
-                <Button variant="outline" className="border-white/45 text-accent-foreground hover:bg-white/10" onClick={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}>
+                <Button variant="outline" className="border-foreground hover:bg-foreground/[0.04]" onClick={hasProSubscription ? () => setScreen('dashboard') : () => requestLogin()}>
                   {hasProSubscription ? 'See dashboard' : 'View pricing'}
                 </Button>
               </div>
@@ -4168,11 +4086,11 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
           </div>
         </section>
 
-        <footer className="border-t border-border/70">
+        <footer className="border-t border-border">
           <div className="organic-container grid gap-8 py-10 text-sm md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
-              <div className="flex items-center gap-3 font-display text-lg">
-                <span className="h-6 w-6 rounded-full bg-accent" />
+              <div className="flex items-center gap-2.5 font-display text-[21px]">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-foreground" aria-hidden="true"><span className="h-2 w-2 rounded-full bg-[var(--organic-accent-200)]" /></span>
                 Folio CV
               </div>
               <p className="mt-3 max-w-sm text-muted-foreground">
@@ -4181,19 +4099,19 @@ const Index = ({ initialScreen = 'landing' }: IndexProps) => {
             </div>
             <nav className="flex flex-col gap-2">
               <span className="font-semibold">Product</span>
-              <a href="#how" className="text-muted-foreground transition-colors hover:text-accent">How it works</a>
-              <a href="#writer" className="text-muted-foreground transition-colors hover:text-accent">AI writer</a>
-              <a href="#pricing" className="text-muted-foreground transition-colors hover:text-accent">Pricing</a>
+              <a href="#how" className="text-muted-foreground transition-colors hover:text-foreground">How it works</a>
+              <a href="#writer" className="text-muted-foreground transition-colors hover:text-foreground">AI writer</a>
+              <a href="#pricing" className="text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
             </nav>
             <nav className="flex flex-col gap-2">
               <span className="font-semibold">Help</span>
-              <a href="/features/" className="text-muted-foreground transition-colors hover:text-accent">Features</a>
-              <a href="/faq/" className="text-muted-foreground transition-colors hover:text-accent">FAQ</a>
-              <a href="#faq" className="text-muted-foreground transition-colors hover:text-accent">Data and privacy</a>
+              <a href="/features/" className="text-muted-foreground transition-colors hover:text-foreground">Features</a>
+              <a href="/faq/" className="text-muted-foreground transition-colors hover:text-foreground">FAQ</a>
+              <a href="#faq" className="text-muted-foreground transition-colors hover:text-foreground">Data and privacy</a>
             </nav>
             <div className="flex flex-col gap-2">
               <span className="font-semibold">Support</span>
-              <a href="https://buymeacoffee.com/yourdeveloperhsn" target="_blank" rel="noreferrer" className="text-muted-foreground transition-colors hover:text-accent">
+              <a href="https://buymeacoffee.com/yourdeveloperhsn" target="_blank" rel="noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
                 <Coffee size={14} className="mr-1 inline-block" />
                 Buy me a coffee
               </a>

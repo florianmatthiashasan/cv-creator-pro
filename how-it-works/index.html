@@ -11,6 +11,10 @@
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
     <link rel="canonical" href="https://www.folio-cv.com/how-it-works/" />
     <link rel="icon" type="image/svg+xml" href="/folio-cv-icon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
     <meta property="og:title" content="How Folio CV Works" />
     <meta property="og:description" content="The Folio CV workflow explained from free CV creation to Pro application tracking." />
     <meta property="og:type" content="website" />
@@ -23,30 +27,31 @@
     <div id="root">
       <div class="organic-page-shell">
         <a href="#content" class="skip-link">Skip to content</a>
-        <header class="fixed inset-x-0 top-0 z-50 bg-background/90 backdrop-blur-xl">
+        <header data-site-header class="fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300">
           <div class="organic-container flex items-center justify-between gap-3 py-3">
-            <a href="/" class="flex items-center gap-3 font-display text-lg text-foreground" aria-label="Folio CV home">
-              <span class="h-6 w-6 rounded-full bg-accent" aria-hidden="true"></span>
+            <a href="/" class="flex items-center gap-2.5 font-display text-[21px] text-foreground" aria-label="Folio CV home">
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-foreground" aria-hidden="true"><span class="h-2 w-2 rounded-full bg-[var(--organic-accent-200)]"></span></span>
               Folio CV
             </a>
-            <nav class="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 text-sm text-muted-foreground shadow-[var(--organic-shadow-sm)] backdrop-blur-xl md:flex">
-              <a href="/how-it-works/" class="rounded-full bg-background px-3 py-2 text-foreground">How it works</a>
-              <a href="/pricing/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Pricing</a>
-              <a href="/features/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Features</a>
-              <a href="/faq/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">FAQ</a>
+            <nav class="hidden items-center gap-2 md:flex">
+              <a href="/how-it-works/" class="px-3 py-2 text-[15px] text-foreground">How it works</a>
+              <a href="/pricing/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
+              <a href="/features/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">Features</a>
+              <a href="/faq/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">FAQ</a>
             </nav>
-            <a href="/dashboard/simulator" class="folio-chip">Free simulator</a>
+            <a href="/dashboard/simulator" class="folio-chip folio-chip-primary">Free simulator</a>
           </div>
         </header>
 
-        <main id="content" class="relative z-10 pt-16">
-          <section class="border-b border-border/70">
-            <div class="organic-container py-14 lg:py-20">
+        <main id="content" class="relative z-10">
+          <section class="relative">
+            <div class="hero-glow" aria-hidden="true"><div class="grain"></div></div>
+            <div class="relative organic-container pb-16 pt-32 lg:pb-24 lg:pt-44">
               <p class="section-kicker">How it works</p>
-              <h1 class="mt-3 max-w-4xl font-display text-[clamp(3rem,5.2vw,5.25rem)] font-normal leading-[1.04] text-foreground">
+              <h1 data-blur-words class="mt-3 max-w-4xl font-display text-[clamp(2.75rem,6vw,5rem)] leading-[1.05] tracking-[-0.025em] text-foreground">
                 Start with the free CV builder. Move to Pro when you need an account.
               </h1>
-              <p class="mt-6 max-w-3xl text-base leading-8 text-muted-foreground">
+              <p class="mt-6 max-w-3xl text-base leading-8 text-muted-foreground" data-reveal style="--reveal-delay: 650ms">
                 Folio CV separates document creation from account features. You can
                 write, design, preview, and export a CV for free. When you want saved
                 versions, AI tools, or an application tracker, Pro starts before login.
@@ -54,28 +59,28 @@
             </div>
           </section>
 
-          <section class="organic-container py-12 lg:py-16">
+          <section class="organic-container py-14 lg:py-20">
             <div class="grid gap-6 md:grid-cols-3">
-              <article class="organic-card p-6">
-                <span class="grid h-12 w-12 place-items-center rounded-full bg-accent font-display text-xl text-accent-foreground">1</span>
-                <h2 class="mt-5 font-display text-2xl font-normal">Build the CV</h2>
+              <article class="organic-card p-6" data-reveal>
+                <span class="grid h-10 w-10 place-items-center rounded-full bg-background text-sm font-medium text-foreground shadow-folio-sm">1</span>
+                <h2 class="mt-5 text-lg font-medium tracking-[-0.01em]">Build the CV</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Enter personal details, experience, education, skills, languages, and
                   additional proof. The editor gives structure so users do not start
                   from a blank page.
                 </p>
               </article>
-              <article class="organic-card p-6">
-                <span class="grid h-12 w-12 place-items-center rounded-full bg-[var(--organic-accent-2)] font-display text-xl text-background">2</span>
-                <h2 class="mt-5 font-display text-2xl font-normal">Preview and export</h2>
+              <article class="organic-card p-6" data-reveal>
+                <span class="grid h-10 w-10 place-items-center rounded-full bg-background text-sm font-medium text-foreground shadow-folio-sm">2</span>
+                <h2 class="mt-5 text-lg font-medium tracking-[-0.01em]">Preview and export</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Switch templates, adjust design controls, inspect the A4 preview, and
                   export the finished CV as a PDF. This Basic workflow is free.
                 </p>
               </article>
-              <article class="organic-card p-6">
-                <span class="grid h-12 w-12 place-items-center rounded-full bg-[var(--organic-neutral-900)] font-display text-xl text-[var(--organic-neutral-100)]">3</span>
-                <h2 class="mt-5 font-display text-2xl font-normal">Upgrade for Pro</h2>
+              <article class="organic-card p-6" data-reveal>
+                <span class="grid h-10 w-10 place-items-center rounded-full bg-background text-sm font-medium text-foreground shadow-folio-sm">3</span>
+                <h2 class="mt-5 text-lg font-medium tracking-[-0.01em]">Upgrade for Pro</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Pro unlocks login access, saved CV versions, AI Judge, AI tailoring,
                   AI application writing, and the application tracker.
@@ -85,10 +90,10 @@
           </section>
 
           <section class="studio-band">
-            <div class="organic-container py-12 lg:py-16">
-              <h2 class="font-display text-4xl font-normal">Why login comes after pricing</h2>
+            <div class="organic-container py-14 lg:py-20">
+              <h2 class="font-display text-[2.25rem] leading-[1.1] md:text-[2.75rem]" data-reveal>Why login comes after pricing</h2>
               <div class="mt-6 grid gap-5 lg:grid-cols-2">
-                <article class="organic-card p-6">
+                <article class="organic-card p-6" data-reveal>
                   <h3 class="text-base font-semibold">Basic does not need login</h3>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     The free simulator is designed for immediate use. Asking for an
@@ -96,7 +101,7 @@
                     core workflow, so Basic stays open.
                   </p>
                 </article>
-                <article class="organic-card p-6">
+                <article class="organic-card p-6" data-reveal>
                   <h3 class="text-base font-semibold">Pro needs an active subscription</h3>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     Saved work, AI calls, and tracking belong to a paid account. That is
@@ -108,10 +113,10 @@
             </div>
           </section>
 
-          <section class="organic-container py-12 lg:py-16">
+          <section class="organic-container py-14 lg:py-20">
             <div class="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <h2 class="font-display text-4xl font-normal leading-[1.08]">The full workflow</h2>
+                <h2 class="font-display text-[2.25rem] leading-[1.1] md:text-[2.75rem]" data-reveal>The full workflow</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   Folio CV starts with the document because that is what users need first.
                   The account layer is added only when the user wants the product to remember
@@ -119,7 +124,7 @@
                 </p>
               </div>
               <div class="space-y-4">
-                <article class="organic-card p-5">
+                <article class="organic-card p-5" data-reveal>
                   <h3 class="text-base font-semibold">Draft the base CV</h3>
                   <p class="mt-2 text-sm leading-7 text-muted-foreground">
                     The user fills structured sections instead of fighting a blank page.
@@ -127,7 +132,7 @@
                     extra proof become one reusable profile.
                   </p>
                 </article>
-                <article class="organic-card p-5">
+                <article class="organic-card p-5" data-reveal>
                   <h3 class="text-base font-semibold">Choose a layout and export</h3>
                   <p class="mt-2 text-sm leading-7 text-muted-foreground">
                     The same content can be shown in modern, classic, compact, grid, and
@@ -135,7 +140,7 @@
                     the final document as a PDF.
                   </p>
                 </article>
-                <article class="organic-card p-5">
+                <article class="organic-card p-5" data-reveal>
                   <h3 class="text-base font-semibold">Upgrade only when the job search grows</h3>
                   <p class="mt-2 text-sm leading-7 text-muted-foreground">
                     Pro becomes useful when the user wants role-specific versions, AI
@@ -147,17 +152,17 @@
           </section>
 
           <section class="studio-band">
-            <div class="organic-container py-12 lg:py-16">
+            <div class="organic-container py-14 lg:py-20">
               <div class="grid gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 class="font-display text-4xl font-normal leading-[1.08]">What the user sees</h2>
+                  <h2 class="font-display text-[2.25rem] leading-[1.1] md:text-[2.75rem]" data-reveal>What the user sees</h2>
                   <p class="mt-4 text-sm leading-7 text-muted-foreground">
                     If the user clicks a free action, the editor opens immediately. If the
                     user clicks a Pro action, the app explains pricing and asks for a plan
                     first. The app should not show an email field before that decision.
                   </p>
                 </div>
-                <div class="overflow-x-auto rounded-[28px] bg-card p-4 shadow-[var(--organic-shadow-sm)]">
+                <div class="overflow-x-auto rounded-3xl bg-card p-5" data-reveal>
                   <table class="w-full min-w-[560px] border-collapse text-sm">
                     <thead>
                       <tr class="border-b border-border">
@@ -178,64 +183,6 @@
             </div>
           </section>
 
-          <section class="organic-container py-12 lg:py-16">
-            <h2 class="font-display text-4xl font-normal">How payment access works</h2>
-            <div class="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <article class="organic-card p-5">
-                <h3 class="text-base font-semibold">Plan selected</h3>
-                <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                  The selected plan maps to weekly, monthly, or yearly billing.
-                </p>
-              </article>
-              <article class="organic-card p-5">
-                <h3 class="text-base font-semibold">Secure checkout</h3>
-                <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                  Payment details are handled outside the app. Folio CV does not touch card data.
-                </p>
-              </article>
-              <article class="organic-card p-5">
-                <h3 class="text-base font-semibold">Webhook updates access</h3>
-                <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                  Subscription events update the app, and Supabase stores whether Pro is active.
-                </p>
-              </article>
-              <article class="organic-card p-5">
-                <h3 class="text-base font-semibold">Pro unlocks</h3>
-                <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                  The dashboard, saved CVs, AI tools, and tracker unlock only while the subscription is active.
-                </p>
-              </article>
-            </div>
-          </section>
-
-          <section class="studio-band">
-            <div class="organic-container py-12 lg:py-16">
-              <h2 class="font-display text-4xl font-normal">What should stay simple</h2>
-              <div class="mt-7 grid gap-4 md:grid-cols-3">
-                <article class="organic-card p-6">
-                  <h3 class="text-base font-semibold">Do not build your own payment form</h3>
-                  <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                    Hosted checkout already handles subscriptions, payment methods, invoices,
-                    failed payment recovery, and billing details better than a custom first version.
-                  </p>
-                </article>
-                <article class="organic-card p-6">
-                  <h3 class="text-base font-semibold">Use a billing portal</h3>
-                  <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                    Cancellations, payment method changes, invoices, and billing updates should
-                    go through a hosted billing portal instead of custom app screens.
-                  </p>
-                </article>
-                <article class="organic-card p-6">
-                  <h3 class="text-base font-semibold">Keep Basic generous</h3>
-                  <p class="mt-2 text-sm leading-7 text-muted-foreground">
-                    Let people finish a CV for free. Pro should be clearly useful for serious
-                    job search work, not a confusing wall before the product can be tested.
-                  </p>
-                </article>
-              </div>
-            </div>
-          </section>
         </main>
       </div>
     </div>

@@ -13,7 +13,10 @@
     <link rel="alternate" hreflang="en" href="https://www.folio-cv.com/faq/" />
     <link rel="alternate" hreflang="x-default" href="https://www.folio-cv.com/faq/" />
     <link rel="icon" type="image/svg+xml" href="/folio-cv-icon.svg" />
-    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
     <meta property="og:title" content="Folio CV FAQ | Free Resume Builder Questions" />
     <meta property="og:description" content="Frequently asked questions about Folio CV, a free browser-based CV and resume builder." />
     <meta property="og:type" content="website" />
@@ -165,30 +168,31 @@
         <a href="#content" class="skip-link">Skip to content</a>
         <div class="app-noise" aria-hidden="true"></div>
 
-        <header class="fixed inset-x-0 top-0 z-50 bg-background/90 backdrop-blur-xl">
+        <header data-site-header class="fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300">
           <div class="organic-container flex items-center justify-between gap-3 py-3">
-            <a href="/" class="flex items-center gap-3 font-display text-lg" aria-label="Folio CV home">
-              <span class="h-6 w-6 rounded-full bg-accent" aria-hidden="true"></span>
+            <a href="/" class="flex items-center gap-2.5 font-display text-[21px]" aria-label="Folio CV home">
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-foreground" aria-hidden="true"><span class="h-2 w-2 rounded-full bg-[var(--organic-accent-200)]"></span></span>
               Folio CV
             </a>
-            <nav class="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 text-sm text-muted-foreground shadow-[var(--organic-shadow-sm)] backdrop-blur-xl md:flex">
-              <a href="/how-it-works/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">How it works</a>
-              <a href="/pricing/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Pricing</a>
-              <a href="/features/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Features</a>
-              <a href="/faq/" class="rounded-full bg-background px-3 py-2 text-foreground">FAQ</a>
+            <nav class="hidden items-center gap-2 md:flex">
+              <a href="/how-it-works/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">How it works</a>
+              <a href="/pricing/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
+              <a href="/features/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">Features</a>
+              <a href="/faq/" class="px-3 py-2 text-[15px] text-foreground">FAQ</a>
             </nav>
-            <a href="/dashboard/simulator" class="folio-chip">Free simulator</a>
+            <a href="/dashboard/simulator" class="folio-chip folio-chip-primary">Free simulator</a>
           </div>
         </header>
 
-        <main id="content" class="relative z-10 pt-16">
-          <section class="border-b border-border/70">
-            <div class="mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:py-20">
+        <main id="content" class="relative z-10">
+          <section class="relative">
+            <div class="hero-glow" aria-hidden="true"><div class="grain"></div></div>
+            <div class="relative mx-auto max-w-7xl px-5 pb-16 pt-32 sm:px-6 lg:pb-24 lg:pt-44">
               <p class="section-kicker">FAQ</p>
-              <h1 class="mt-3 max-w-4xl font-display text-[clamp(3rem,5.2vw,5.25rem)] font-semibold leading-[1.04] tracking-[-0.025em] text-foreground">
+              <h1 data-blur-words class="mt-3 max-w-4xl font-display text-[clamp(2.75rem,6vw,5rem)] leading-[1.05] tracking-[-0.025em] text-foreground">
                 Frequently asked questions about Folio CV.
               </h1>
-              <p class="mt-7 max-w-3xl text-base leading-8 text-muted-foreground">
+              <p class="mt-7 max-w-3xl text-base leading-8 text-muted-foreground" data-reveal style="--reveal-delay: 650ms">
                 These answers explain how Folio CV works, what is included in Basic,
                 what Pro unlocks, how export behaves, and how to think about privacy
                 when entering resume content in a browser-based builder.
@@ -198,7 +202,7 @@
 
           <section class="studio-band">
             <div class="mx-auto max-w-7xl space-y-4 px-5 py-12 sm:px-6 lg:py-16">
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Is Folio CV free?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Yes. Folio CV is free to use for creating a resume or CV, previewing
@@ -208,7 +212,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Do I need to create an account?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   No account is needed for Basic. Login access is part of Folio CV Pro,
@@ -217,7 +221,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">What is included in Folio CV Pro?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Pro includes login access, saved CV versions, AI Judge, AI tailoring,
@@ -226,7 +230,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Which Pro plans are available?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV Pro has three subscriptions: weekly for EUR 2.99, monthly for
@@ -235,7 +239,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Can I log in without a Pro subscription?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   The intended product rule is no. Basic works without login. Login belongs
@@ -244,7 +248,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Who handles payment details?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Secure checkout should handle payment details, billing details, invoices,
@@ -254,7 +258,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">What happens when Pro is canceled?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Pro should remain available until the paid billing period ends. After that,
@@ -264,7 +268,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Is Folio CV suitable for ATS systems?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV templates are built with clear sections and readable
@@ -275,7 +279,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">What file formats can I export?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV focuses on PDF export. PDF is widely used for job
@@ -284,7 +288,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Can I use Folio CV on mobile?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV can be opened in a web browser, including on mobile devices.
@@ -294,7 +298,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Can I customize the design?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Yes. Users can adjust templates, fonts, colors, accents, sidebars,
@@ -304,7 +308,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Which templates are available?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV includes modern, classic, creative, minimal, executive, mono,
@@ -313,7 +317,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">What languages can I write my CV in?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   You can write your resume content in the language you choose, as long as
@@ -323,7 +327,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">How does Folio CV handle my data?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV is designed as a lightweight browser-based CV builder. Resume
@@ -334,7 +338,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Can I update my CV later?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   You can return to the builder and create or edit resume content again. If
@@ -343,7 +347,7 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h2 class="text-base font-semibold text-foreground">Is Folio CV only for resumes?</h2>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV is primarily for resumes and CVs. It works for job

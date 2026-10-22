@@ -13,7 +13,10 @@
     <link rel="alternate" hreflang="en" href="https://www.folio-cv.com/features/" />
     <link rel="alternate" hreflang="x-default" href="https://www.folio-cv.com/features/" />
     <link rel="icon" type="image/svg+xml" href="/folio-cv-icon.svg" />
-    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
     <meta property="og:title" content="Folio CV Features | Basic Builder and Pro Workspace" />
     <meta property="og:description" content="Live preview, templates, design controls, PDF export, Pro login, AI tools, and application tracking in Folio CV." />
     <meta property="og:type" content="website" />
@@ -29,30 +32,31 @@
         <a href="#content" class="skip-link">Skip to content</a>
         <div class="app-noise" aria-hidden="true"></div>
 
-        <header class="fixed inset-x-0 top-0 z-50 bg-background/90 backdrop-blur-xl">
+        <header data-site-header class="fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300">
           <div class="organic-container flex items-center justify-between gap-3 py-3">
-            <a href="/" class="flex items-center gap-3 font-display text-lg" aria-label="Folio CV home">
-              <span class="h-6 w-6 rounded-full bg-accent" aria-hidden="true"></span>
+            <a href="/" class="flex items-center gap-2.5 font-display text-[21px]" aria-label="Folio CV home">
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-foreground" aria-hidden="true"><span class="h-2 w-2 rounded-full bg-[var(--organic-accent-200)]"></span></span>
               Folio CV
             </a>
-            <nav class="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 text-sm text-muted-foreground shadow-[var(--organic-shadow-sm)] backdrop-blur-xl md:flex">
-              <a href="/how-it-works/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">How it works</a>
-              <a href="/pricing/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">Pricing</a>
-              <a href="/features/" class="rounded-full bg-background px-3 py-2 text-foreground">Features</a>
-              <a href="/faq/" class="rounded-full px-3 py-2 transition-colors hover:bg-background hover:text-foreground">FAQ</a>
+            <nav class="hidden items-center gap-2 md:flex">
+              <a href="/how-it-works/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">How it works</a>
+              <a href="/pricing/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
+              <a href="/features/" class="px-3 py-2 text-[15px] text-foreground">Features</a>
+              <a href="/faq/" class="px-3 py-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground">FAQ</a>
             </nav>
-            <a href="/dashboard/simulator" class="folio-chip">Free simulator</a>
+            <a href="/dashboard/simulator" class="folio-chip folio-chip-primary">Free simulator</a>
           </div>
         </header>
 
-        <main id="content" class="relative z-10 pt-16">
-          <section class="border-b border-border/70">
-            <div class="mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:py-20">
+        <main id="content" class="relative z-10">
+          <section class="relative">
+            <div class="hero-glow" aria-hidden="true"><div class="grain"></div></div>
+            <div class="relative mx-auto max-w-7xl px-5 pb-16 pt-32 sm:px-6 lg:pb-24 lg:pt-44">
               <p class="section-kicker">Features</p>
-              <h1 class="mt-3 max-w-4xl font-display text-[clamp(3rem,5.2vw,5.25rem)] font-semibold leading-[1.04] tracking-[-0.025em] text-foreground">
+              <h1 data-blur-words class="mt-3 max-w-4xl font-display text-[clamp(2.75rem,6vw,5rem)] leading-[1.05] tracking-[-0.025em] text-foreground">
                 Folio CV features for building a clear resume online.
               </h1>
-              <p class="mt-7 max-w-3xl text-base leading-8 text-muted-foreground">
+              <p class="mt-7 max-w-3xl text-base leading-8 text-muted-foreground" data-reveal style="--reveal-delay: 650ms">
                 Folio CV starts with a free Basic builder for writing, designing, previewing,
                 and exporting a CV. Pro adds the account layer: login access, saved versions,
                 AI feedback, AI tailoring, application writing, and a tracker for active job
@@ -64,8 +68,8 @@
 
           <section class="studio-band">
             <div class="mx-auto grid max-w-7xl gap-4 px-5 py-12 sm:px-6 lg:grid-cols-2 lg:py-16">
-              <article class="soft-panel p-5">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">Live Preview</h2>
+              <article class="soft-panel p-5" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>Live Preview</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   The live preview shows the resume as it is being built, so every change
                   to the content or design can be checked immediately. This helps users
@@ -77,8 +81,8 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">Templates</h2>
+              <article class="soft-panel p-5" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>Templates</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   Folio CV includes multiple CV and resume templates for different
                   application styles. Users can switch between modern, classic, creative,
@@ -89,8 +93,8 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">Design Customization</h2>
+              <article class="soft-panel p-5" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>Design Customization</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   The design controls let users adjust the visual direction of their resume
                   without editing CSS or working in a design tool. Fonts, accent colors,
@@ -101,8 +105,8 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">PDF Export</h2>
+              <article class="soft-panel p-5" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>PDF Export</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   When the resume is ready, Folio CV exports the finished document as a PDF.
                   PDF export is useful for job applications, portfolio submissions, email
@@ -112,8 +116,8 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">Basic Without Registration</h2>
+              <article class="soft-panel p-5" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>Basic Without Registration</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   The Basic builder can be used without creating an account. Users can start
                   writing immediately, test templates, adjust the design, and export a PDF
@@ -122,8 +126,8 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">Free Core Workflow</h2>
+              <article class="soft-panel p-5" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>Free Core Workflow</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   Creating a resume, switching templates, customizing the design, using the
                   live preview, and exporting a PDF do not require payment. No credit card is
@@ -132,8 +136,8 @@
                 </p>
               </article>
 
-              <article class="soft-panel p-5 lg:col-span-2">
-                <h2 class="font-display text-3xl font-semibold tracking-[-0.035em] text-foreground">GDPR And Data Handling</h2>
+              <article class="soft-panel p-5 lg:col-span-2" data-reveal>
+                <h2 class="font-display text-2xl text-foreground" data-reveal>GDPR And Data Handling</h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
                   Folio CV is designed as a lightweight browser-based CV builder. The resume
                   content is entered by the user during the editing session and used to
@@ -149,7 +153,7 @@
             <div class="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
               <div>
                 <p class="section-kicker">What belongs where</p>
-                <h2 class="mt-3 font-display text-4xl font-semibold tracking-[-0.035em] text-foreground">
+                <h2 class="mt-3 font-display text-2xl text-foreground" data-reveal>
                   Basic is for the finished PDF. Pro is for the job-search workspace.
                 </h2>
                 <p class="mt-4 text-sm leading-7 text-muted-foreground">
@@ -158,7 +162,7 @@
                   applying, managing multiple CV versions, and using AI support across roles.
                 </p>
               </div>
-              <div class="overflow-x-auto rounded-[28px] bg-card p-4 shadow-[var(--organic-shadow-sm)]">
+              <div class="overflow-x-auto rounded-3xl bg-card p-5" data-reveal>
                 <table class="w-full min-w-[720px] border-collapse text-sm">
                   <thead>
                     <tr class="border-b border-border">
@@ -182,48 +186,48 @@
           <section class="studio-band">
             <div class="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:py-16">
               <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                <article class="soft-panel p-5">
-                  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-foreground">AI Judge</h2>
+                <article class="soft-panel p-5" data-reveal>
+                  <h2 class="text-lg font-medium tracking-[-0.01em] text-foreground">AI Judge</h2>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     Pro can review a CV against recruiter-friendly criteria such as clarity,
                     completeness, structure, evidence, and role fit. The goal is to show what
                     should be improved before the user sends the document.
                   </p>
                 </article>
-                <article class="soft-panel p-5">
-                  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-foreground">AI Tailoring</h2>
+                <article class="soft-panel p-5" data-reveal>
+                  <h2 class="text-lg font-medium tracking-[-0.01em] text-foreground">AI Tailoring</h2>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     Users can adapt a CV toward a specific job ad without rewriting the entire
                     document from scratch. The workflow should keep the user's real experience
                     intact while improving wording, emphasis, and relevance.
                   </p>
                 </article>
-                <article class="soft-panel p-5">
-                  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-foreground">Application Writing</h2>
+                <article class="soft-panel p-5" data-reveal>
+                  <h2 class="text-lg font-medium tracking-[-0.01em] text-foreground">Application Writing</h2>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     Pro can produce supporting application text from the CV and job ad: cover
                     letter drafts, motivation answers, and concise application emails that are
                     ready to review and adjust.
                   </p>
                 </article>
-                <article class="soft-panel p-5">
-                  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-foreground">Saved Versions</h2>
+                <article class="soft-panel p-5" data-reveal>
+                  <h2 class="text-lg font-medium tracking-[-0.01em] text-foreground">Saved Versions</h2>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     A logged-in Pro workspace gives users a place to keep role-specific CV
                     versions. This matters when one application needs a compact CV and another
                     needs more project detail.
                   </p>
                 </article>
-                <article class="soft-panel p-5">
-                  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-foreground">Application Tracker</h2>
+                <article class="soft-panel p-5" data-reveal>
+                  <h2 class="text-lg font-medium tracking-[-0.01em] text-foreground">Application Tracker</h2>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     The tracker helps users remember where they applied, which role each CV was
                     tailored for, and what stage comes next. It turns Folio CV from a document
                     tool into a lightweight job-search workspace.
                   </p>
                 </article>
-                <article class="soft-panel p-5">
-                  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-foreground">Subscription Gate</h2>
+                <article class="soft-panel p-5" data-reveal>
+                  <h2 class="text-lg font-medium tracking-[-0.01em] text-foreground">Subscription Gate</h2>
                   <p class="mt-3 text-sm leading-7 text-muted-foreground">
                     When someone clicks a Pro action, Folio CV explains pricing first. The app
                     should not ask for an email in its own dialog before plan selection; secure
@@ -238,11 +242,11 @@
             <div class="grid gap-5 lg:grid-cols-3">
               <div class="lg:col-span-1">
                 <p class="section-kicker">Product principles</p>
-                <h2 class="mt-3 font-display text-4xl font-semibold tracking-[-0.035em] text-foreground">
+                <h2 class="mt-3 font-display text-2xl text-foreground" data-reveal>
                   The app should feel useful before it asks for money.
                 </h2>
               </div>
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h3 class="text-base font-semibold text-foreground">No payment form inside the app</h3>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Folio CV should redirect Pro customers to secure checkout. That keeps card
@@ -250,7 +254,7 @@
                   instead of rebuilding billing screens from scratch.
                 </p>
               </article>
-              <article class="soft-panel p-5">
+              <article class="soft-panel p-5" data-reveal>
                 <h3 class="text-base font-semibold text-foreground">Clear upgrade moment</h3>
                 <p class="mt-3 text-sm leading-7 text-muted-foreground">
                   Free actions open the builder. Pro actions open pricing. This creates a

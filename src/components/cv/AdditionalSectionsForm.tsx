@@ -128,7 +128,7 @@ const AdditionalSectionsForm = ({ data, onChange }: Props) => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-full border border-border bg-background/50 px-3 py-2.5">
+                <div className="flex items-center gap-3 rounded-full border border-input bg-background px-4 py-2.5">
                   <Checkbox id={fieldId('current')} checked={item.current} onCheckedChange={(checked) => update(item.id, 'current', !!checked)} />
                   <Label htmlFor={fieldId('current')} className="text-sm text-foreground/70">Currently active</Label>
                 </div>

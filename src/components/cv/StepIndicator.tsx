@@ -33,20 +33,20 @@ const StepIndicator = ({ currentStep, onStepClick }: StepIndicatorProps) => {
               aria-label={`Step ${index + 1}: ${step.label}`}
               title={step.label}
               onClick={() => onStepClick(index)}
-              className={`group relative flex min-w-0 items-center justify-center rounded-full px-1.5 py-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 ${
+              className={`group relative flex min-w-0 items-center justify-center rounded-full px-1.5 py-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 ${
                 isActive
-                  ? 'bg-background text-foreground shadow-[var(--organic-shadow-sm)]'
+                  ? 'bg-card text-foreground'
                   : isCompleted
-                    ? 'text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground'
-                    : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground/70'
+                    ? 'text-foreground/70 hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground/70'
               }`}
             >
               <motion.div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-150 ${
                   isActive
-                    ? 'bg-accent text-accent-foreground'
+                    ? 'text-foreground'
                     : isCompleted
-                      ? 'bg-accent/10 text-accent'
+                      ? 'text-foreground'
                       : 'bg-transparent text-muted-foreground'
                 }`}
                 whileTap={{ scale: 0.95 }}

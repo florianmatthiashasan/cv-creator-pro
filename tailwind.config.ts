@@ -3,7 +3,7 @@ import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
-  content: ["./features/**/*.html", "./faq/**/*.html", "./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: ["./features/**/*.html", "./faq/**/*.html", "./pricing/**/*.html", "./how-it-works/**/*.html", "./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
     container: {
@@ -15,9 +15,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Caprasimo', 'system-ui', 'sans-serif'],
-        body: ['Figtree', 'system-ui', 'sans-serif'],
-        mono: ['DM Mono', 'monospace'],
+        display: ['"Source Serif 4"', 'ui-serif', 'Georgia', 'serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -67,6 +67,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      boxShadow: {
+        "folio-sm": "var(--organic-shadow-sm)",
+        "folio-md": "var(--organic-shadow-md)",
+        "folio-lg": "var(--organic-shadow-lg)",
       },
       borderRadius: {
         lg: "var(--radius)",

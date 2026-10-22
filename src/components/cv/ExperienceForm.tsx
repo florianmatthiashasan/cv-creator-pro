@@ -95,7 +95,7 @@ const ExperienceForm = ({ data, onChange }: Props) => {
                   <Input id={fieldId('end')} name="experience-end" type="month" value={exp.endDate} onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)} disabled={exp.current} className="disabled:opacity-40" />
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-full border border-border bg-background/50 px-3 py-2.5">
+              <div className="flex items-center gap-3 rounded-full border border-input bg-background px-4 py-2.5">
                 <Checkbox id={fieldId('current')} checked={exp.current} onCheckedChange={(checked) => updateExperience(exp.id, 'current', !!checked)} />
                 <Label htmlFor={fieldId('current')} className="text-sm text-foreground/70">Currently working here</Label>
               </div>

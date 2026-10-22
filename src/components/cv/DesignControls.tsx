@@ -76,7 +76,7 @@ const DesignControls = ({ data, onChange }: Props) => {
                 type="color"
                 value={String(data[field.key])}
                 onChange={(event) => update(field.key, event.target.value)}
-                className="h-9 w-10 shrink-0 cursor-pointer rounded-full border border-border bg-card p-1 shadow-[var(--organic-shadow-sm)]"
+                className="h-9 w-10 shrink-0 cursor-pointer rounded-full border border-input bg-background p-1"
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-mono text-xs font-medium text-foreground">{String(data[field.key]).toUpperCase()}</p>
